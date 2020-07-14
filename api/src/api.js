@@ -1,10 +1,9 @@
 const express = require('express'); 
 const database = require('./database')
+const twitchAPI = require('./twitch-api')
 
 const hostname ="149.91.81.151";
 const port = 3000; 
-const app_twitch_client_id = '0c36td77t9i3e1npj8gy6req93567o'
-const app_twitch_token = '3cmxyp0fd5fvcg6k18qme2v67kaeei'
 
 // tutorial : https://www.frugalprototype.com/developpez-propre-api-node-js-express/
 
@@ -14,46 +13,75 @@ var router = express.Router();
 app.use(router);  
  
 app.listen(port, hostname, function(){
+    
 })
  
-router.route('api/pin/:client_id')
-.get(function(req,res){ // get pinned streamers
-    let userID = req.params.client_id
-    checkBeforeTreatment((userID)).then((userExistedBefore)=>{
-        if(userExistedBefore){
-            database.getStreamers(userID).then((pinnedStreamers)=>{
-                res.json({pinnedStreamers : pinnedStreamers, methode : req.method});
+app.delete('/api/pin',function(req,res){  // delete streamer to pinned streamers
+    let userID = req.query.userID
+    let streamerID = req.query.streamerID
+    if(userID&streamerID){
+        checkBeforeTreatment((userID)).then(()=>{
+            database.deleteStreamer(userID,streamerID).then(()=>{
+                res.status(200).send("ok")
             })
-        }else{
-            res.json({pinnedStreamers : [], methode : req.method});
-        }
-    }).catch((err)=>{
-        res.status(500).send(err)
-    })
+        }).catch((err)=>{
+            res.status(500).send(err)
+        })
+    }else{
+        res.status(500).send("userID or/and streamerID not define")
+    }
+
 })
 
-router.route('api/pin/:client_id/:streamer_id')
-.delete(function(req,res){  // delete streamer to pinned streamers
-    let userID = req.params.client_id
-    let streamerID = req.params.streamer_id
-    checkBeforeTreatment((userID)).then(()=>{
-        database.deleteStreamer(userID,streamerID).then(()=>{
-            res.status(200)
+app.put('/api/pin',function(req,res){ // add streamer to pinned streamers
+    let userID = req.query.userID
+    let streamerID = req.query.streamerID
+    if(userID&streamerID){
+        checkBeforeTreatment((userID)).then(()=>{
+            database.addStreamer(userID,streamerID).then(()=>{
+                res.status(200).send("ok")
+            })
+        }).catch((err)=>{
+            res.status(500).send(err)
         })
-    }).catch((err)=>{
-        res.status(500).send(err)
-    })
-}).put(function(req,res){ // add streamer to pinned streamers
-    let userID = req.params.client_id
-    let streamerID = req.params.streamer_id
-    checkBeforeTreatment((userID)).then(()=>{
-        database.addStreamer(userID,streamerID).then(()=>{
-            res.status(200)
-        })
-    }).catch((err)=>{
-        res.status(500).send(err)
-    })
+    }else{
+        res.status(500).send("userID or/and streamerID not define")
+    }
 });
+
+app.get('/api/pin',function(req,res){ // get pinned streamers
+    let userID = req.query.userID
+    if(userID){
+        checkBeforeTreatment((userID)).then((userExistedBefore)=>{
+            if(userExistedBefore){
+                database.getStreamers(userID).then((pinnedStreamers)=>{
+                    res.json({pinnedStreamers : pinnedStreamers, methode : req.method});
+                })
+            }else{
+                res.json({pinnedStreamers : [], methode : req.method});
+            }
+        }).catch((err)=>{
+            res.status(500).send(err)
+        })
+    }else{
+        res.status(500).send("userID not define")
+    }
+})
+
+app.get('/api/streamerInfo',function(req,res){ // get pinned streamers information ( streamInfo & streamerInfo )
+    let streamerID = req.query.streamerID
+    if(streamerID){
+        twitchAPI.getStreamer(streamerID).then((_streamerInfo)=>{
+            res.json({info:_streamerInfo,methode:req.method})
+        }).catch((err)=>{
+            res.status(500).send(err)
+        })
+    }else{
+        res.status(500).send("streamerID not define")
+    }
+})
+
+
 
 /**
  * check if user exist in database. If not create it
@@ -67,6 +95,8 @@ function checkBeforeTreatment(userID){
             }else{
                 database.addNewUser(userID).then(()=>{
                     resolve(false)
+                }).catch((err)=>{
+                    reject(err)
                 })
             }
         }).catch((err)=>{
@@ -74,3 +104,12 @@ function checkBeforeTreatment(userID){
         })
     })
 }
+
+
+
+//curl GET 'http://149.91.81.151:3000/api/pin?userID=172304722'
+//curl -X PUT 'http://149.91.81.151:3000/api/pin?userID=172304722&streamerID=10'
+//curl -X DELETE 'http://149.91.81.151:3000/api/pin?userID=172304722&streamerID=10'
+//mongo pe_db --eval "db.dropDatabase();"
+//mongo pe_db --eval "db.dropDatabase();" &cd /usr/twitch_pin_extension/api/ && npm run api-listen &
+//curl GET 'http://149.91.81.151:3000/api/streamerInfo?streamerID=44445592'

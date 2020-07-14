@@ -1,6 +1,6 @@
 const script = document.createElement('script');
 script.type = 'text/javascript';
-script.src = 'http://192.168.1.230:8080/outputbuild/bundle.js';
+script.src = 'http://149.91.81.151/bundle.js';
 script.id='twitchpin'
 
 let oldscript = document.getElementById('twitchpin') // to remove

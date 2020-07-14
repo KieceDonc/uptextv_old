@@ -10,6 +10,7 @@ const pinLiveColor = '#007aa3'
 class PinChannelModule{
     constructor(){
         watcher.on('load.channel',()=>{addPinButton();  
+          console.log(twitch.getCurrentUser())
           //https://id.twitch.tv/oauth2/authorize?client_id=4i47709s2gwve3eg1mki2brms3n9bt&redirect_uri=http://localhost.&response_type=token
           twitchAPI.get("",{"url":"https://api.twitch.tv/helix/users/follows?from_id="+(twitch.getCurrentUser().id)}).then((userFollows)=>{
               console.log(userFollows)
