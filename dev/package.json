@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "browserify ./src/index.js -o ./outputbuild/bundle.js",
-    "watch": "watchify ./src/index.js -o ./outputbuild/bundle.js",
-    "share": "http-server /twitch_pin_extension/ "
+    "build": "browserify ./src/index.js -o /var/www/pe/bundle.js",
+    "watch": "watchify ./src/index.js -o /var/www/pe/bundle.js"
   },
   "author": "",
   "license": "ISC",

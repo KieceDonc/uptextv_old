@@ -11970,10 +11970,11 @@ exports.encode = exports.stringify = require('./encode');
 })();
 
 }).call(this,require('_process'))
-},{"./modules/pin_channels/index.js":9,"./settings":10,"./utils/debug":13,"./watcher":17,"_process":4}],9:[function(require,module,exports){
+},{"./modules/pin_channels/index.js":9,"./settings":10,"./utils/debug":13,"./watcher":18,"_process":4}],9:[function(require,module,exports){
 const watcher = require('../../watcher');
 const twitch = require('../../utils/twitch')
 const twitchAPI = require('../../utils/twitch-api')
+const peAPI = require('../../utils/pe-api')
 
 
 const pin_icon_mouse_over_url = "https://sendeyo.com/up/d/154ed91095"
@@ -11982,14 +11983,10 @@ const pinLiveColor = '#007aa3'
 
 class PinChannelModule{
     constructor(){
+        
         watcher.on('load.channel',()=>{addPinButton();  
-          console.log(twitch.getCurrentUser())
-          //https://id.twitch.tv/oauth2/authorize?client_id=4i47709s2gwve3eg1mki2brms3n9bt&redirect_uri=http://localhost.&response_type=token
-          twitchAPI.get("",{"url":"https://api.twitch.tv/helix/users/follows?from_id="+(twitch.getCurrentUser().id)}).then((userFollows)=>{
-              console.log(userFollows)
-            }).catch((err)=>{
-              console.log(err)
-            })
+          let userID = twitch.getCurrentUser().id
+          getPinnedChannels(userID)
           })          
         
         //this.load()
@@ -12003,6 +12000,16 @@ class PinChannelModule{
         //watcher.on('load.following', () => addPinButton());
       }
 }
+
+
+function getPinnedChannels(userID){
+    return new Promise((resolve,reject)=>{
+        peAPI.get("pin?userID="+userID).then((data)=>{
+          console.log(data)
+        })
+    })
+}
+
 
 // setup side nav pin section to welcome pinned streamer
 function addPinSection(){ 
@@ -12257,7 +12264,7 @@ function createBlueClassColor(){
 
 
 module.exports = new PinChannelModule()
-},{"../../utils/twitch":16,"../../utils/twitch-api":15,"../../watcher":17}],10:[function(require,module,exports){
+},{"../../utils/pe-api":14,"../../utils/twitch":17,"../../utils/twitch-api":16,"../../watcher":18}],10:[function(require,module,exports){
 const SafeEventEmitter = require('./utils/safe-event-emitter');
 const storage = require('./storage');
 
@@ -12309,7 +12316,7 @@ class Settings extends SafeEventEmitter {
 
 module.exports = new Settings();
 
-},{"./storage":11,"./utils/safe-event-emitter":14}],11:[function(require,module,exports){
+},{"./storage":11,"./utils/safe-event-emitter":15}],11:[function(require,module,exports){
 const cookies = require('cookies-js');
 const SafeEventEmitter = require('./utils/safe-event-emitter');
 
@@ -12389,7 +12396,7 @@ class Storage extends SafeEventEmitter {
 
 module.exports = new Storage();
 
-},{"./utils/safe-event-emitter":14,"cookies-js":1}],12:[function(require,module,exports){
+},{"./utils/safe-event-emitter":15,"cookies-js":1}],12:[function(require,module,exports){
 const $ = require('jquery');
 const querystring = require('querystring');
 
@@ -12455,6 +12462,49 @@ module.exports = {
 
 }).call(this,require('_process'))
 },{"../storage":11,"_process":4}],14:[function(require,module,exports){
+const $ = require('jquery');
+const API_ENDPOINT_IP = '149.91.81.151';
+const API_ENDPOINT_PORT = '3000';
+const API_ENDPOINT = 'https://'+API_ENDPOINT_IP+":"+API_ENDPOINT_PORT+"/api/"
+
+function request(method, path) {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: API_ENDPOINT+path,
+            method,
+            timeout: 30000,
+            success: data => resolve(data),
+            error: ({status, responseJSON}) => reject({
+                status,
+                data: responseJSON
+            })
+        });
+    });
+}
+
+module.exports = {
+    get(path) {
+        return request('GET', path);
+    },
+
+    post(path) {
+        return request('POST', path);
+    },
+
+    put(path) {
+        return request('PUT', path);
+    },
+
+    patch(path) {
+        return request('PATCH', path);
+    },
+
+    delete(path) {
+        return request('DELETE', path);
+    }
+};
+
+},{"jquery":3}],15:[function(require,module,exports){
 const EventEmitter = require('events').EventEmitter;
 
 function newListener(listener, ...args) {
@@ -12481,7 +12531,7 @@ class SafeEventEmitter extends EventEmitter {
 
 module.exports = SafeEventEmitter;
 
-},{"./debug":13,"events":2}],15:[function(require,module,exports){
+},{"./debug":13,"events":2}],16:[function(require,module,exports){
 const $ = require('jquery');
 const querystring = require('querystring');
 
@@ -12548,7 +12598,7 @@ module.exports = {
     }
 };
 
-},{"jquery":3,"querystring":7}],16:[function(require,module,exports){
+},{"jquery":3,"querystring":7}],17:[function(require,module,exports){
 const $ = require('jquery');
 const twitchAPI = require('./twitch-api');
 
@@ -13039,7 +13089,7 @@ module.exports = {
 
 };
 
-},{"./twitch-api":15,"jquery":3}],17:[function(require,module,exports){
+},{"./twitch-api":16,"jquery":3}],18:[function(require,module,exports){
 const api = require('./utils/api');
 const debug = require('./utils/debug');
 const twitch = require('./utils/twitch');
@@ -13497,7 +13547,7 @@ class Watcher extends SafeEventEmitter {
 
 module.exports = new Watcher();
 
-},{"./utils/api":12,"./utils/debug":13,"./utils/safe-event-emitter":14,"./utils/twitch":16,"./watchers/chat-message-handler.js":18,"jquery":3}],18:[function(require,module,exports){
+},{"./utils/api":12,"./utils/debug":13,"./utils/safe-event-emitter":15,"./utils/twitch":17,"./watchers/chat-message-handler.js":19,"jquery":3}],19:[function(require,module,exports){
 const twitch = require('../utils/twitch');
 const watcher = require('../watcher');
 
@@ -13548,4 +13598,4 @@ class ChatMessageHandlerWatcher {
 
 module.exports = new ChatMessageHandlerWatcher();
 
-},{"../utils/twitch":16,"../watcher":17}]},{},[8]);
+},{"../utils/twitch":17,"../watcher":18}]},{},[8]);

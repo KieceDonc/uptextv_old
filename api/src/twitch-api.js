@@ -83,13 +83,14 @@ module.exports = {
      * return object under this form : 
      * status 	            |string| 	Channel’s streaming status
      * broadcaster_id 	    |string| 	Twitch User ID of this channel owner
+     * broadcaster_name 	|string| 	Twitch User name of this channel owner
      * game_id 	            |string| 	Current game ID being played on the channel
      * broadcaster_language |string| 	Language of the channel
      * title 	            |string| 	Title of the stream
      * description 	        |string| 	Description of the stream
      * @param {*} streamerID 
      */
-    getStream(streamerID){
+    getStream_1(streamerID){
         return new Promise((resolve,reject)=>{
             getTwitchAccessToken().then((bearer_token)=>{
                 let urlToCall = API_ENDPOINT+'channels?broadcaster_id='+streamerID
@@ -115,27 +116,84 @@ module.exports = {
         })
     },
 
+    /**
+    *    game_id 	     |string| 	ID of the game being played on the stream.
+    *    id 	         |string| 	Stream ID.
+    *    language 	     |string| 	Stream language.
+    *    pagination 	 |string| 	A cursor value, to be used in a subsequent request to specify the starting point of the next set of results.
+    *    started_at 	 |string| 	UTC timestamp. 
+    *    tag_ids 	     |string| 	Shows tag IDs that apply to the stream.
+    *    thumbnail_url   |string| 	Thumbnail URL of the stream. All image URLs have variable width and height. You can replace {width} and {height} with any values to get that size image
+    *    title 	         |string| 	Stream title.
+    *    type 	         |string| 	Stream type: "live" or "" (in case of error).
+    *    user_id 	     |string| 	ID of the user who is streaming.
+    *    user_name 	     |string| 	Display name corresponding to user_id.
+    *    viewer_count    | int  |   Number of viewers watching the stream at the time of the query.
+     * @param {*} streamerID 
+     */
+    getStream_2(streamerID){
+        return new Promise((resolve,reject)=>{
+            getTwitchAccessToken().then((bearer_token)=>{
+                let urlToCall = API_ENDPOINT+'streams?user_id='+streamerID
+                request.get({ 
+                    headers: {
+                        'content-type' : 'application/json',
+                        'Authorization': 'Bearer '+bearer_token,
+                        'Client-ID' : app_twitch_client_id
+                    }, 
+                    url: urlToCall 
+                }, 
+                    function(error, response, body){
+                        body = JSON.parse(body)
+                        if(error){
+                            reject(error)
+                        }else{
+                            resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
+                        }
+                });
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
+    },
+    
+
      /**
      * return information about the stream and the user ( the streamer )
      * return object under this form : 
      * streamer :{
-     *    broadcaster_type      |string| 	User’s broadcaster type: "partner", "affiliate", or "".
-     *    description 	        |string| 	User’s channel description.
-     *    display_name 	        |string| 	User’s display name.
-     *    email 	            |string| 	User’s email address. Returned if the request includes the user:read:email scope.
-     *    id 	                |string| 	User’s ID.
-     *    login 	            |string| 	User’s login name.
-     *    offline_image_url     |string| 	URL of the user’s offline image.
-     *    profile_image_url     |string| 	URL of the user’s profile image.
-     *    type 	                |string| 	User’s type: "staff", "admin", "global_mod", or "".
-     *    view_count 	        | int  |    Total number of views of the user’s channel.
+     *    broadcaster_type    |string| 	User’s broadcaster type: "partner", "affiliate", or "".
+     *    description 	      |string| 	User’s channel description.
+     *    display_name 	      |string| 	User’s display name.
+     *    email 	          |string| 	User’s email address. Returned if the request includes the user:read:email scope.
+     *    id 	              |string| 	User’s ID.
+     *    login 	          |string| 	User’s login name.
+     *    offline_image_url   |string| 	URL of the user’s offline image.
+     *    profile_image_url   |string| 	URL of the user’s profile image.
+     *     type 	          |string| 	User’s type: "staff", "admin", "global_mod", or "".
+     *    view_count 	      | int  |    Total number of views of the user’s channel.
      * },
-     * stream:{
-     *    broadcaster_id 	    |string| 	Twitch User ID of this channel owner
-     *    game_id 	            |string| 	Current game ID being played on the channel
-     *    broadcaster_language  |string| 	Language of the channel
-     *    title 	            |string| 	Title of the stream
-     *    description 	        |string| 	Description of the stream
+     * stream1:{
+     *    broadcaster_id 	     |string| 	Twitch User ID of this channel owner
+     *    broadcaster_name 	     |string| 	Twitch User name of this channel owner
+     *    game_id 	             |string| 	Current game ID being played on the channel
+     *    broadcaster_language   |string| 	Language of the channel
+     *    title 	             |string| 	Title of the stream
+     *    description 	         |string| 	Description of the stream
+     * },
+     * stream2:{
+     *    game_id 	         |string| 	ID of the game being played on the stream.
+     *    id 	             |string| 	Stream ID.
+     *    language 	         |string| 	Stream language.
+     *    pagination 	     |string| 	A cursor value, to be used in a subsequent request to specify the starting point of the next set of results.
+     *    started_at 	     |string| 	UTC timestamp. 
+     *    tag_ids 	         |string| 	Shows tag IDs that apply to the stream.
+     *    thumbnail_url      |string| 	Thumbnail URL of the stream. All image URLs have variable width and height. You can replace {width} and {height} with any values to get that size image
+     *    title 	         |string| 	Stream title.
+     *    type 	             |string| 	Stream type: "live" or "" (in case of error).
+     *    user_id 	         |string| 	ID of the user who is streaming.
+     *    user_name 	     |string| 	Display name corresponding to user_id.
+     *    viewer_count       | int  |   Number of viewers watching the stream at the time of the query.
      * }
      * @param {*} streamerID 
      */
@@ -143,7 +201,8 @@ module.exports = {
         return new Promise((resolve,reject)=>{
 
             let streamerInfo
-            let streamInfo
+            let streamInfo1
+            let streamInfo2
 
             this.getUser(streamerID).then((user)=>{
                 streamerInfo = user
@@ -152,9 +211,15 @@ module.exports = {
                 reject(err)
             })
 
-            this.getStream(streamerID).then((stream)=>{
-                streamInfo = stream
+            this.getStream_1(streamerID).then((stream)=>{
+                streamInfo1 = stream
+                onInformationReceived()
+            }).catch((err)=>{
+                reject(err)
+            })
 
+            this.getStream_2(streamerID).then((stream)=>{
+                streamInfo2 = stream
                 onInformationReceived()
             }).catch((err)=>{
                 reject(err)
@@ -164,10 +229,11 @@ module.exports = {
              * check if we received streamer & stream info. If yes, create an oject of this and return this object
              */
             let onInformationReceived = function(){
-                if(streamerInfo&&streamInfo){
+                if(streamerInfo&&streamInfo1&&streamInfo2){
                     resolve({
                         'streamer':streamerInfo,
-                        'stream':streamInfo
+                        'stream1':streamInfo1,
+                        'stream2':streamInfo2
                     })
                 }
             }

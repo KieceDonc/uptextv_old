@@ -1,38 +1,52 @@
 const watcher = require('../../watcher');
 const twitch = require('../../utils/twitch')
-const twitchAPI = require('../../utils/twitch-api')
+const peAPI = require('./pe-api')
+const debug = require('../../utils/debug')
 
 
 const pin_icon_mouse_over_url = "https://sendeyo.com/up/d/154ed91095"
 const pin_icon_no_mouse_url =''
 const pinLiveColor = '#007aa3'
 
+var userID
+var streamerID
+var pinnedStreamers = null // array list of pinned streamers with their info
+
 class PinChannelModule{
-    constructor(){
-        watcher.on('load.channel',()=>{addPinButton();  
-          console.log(twitch.getCurrentUser())
-          //https://id.twitch.tv/oauth2/authorize?client_id=4i47709s2gwve3eg1mki2brms3n9bt&redirect_uri=http://localhost.&response_type=token
-          twitchAPI.get("",{"url":"https://api.twitch.tv/helix/users/follows?from_id="+(twitch.getCurrentUser().id)}).then((userFollows)=>{
-              console.log(userFollows)
-            }).catch((err)=>{
-              console.log(err)
-            })
-          })          
-        
-        //this.load()
+    constructor(){    
+      watcher.on('load.channel',()=>{
+        this.load()
+      })      
     }
 
     load(){
-        createBlueClassColor()
+      userID = twitch.getCurrentUser().id
+      streamerID = twitch.getCurrentChannel().id
+
+      peAPI.getPinnedStreamers(userID).then((_pinnedStreamers)=>{
+        pinnedStreamers = _pinnedStreamers
         addPinSection()
-        addStreamer("Ogaminglol","https://static-cdn.jtvnw.net/jtv_user_pictures/8dbce7bb-bb6e-4a3b-8121-ff262b717c81-profile_image-70x70.png","League of Legends","10 000",true)
-        addStreamer("Ogaminglol","https://static-cdn.jtvnw.net/jtv_user_pictures/8dbce7bb-bb6e-4a3b-8121-ff262b717c81-profile_image-70x70.png","1 new video","Disconnected",false)
-        //watcher.on('load.following', () => addPinButton());
-      }
+        addPinButton()
+        setupPinSection()
+      }).catch((err)=>{
+        debug.error('error while trying to get pinned streamers through the api. err :',err )
+      })
+    }
+}
+
+
+
+// use right after pinnedstreamers received. It basically add pinned streamers in pin section
+function setupPinSection(){
+  for(let x=0;x<pinnedStreamers.length;x++){
+    addStreamerInPinSection(x)
+  }
 }
 
 // setup side nav pin section to welcome pinned streamer
 function addPinSection(){ 
+
+  createBlueClassColor()
 
   let parentDiv = document.getElementsByClassName('side-nav-section')[0] // getting div parent
 
@@ -64,15 +78,14 @@ function addPinSection(){
   }
 }
 
-
 // this code add the pin button
-// TODO need to handle when user don't follow streamer
 // twitch standard to look like button follow / notification : 
+// button use to add streamer id = 'pin-button'
 function addPinButton(){
-
   let parentdiv = document.getElementsByClassName("tw-align-items-center tw-flex tw-full-height tw-overflow-hidden")[0]
 
   if(parentdiv!=null){
+
     let div0 = document.createElement("div")
     div0.className= "follow-btn__notification-toggle-container follow-btn__notification-toggle-container--visible tw-mg-l-1"
 
@@ -91,8 +104,10 @@ function addPinButton(){
     div3.className="tw-border-radius-medium tw-c-background-base tw-inline-flex tw-overflow-hidden"
 
     let button0 = document.createElement("button") // HANDLE PIN / UNPIN / ADD TO SIDE SECTION / DELETE FROM SIDE SECTION
+    button0.id="pin-button"
     button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-  
+    //button0.onclick=pinButtonTreatment()
+
     let div4 = document.createElement("div")
     div4.className="tw-align-items-center tw-core-button-label tw-flex tw-flex-grow-0"
   
@@ -139,19 +154,80 @@ function addPinButton(){
   }
 }
 
-function addStreamerToPinList(){
+// handle pin / unpin, modification of colors etc 
+function pinButtonTreatment(){
+  if(isStreamerPinnedByUser()){
+    deleteCurrentStreamer()
+  }else{
+    addCurrentStreamer()
+  }
+}
+
+// function name is preally clear
+function isStreamerPinnedByUser(){
+  return getCurrentStreamerIndex()!=-1
+}
+
+// return the index in pinnedStreamer array
+function getCurrentStreamerIndex(){
+  let founded = false
+  let cmpt = -1
+  do{
+    cmpt+=1
+    if(streamerID==parseInt(pinnedStreamers[cmpt])){
+      founded=true
+    }
+  }while(!founded&cmpt<pinnedStreamers.length)
+
+  if(founded){
+    return cmpt
+  }else{
+    return -1
+  }
+}
+
+// handle front ( pin section ) and back ( api ) end way with some verification to add a streamer
+function addCurrentStreamer(){
+  pinnedStreamers.push(streamerID)
+  addCurrentStreamerInAPI()
+  addStreamerInPinSection()
+}
+
+// handle front and back end way ( with some verification ) to delete a streamer
+function deleteCurrentStreamer(){
+  pinnedStreamers = pinnedStreamers.filter(e => e !== streamerID);
+  deleteCurrentStreamerInAPI()
+  deleteStreamerInPinSection()
+}
+
+// add the streamer in the database in api
+function addCurrentStreamerInAPI(){
+  peAPI.addStreamer(userID,streamerID).catch((err)=>{
+    debug.error("failed in adding pinned streamer (api call failed). err :",err)
+  })
 
 }
 
-function deleteStreamerFromPinList(){
-  
+// delete the streamer in the database in api
+function deleteCurrentStreamerInAPI(){
+  peAPI.deleteStreamer(userID,streamerID).catch((err)=>{
+    debug.error("failed in deleting pinned streamer (api call failed). err :",err)
+  })
 }
 
 // use to add streamer in html / css 
-// top div have the id of the streamer name ( to lower case )
-// span of number of viewer have the id of = streamername ( to lower case ) + "viewercount"
-// p of the current game of the id of = streamername ( to lower case ) + "currentgame"
-function addStreamer(streamerName, streamerIcon, streamerGame, streamerViewerCount,isStreaming){ // TODO ADD EVENT
+// top div have the id of the streamerID ( to lower case )
+// span of number of viewer have the id of = streamerID ( to lower case ) + "viewercount"
+// p of the current game of the id of = streamerID ( to lower case ) + "currentgame"
+function addStreamerInPinSection(streamerIndex){ // TODO ADD EVENT
+
+  let currentStreamer = pinnedStreamers[streamerIndex]
+  console.log(currentStreamer)
+  let streamerName = currentStreamer.stream2.user_name
+  let streamerIcon = currentStreamer.streamer.profile_image_url
+  let streamerGame = currentStreamer.stream1.game_name
+  let streamerViewerCount = currentStreamer.stream2.viewer_count
+  let streamerIsStreaming = streamerViewerCount>0?true:false
 
   let div0 = document.createElement("div")
   div0.className="tw-transition tw-transition--enter-done tw-transition__scale-over tw-transition__scale-over--enter-done"
@@ -168,7 +244,7 @@ function addStreamer(streamerName, streamerIcon, streamerGame, streamerViewerCou
   a0.href="/"+streamerName.toLowerCase()
 
   let div3 = document.createElement("div")
-  if(isStreaming){
+  if(streamerIsStreaming){
     div3.className="side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
   }else{
     div3.className="side-nav-card__avatar side-nav-card__avatar--offline tw-align-items-center tw-flex-shrink-0"
@@ -212,7 +288,7 @@ function addStreamer(streamerName, streamerIcon, streamerGame, streamerViewerCou
   let div9 = document.createElement("div")
   let div10 = document.createElement("div")
   let div11 = document.createElement("div")
-  if(isStreaming){
+  if(streamerIsStreaming){
 
     div9.className = "tw-align-items-center tw-flex"
   
@@ -243,7 +319,7 @@ function addStreamer(streamerName, streamerIcon, streamerGame, streamerViewerCou
   div5.append(div7)
   div7.append(p1)
   div4.append(div8)
-  if(isStreaming){
+  if(streamerIsStreaming){
     div8.append(div9)
     div9.append(div10)
     div9.append(div11)
@@ -253,23 +329,23 @@ function addStreamer(streamerName, streamerIcon, streamerGame, streamerViewerCou
   }
 }
 
-// modify a streamer viewver count from pin section by his name 
-function modifyStreamerViewerCount(streamerName,streamerViewerCount){
-  let span = document.getElementById((streamerName.toLowerCase()+"viewercount"))
+// delete a streamer from pin section by his id
+function deleteStreamerInPinSection(){
+  let mainDiv = document.getElementById(streamerID)
+  mainDiv.remove()
+}
+
+// modify a streamer viewver count from pin section by his id
+function modifyStreamerViewerCount(streamerViewerCount){
+  let span = document.getElementById((streamerID+"viewercount"))
   span.innerHTML=streamerViewerCount
 }
 
-// modify the streamer game from pin section by his name 
-function modifyStreamerGame(streamerName,streamerCurrentGame){
-  let p = document.getElementById((streamerName.toLowerCase()+"currentgame"))
+// modify the streamer game from pin section by his id
+function modifyStreamerGame(streamerCurrentGame){
+  let p = document.getElementById((streamerName+"currentgame"))
   p.title=streamerCurrentGame
   p.innerHTML=streamerCurrentGame
-}
-
-// delete a streamer from pin section by his name 
-function deleteStreamer(streamerName){
-  let mainDiv = document.getElementById(streamerName.toLowerCase())
-  mainDiv.remove()
 }
 
 // create the css class of the color of the live button
@@ -284,3 +360,7 @@ function createBlueClassColor(){
 
 
 module.exports = new PinChannelModule()
+
+//addStreamer("Ogaminglol","https://static-cdn.jtvnw.net/jtv_user_pictures/8dbce7bb-bb6e-4a3b-8121-ff262b717c81-profile_image-70x70.png","League of Legends","10 000",true)
+        //addStreamer("Ogaminglol","https://static-cdn.jtvnw.net/jtv_user_pictures/8dbce7bb-bb6e-4a3b-8121-ff262b717c81-profile_image-70x70.png","1 new video","Disconnected",false)
+
