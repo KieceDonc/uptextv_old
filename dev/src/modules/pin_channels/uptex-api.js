@@ -1,10 +1,10 @@
-const peAPI = require('../../utils/pe-api')
+const uptexAPI = require('../../utils/uptex-api.js')
 
 module.exports = {
     // make an api call to get all pinned streamers by user
     getPinnedStreamers(userID){
         return new Promise((resolve,reject)=>{
-            peAPI.get("pin?userID="+userID).then((data)=>{
+            uptexAPI.get("pin?userID="+userID).then((data)=>{
                 resolve(data.pinnedStreamers)
             }).catch((err)=>{
                 reject(err)
@@ -52,7 +52,7 @@ module.exports = {
    */
     getStreamerInfo(streamerID){
         return new Promise((resolve,reject)=>{
-            peAPI.get("streamerInfo?streamerID="+streamerID).then((data)=>{
+            uptexAPI.get("streamerInfo?streamerID="+streamerID).then((data)=>{
                 resolve(data.info)
             }).catch((err)=>{
                 reject(err)
@@ -62,7 +62,7 @@ module.exports = {
 
     addStreamer(userID,streamerID){
         return new Promise((resolve,reject)=>{
-            peAPI.put('pin?userID='+userID+'&streamerID='+streamerID).then(()=>{
+            uptexAPI.put('pin?userID='+userID+'&streamerID='+streamerID).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)
@@ -72,7 +72,7 @@ module.exports = {
 
     deleteStreamer(userID,streamerID){
         return new Promise((resolve,reject)=>{
-            peAPI.delete('pin?userID='+userID+'&streamerID='+streamerID).then(()=>{
+            uptexAPI.delete('pin?userID='+userID+'&streamerID='+streamerID).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)

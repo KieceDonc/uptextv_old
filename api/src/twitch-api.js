@@ -219,7 +219,12 @@ module.exports = {
             })
 
             this.getStream_2(streamerID).then((stream)=>{
-                streamInfo2 = stream
+                if(stream==null){
+                    streamInfo2={isStreaming:false}
+                }else{
+                    streamInfo2 = stream
+                    streamInfo2.isStreaming=true
+                }
                 onInformationReceived()
             }).catch((err)=>{
                 reject(err)

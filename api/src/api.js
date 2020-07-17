@@ -47,6 +47,7 @@ app.delete('/api/pin',function(req,res){  // delete streamer to pinned streamers
 })
 
 app.put('/api/pin',function(req,res){ // add streamer to pinned streamers
+    console.log(req)
     let userID = req.query.userID
     let streamerID = req.query.streamerID
     if(userID&streamerID){
@@ -75,6 +76,8 @@ app.get('/api/pin',function(req,res){ // get pinned streamers with their informa
                     Promise.all(getStreamersInfo).then((pinnedStreamersInfo)=>{
                         res.status(200)
                         res.json({pinnedStreamers : pinnedStreamersInfo,methode: req.method})
+                    }).catch((err)=>{
+                        res.status(500).send(err)
                     })
                 }).catch((err)=>{
                     res.status(500).send(err)
@@ -90,7 +93,7 @@ app.get('/api/pin',function(req,res){ // get pinned streamers with their informa
     }
 })
 
-/*app.get('/api/streamerInfo',function(req,res){ // get pinned streamer information ( streamInfo & streamerInfo )
+app.get('/api/streamerInfo',function(req,res){ // get pinned streamer information ( streamInfo & streamerInfo )
     let streamerID = req.query.streamerID
     if(streamerID){
         twitchAPI.getStreamer(streamerID).then((_streamerInfo)=>{
@@ -102,7 +105,7 @@ app.get('/api/pin',function(req,res){ // get pinned streamers with their informa
     }else{
         res.status(500).send("streamerID not define")
     }
-})*/
+})
 
 
 
