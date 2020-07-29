@@ -20,6 +20,7 @@ let currentChatReference;
 let currentChatChannelId;
 let currentChannelId;
 let channel = {};
+let sidenav_loaded=false
 
 const loadPredicates = {
     following: () => !!$('.tw-tabs div[data-test-selector="ACTIVE_TAB_INDICATOR"]').length,
@@ -34,6 +35,7 @@ const loadPredicates = {
         currentChannelId = currentChannel.id;
         return !!href;
     },
+    channelheaderright: () => !!$('.channel-header__right').length,
     chat: context => {
         if (!twitch.updateCurrentChannel()) return false;
 
@@ -66,7 +68,8 @@ const loadPredicates = {
     player: () => !!twitch.getCurrentPlayer(),
     vod: () => twitch.updateCurrentChannel() && $('.video-chat__input textarea').length,
     vodRecommendation: () => $(CANCEL_VOD_RECOMMENDATION_SELECTOR).length,
-    homepage: () => !!$('.front-page-carousel .video-player__container').length
+    homepage: () => !!$('.front-page-carousel .video-player__container').length,
+    sidenav: () => !!$('.side-bar-contents').length
 };
 
 const routes = {
@@ -213,6 +216,13 @@ class Watcher extends SafeEventEmitter {
             currentRoute = route;
             if (currentPath === lastPath) return;
 
+            if(!sidenav_loaded){
+                this.waitForLoad('sidenav').then(() => {
+                    this.emit('load.sidenav')
+                    sidenav_loaded=true
+                })
+            }
+
             switch (route) {
                 case routes.DIRECTORY_FOLLOWING:
                     if (lastRoute === routes.DIRECTORY_FOLLOWING_LIVE) break;
@@ -231,6 +241,7 @@ class Watcher extends SafeEventEmitter {
                     break;
                 case routes.CHANNEL:
                     this.waitForLoad('channel').then(() => this.emit('load.channel'));
+                    this.waitForLoad('channelheaderright').then((() => this.emit('load.channelheaderright')))
                     this.waitForLoad('chat').then(() => this.emit('load.chat'));
                     this.waitForLoad('player').then(() => this.emit('load.player'));
                     break;
@@ -391,15 +402,6 @@ class Watcher extends SafeEventEmitter {
             debug.log(`Channel Observer: ${currentChannel.name} (${currentChannel.id}) loaded.`);
 
             channel = currentChannel;
-
-            api.get(`cached/users/twitch/${channel.id}`)
-                .catch(error => ({
-                    bots: [],
-                    channelEmotes: [],
-                    sharedEmotes: [],
-                    status: error.status || 0
-                }))
-                .then(data => this.emit('channel.updated', data));
         };
 
         this.on('load.channel', updateChannel);

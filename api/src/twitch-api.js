@@ -117,6 +117,7 @@ module.exports = {
     },
 
     /**
+    * IF OFFLINE RETURN NULL
     *    game_id 	     |string| 	ID of the game being played on the stream.
     *    id 	         |string| 	Stream ID.
     *    language 	     |string| 	Stream language.
@@ -161,46 +162,100 @@ module.exports = {
      /**
      * return information about the stream and the user ( the streamer )
      * return object under this form : 
-     * streamer :{
-     *    broadcaster_type    |string| 	User’s broadcaster type: "partner", "affiliate", or "".
-     *    description 	      |string| 	User’s channel description.
-     *    display_name 	      |string| 	User’s display name.
-     *    email 	          |string| 	User’s email address. Returned if the request includes the user:read:email scope.
-     *    id 	              |string| 	User’s ID.
-     *    login 	          |string| 	User’s login name.
-     *    offline_image_url   |string| 	URL of the user’s offline image.
-     *    profile_image_url   |string| 	URL of the user’s profile image.
-     *     type 	          |string| 	User’s type: "staff", "admin", "global_mod", or "".
-     *    view_count 	      | int  |    Total number of views of the user’s channel.
-     * },
-     * stream1:{
+     * {
+     *    broadcaster_type       |string| 	User’s broadcaster type: "partner", "affiliate", or "".
+     *    -------------------------------------------------------------------------------------------------------------- Overwrites      description 	         |string| 	User’s channel description.
+     *    display_name 	         |string| 	User’s display name.
+     *    email 	             |string| 	User’s email address. Returned if the request includes the user:read:email scope.
+     *    -------------------------------------------------------------------------------------------------------------- Overwrites      id 	                 |string| 	User’s ID.
+     *    login 	             |string| 	User’s login name.
+     *    offline_image_url      |string| 	URL of the user’s offline image.
+     *    profile_image_url      |string| 	URL of the user’s profile image.
+     *    -------------------------------------------------------------------------------------------------------------- Overwrites      type 	                 |string| 	User’s type: "staff", "admin", "global_mod", or "".
+     *    view_count 	         | int  |   Total number of views of the user’s channel.
      *    broadcaster_id 	     |string| 	Twitch User ID of this channel owner
      *    broadcaster_name 	     |string| 	Twitch User name of this channel owner
-     *    game_id 	             |string| 	Current game ID being played on the channel
+     *    MAY NOT BE OVERWRITE IF STREAM IS OFFLINE -------------------------------------------------------------------- Overwrites      game_id 	             |string| 	Current game ID being played on the channel
      *    broadcaster_language   |string| 	Language of the channel
      *    title 	             |string| 	Title of the stream
      *    description 	         |string| 	Description of the stream
-     * },
-     * stream2:{
-     *    game_id 	         |string| 	ID of the game being played on the stream.
-     *    id 	             |string| 	Stream ID.
-     *    language 	         |string| 	Stream language.
-     *    pagination 	     |string| 	A cursor value, to be used in a subsequent request to specify the starting point of the next set of results.
-     *    started_at 	     |string| 	UTC timestamp. 
-     *    tag_ids 	         |string| 	Shows tag IDs that apply to the stream.
-     *    thumbnail_url      |string| 	Thumbnail URL of the stream. All image URLs have variable width and height. You can replace {width} and {height} with any values to get that size image
-     *    title 	         |string| 	Stream title.
-     *    type 	             |string| 	Stream type: "live" or "" (in case of error).
-     *    user_id 	         |string| 	ID of the user who is streaming.
-     *    user_name 	     |string| 	Display name corresponding to user_id.
-     *    viewer_count       | int  |   Number of viewers watching the stream at the time of the query.
+     *    isStreaming            |boolean|  if streaming = true else = false
+     *    FROM THIS PART MAY NOT APPEAR IF STREAM OFFLINE
+     *    game_id 	             |string| 	ID of the game being played on the stream.
+     *    id 	                 |string| 	Stream ID.
+     *    language 	             |string| 	Stream language.
+     *    pagination 	         |string| 	A cursor value, to be used in a subsequent request to specify the starting point of the next set of results.
+     *    started_at 	         |string| 	UTC timestamp. 
+     *    tag_ids 	             |string| 	Shows tag IDs that apply to the stream.
+     *    thumbnail_url          |string| 	Thumbnail URL of the stream. All image URLs have variable width and height. You can replace {width} and {height} with any values to get that size image
+     *    title 	             |string| 	Stream title.
+     *    type 	                 |string| 	Stream type: "live" or "" (in case of error).
+     *    user_id 	             |string| 	ID of the user who is streaming.
+     *    user_name 	         |string| 	Display name corresponding to user_id.
+     *    viewer_count           | int  |   Number of viewers watching the stream at the time of the query.
      * }
      * @param {*} streamerID 
      */
     getStreamer(streamerID){
         return new Promise((resolve,reject)=>{
 
-            let streamerInfo
+            const promises = new Array()
+            
+            promises.push(this.getUser(streamerID),this.getStream_1(streamerID),this.getStream_2(streamerID))
+
+
+           /* StreamerInfo under this form : 
+            * {
+            *    broadcaster_type    |string| 	User’s broadcaster type: "partner", "affiliate", or "".
+            *    description 	     |string| 	User’s channel description.
+            *    display_name 	     |string| 	User’s display name.
+            *    email 	             |string| 	User’s email address. Returned if the request includes the user:read:email scope.
+            *    id 	             |string| 	User’s ID.
+            *    login 	             |string| 	User’s login name.
+            *    offline_image_url   |string| 	URL of the user’s offline image.
+            *    profile_image_url   |string| 	URL of the user’s profile image.
+            *     type 	             |string| 	User’s type: "staff", "admin", "global_mod", or "".
+            *    view_count 	     | int  |    Total number of views of the user’s channel.
+            * },
+            * {
+            *    broadcaster_id 	     |string| 	Twitch User ID of this channel owner
+            *    broadcaster_name 	     |string| 	Twitch User name of this channel owner
+            *    game_id 	             |string| 	Current game ID being played on the channel
+            *    broadcaster_language    |string| 	Language of the channel
+            *    title 	                 |string| 	Title of the stream
+            *    description 	         |string| 	Description of the stream
+            * },
+            *{FROM THIS PART MAY NOT APPEAR IF STREAM OFFLINE
+            *    game_id 	         |string| 	ID of the game being played on the stream.
+            *    id 	             |string| 	Stream ID.
+            *    language 	         |string| 	Stream language.
+            *    pagination 	     |string| 	A cursor value, to be used in a subsequent request to specify the starting point of the next set of results.
+            *    started_at 	     |string| 	UTC timestamp. 
+            *    tag_ids 	         |string| 	Shows tag IDs that apply to the stream.
+            *    thumbnail_url       |string| 	Thumbnail URL of the stream. All image URLs have variable width and height. You can replace {width} and {height} with any values to get that size image
+            *    title 	             |string| 	Stream title.
+            *    type 	             |string| 	Stream type: "live" or "" (in case of error).
+            *    user_id 	         |string| 	ID of the user who is streaming.
+            *    user_name 	         |string| 	Display name corresponding to user_id.
+            *    viewer_count        | int  |   Number of viewers watching the stream at the time of the query.
+            * }
+            */
+
+            Promise.all(promises).then((streamerInfo)=>{
+                let correctStreamerInfoObjc
+                    if(streamerInfo[2]==null){
+                        correctStreamerInfoObjc = merge_options(streamerInfo[0],streamerInfo[1])
+                        correctStreamerInfoObjc.isStreaming=false
+                    }else{
+                        correctStreamerInfoObjc = merge_options(streamerInfo[0],streamerInfo[1],streamerInfo[2])
+                        correctStreamerInfoObjc.isStreaming=true
+                    }
+
+                    resolve(correctStreamerInfoObjc)
+            }).catch((err)=>{
+                reject(err)
+            })
+            /*let streamerInfo
             let streamInfo1
             let streamInfo2
 
@@ -228,12 +283,12 @@ module.exports = {
                 onInformationReceived()
             }).catch((err)=>{
                 reject(err)
-            })
+            })*/
 
             /**
              * check if we received streamer & stream info. If yes, create an oject of this and return this object
              */
-            let onInformationReceived = function(){
+            /*let onInformationReceived = function(){
                 if(streamerInfo&&streamInfo1&&streamInfo2){
                     resolve({
                         'streamer':streamerInfo,
@@ -241,8 +296,36 @@ module.exports = {
                         'stream2':streamInfo2
                     })
                 }
-            }
+            }*/
         })
     },
 
+}
+
+/**
+ * Overwrites obj1's values with obj2's and adds obj2's if non existent in obj1
+ * @param obj1
+ * @param obj2
+ * @returns obj3 a new object based on obj1 and obj2
+ */
+function merge_options(obj1,obj2){
+    var obj3 = {};
+    for (var attrname in obj1) { obj3[attrname] = obj1[attrname]; }
+    for (var attrname in obj2) { obj3[attrname] = obj2[attrname]; }
+    return obj3;
+}
+
+/**
+ * First Overwrites obj1's values with obj2's and adds obj2's if non existent in obj1. Secondly Overwrites obj2's values with obj3's and adds obj3's if non existent in obj2.
+ * @param obj1
+ * @param obj2
+ * @param obj3
+ * @returns obj4 a new object based on obj1 and obj2
+ */
+function merge_options(obj1,obj2,obj3){
+    var obj4 = {};
+    for (var attrname in obj1) { obj4[attrname] = obj1[attrname]; }
+    for (var attrname in obj2) { obj4[attrname] = obj2[attrname]; }
+    for (var attrname in obj3) { obj4[attrname] = obj3[attrname]; }
+    return obj4;
 }

@@ -12,7 +12,6 @@ function newListener(listener, ...args) {
 class SafeEventEmitter extends EventEmitter {
     constructor() {
         super();
-
         // Monkey-patch on/once to be "safer" & log errors
         const oldOn = this.on;
         const oldOnce = this.once;

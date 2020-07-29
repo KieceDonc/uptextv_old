@@ -1,7 +1,5 @@
 const $ = require('jquery');
-const API_ENDPOINT_IP = '149.91.81.151';
-const API_ENDPOINT_PORT = '3000';
-const API_ENDPOINT = 'https://'+API_ENDPOINT_IP+":"+API_ENDPOINT_PORT+"/api/"
+const API_ENDPOINT = 'https://uptextv.com:3000/'
 
 function request(method, path) {
     return new Promise((resolve, reject) => {
