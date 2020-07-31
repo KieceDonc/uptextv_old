@@ -21,6 +21,7 @@ let currentChatChannelId;
 let currentChannelId;
 let channel = {};
 let sidenav_loaded=false
+let first_load_follow_button = true
 
 const loadPredicates = {
     following: () => !!$('.tw-tabs div[data-test-selector="ACTIVE_TAB_INDICATOR"]').length,
@@ -35,7 +36,21 @@ const loadPredicates = {
         currentChannelId = currentChannel.id;
         return !!href;
     },
-    channelheaderright: () => !!$('.channel-header__right').length,
+    followbutton: () => {
+        const currentChannel = twitch.updateCurrentChannel();
+        let isfollowbuttonsetup = !!$('.follow-btn__follow-btn-container--following').length
+        if(!first_load_follow_button){
+            if(!currentChannel || !currentChannel.id || (currentChannelId && currentChannelId === currentChannel.id)) {
+                return false
+            }
+        }
+
+        if(isfollowbuttonsetup&&first_load_follow_button){
+            first_load_follow_button=false
+        }
+        
+        return isfollowbuttonsetup;  
+    },
     chat: context => {
         if (!twitch.updateCurrentChannel()) return false;
 
@@ -240,8 +255,8 @@ class Watcher extends SafeEventEmitter {
                     this.waitForLoad('player').then(() => this.emit('load.player'));
                     break;
                 case routes.CHANNEL:
+                    this.waitForLoad('followbutton').then((() => this.emit('load.followbutton')))
                     this.waitForLoad('channel').then(() => this.emit('load.channel'));
-                    this.waitForLoad('channelheaderright').then((() => this.emit('load.channelheaderright')))
                     this.waitForLoad('chat').then(() => this.emit('load.chat'));
                     this.waitForLoad('player').then(() => this.emit('load.player'));
                     break;

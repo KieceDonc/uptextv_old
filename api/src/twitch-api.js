@@ -69,6 +69,8 @@ module.exports = {
                         if(error){
                             reject(error)
                         }else{
+                            console.log(userID)
+                            console.log(body)
                             resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
                         }
                 });
@@ -107,6 +109,8 @@ module.exports = {
                         if(error){
                             reject(error)
                         }else{
+                            console.log(streamerID)
+                            console.log(body)
                             resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
                         }
                 });
@@ -149,6 +153,8 @@ module.exports = {
                         if(error){
                             reject(error)
                         }else{
+                            console.log(streamerID)
+                            console.log(body)
                             resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
                         }
                 });

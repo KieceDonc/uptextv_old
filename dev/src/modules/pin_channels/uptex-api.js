@@ -5,8 +5,14 @@ module.exports = {
     getPinnedStreamers(userID){
         return new Promise((resolve,reject)=>{
             let cryptedID = getCryptedId(userID)
-            uptexAPI.get("pin?userID="+cryptedID).then((data)=>{
-                resolve(data.pinnedStreamers)
+            uptexAPI.get("pin?userID="+cryptedID).then((data)=>{  
+                if(data.pinnedStreamers.length>0&&data.pinnedStreamers[0].isStreaming!=null){ // checking if api hasn't return empty object. 
+                  resolve(data.pinnedStreamers)
+                }else{ // has return empty object ( no pinned streamer )
+                  // we return new Array cuz data.pinnedStreamers contain a array with one empty object
+                  // and it does boring stuff 
+                  resolve(new Array()) 
+                }
             }).catch((err)=>{
                 reject(err)
             })

@@ -1,9 +1,9 @@
 const script = document.createElement('script');
 script.type = 'text/javascript';
-script.src = 'http://149.91.81.151/pe/bundle.js';
-script.id='twitchpin'
+script.src = 'https://uptextv.com/pe/bundle.js';
+script.id='uptextv'
 
-let oldscript = document.getElementById('twitchpin') // to remove
+let oldscript = document.getElementById('uptextv') // to remove
 if(oldscript){// to remove
     oldscript.parentElement.removeChild(oldscript)// to remove
 }// to remove

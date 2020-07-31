@@ -5,8 +5,7 @@ const debug = require('../../utils/debug')
 
 // https://obfuscator.io/
 
-const pin_icon_mouse_over_url = "https://sendeyo.com/up/d/154ed91095"
-const pin_icon_no_mouse_url =''
+const pin_icon_mouse_over_url = "https://uptextv.com/pe/pin-icon.svg"
 const pinLiveColor = '#007aa3'
 
 const css_picture_profile_online = "side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
@@ -14,29 +13,41 @@ const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar
 
 var userID
 var streamerID
-var pinnedStreamers = null // array list of pinned streamers with their info
+var pinnedStreamers = new Array() // array list of pinned streamers with their info
 
 class PinChannelModule{
     constructor(){    
       watcher.on('load.sidenav',()=>{
         this.sidenavload()
       })
-      watcher.on('load.channelheaderright',()=>{
-        addPinButton()
+      watcher.on('load.followbutton',()=>{
+        streamerID = twitch.getCurrentChannel().id
+        console.log("current streamer id : "+streamerID)
+        if(shouldAddPinButton()){
+          addPinButton()
+        }
       })      
     }
 
     sidenavload(){
-      userID = twitch.getCurrentUser().id
-      uptexAPI.getPinnedStreamers(userID).then((_pinnedStreamers)=>{
-        pinnedStreamers = _pinnedStreamers
-        addPinSection()
-        setupPinSection()
-        handleUpdateEach5min()
-      
-      }).catch((err)=>{
-        debug.error('error while trying to get pinned streamers through the api. err :',err )
-      })
+      if(shouldAddPinSection()){
+        try{
+          userID = twitch.getCurrentUser().id
+          uptexAPI.getPinnedStreamers(userID).then((_pinnedStreamers)=>{
+            pinnedStreamers = _pinnedStreamers   
+            if(pinnedStreamers.length>0){
+              shortPinnedStreamersByViewers()
+            }
+            addPinSection()
+            setupPinSection()
+            handleUpdateEach5min()
+          }).catch((err)=>{
+            debug.error('error while trying to get pinned streamers through the api. err :',err )
+          })
+        }catch(_){
+          console.log(_)
+        }
+      }
     }
 }
 
@@ -85,6 +96,12 @@ function addPinSection(){
     titleDiv.appendChild(titleH5)
     // End
   }
+}
+
+// check if pin section exist
+function shouldAddPinSection(){
+  let mainDiv = document.getElementById('sideNavePinSection')
+  return mainDiv==null
 }
 
 // this code add the pin button
@@ -166,6 +183,12 @@ function addPinButton(){
     figure0.appendChild(img0)
     div8.appendChild(span0)
   }
+}
+
+// check if pin button exist
+function shouldAddPinButton(){
+  let button = document.getElementById('pin-button')
+  return button==null
 }
 
 // handle pin / unpin, modification of colors etc 
@@ -478,9 +501,14 @@ function streamerGoesOnline(streamerInfo){
 
 // short pinned streamers by viewers
 function shortPinnedStreamersByViewers(){
-  let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
-  splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy('viewer_count'))
-  pinnedStreamers = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
+    let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
+    console.log(splitByOnlineAndOffline)
+    splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
+      console.log(a,b)
+      return -1
+    })
+    pinnedStreamers = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
+
 }
 
 // short pinned streamers by name
@@ -508,20 +536,18 @@ function shortPinnedStreamersByUptime(){
 // online is list of pinned streamer online
 // offline is list of pinned streamer offline
 function getOnlineAndOfflinePinnedStreamers(){
-  let splitPinnedStreamers = pinnedStreamers.sortBy('isStreaming') // https://stackoverflow.com/a/14696535/12577512
-  return {online : splitPinnedStreamers.true, offline : splitPinnedStreamers.false}
+  let offline = new Array()
+  let online = new Array()
+  pinnedStreamers.forEach((currentPinnedStreamer)=>{
+    if(currentPinnedStreamer.isStreaming == true){
+      online.push(currentPinnedStreamer)
+    }else{
+      offline.push(currentPinnedStreamer)
+    }
+  })
+  return {'online' : online, 'offline' : offline}
 }
 
-function sortBy(field) {
-  return function(a, b) {
-      if (a[field] > b[field]) {
-          return -1;
-      } else if (a[field] < b[field]) {
-          return 1;
-      }
-      return 0;
-  };
-}
 
 // create the css class of the color of the live button
 // class name = .tw-channel-status-indicator-pin

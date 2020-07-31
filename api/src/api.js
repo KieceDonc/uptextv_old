@@ -11,7 +11,6 @@ const privateKey = fs.readFileSync('/etc/letsencrypt/live/'+domain+'/privkey.pem
 const certificate = fs.readFileSync('/etc/letsencrypt/live/'+domain+'/cert.pem', 'utf8');
 const ca = fs.readFileSync('/etc/letsencrypt/live/'+domain+'/chain.pem', 'utf8');
 
-const responseToAPIHACKER = "If you continue to try to hack this api you will be perma ban"
 const credentials = {
 	key: privateKey,
 	cert: certificate,
@@ -47,14 +46,15 @@ app.delete('/pin',function(req,res){  // delete streamer to pinned streamers
                     res.status(200).send({response : "ok",methode: req.method})
                 })
             }).catch((err)=>{
-                respondError(req,res,err)
+                res.status(500).send({error : err,methode: req.method})
             })
-        }).catch(()=>{
-            respondError(req,res,responseToAPIHACKER+" level 1")
+        }).catch((err)=>{
+            res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
         })
-    }).catch(()=>{
-        respondError(req,res,responseToAPIHACKER+" level 0 ")
+    }).catch((err)=>{
+        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
     })
+
 })
 
 app.put('/pin',function(req,res){ // add streamer to pinned streamers
@@ -67,13 +67,13 @@ app.put('/pin',function(req,res){ // add streamer to pinned streamers
                     res.status(200).send({response : "ok",methode: req.method})
                 })
             }).catch((err)=>{
-                respondError(req,res,err)
+                res.status(500).send({error : err,methode: req.method})
             })
-        }).catch(()=>{
-            respondError(req,res,responseToAPIHACKER+" level 1")
+        }).catch((err)=>{
+            res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
         })
-    }).catch(()=>{
-        respondError(req,res,responseToAPIHACKER+" level 0 ")
+    }).catch((err)=>{
+        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
     })
 });
 
@@ -91,34 +91,37 @@ app.get('/pin',function(req,res){ // get pinned streamers with their information
                         res.status(200)
                         res.json({pinnedStreamers : pinnedStreamersInfo,methode: req.method})
                     }).catch((err)=>{
-                        respondError(req,res,err)
+                        res.status(500).send({error : err,methode: req.method})
                     })
                 }).catch((err)=>{
-                    respondError(req,res,err)
+                    res.status(500).send({error : err,methode: req.method})
                 })
             }else{
                 res.json({pinnedStreamers : [{}], methode : req.method});
             }
         }).catch((err)=>{
-            respondError(req,res,err)
-
+            res.status(500).send({error : err,methode: req.method})
         })
-    }).catch(()=>{
-        respondError(req,res,responseToAPIHACKER+" level 0 ")
+    }).catch((err)=>{
+        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
     })
 })
 
 app.get('/streamerInfo',function(req,res){ // get pinned streamer information ( streamInfo & streamerInfo )
     let cryptedStreamerID = req.query.streamerID
     decryptID(cryptedStreamerID).then((streamerID)=>{
-        twitchAPI.getStreamer(streamerID).then((_streamerInfo)=>{
-            res.status(200);
-            res.json({info:_streamerInfo,methode:req.method})
-        }).catch((err)=>{
-            respondError(req,res,err)
-        })
-    }).catch(()=>{
-        respondError(req,res,responseToAPIHACKER+" level 1")
+        if(streamerID){
+            twitchAPI.getStreamer(streamerID).then((_streamerInfo)=>{
+                res.status(200)
+                res.json({info:_streamerInfo,methode:req.method})
+            }).catch((err)=>{
+                res.status(500).send({error : err,methode: req.method})
+            })
+        }else{
+            res.status(500).send({error : "streamerID not define",methode: req.method})
+        }
+    }).catch((err)=>{
+        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
     })
 })
 
@@ -141,7 +144,13 @@ app.get('/streamerInfo',function(req,res){ // get pinned streamer information ( 
 function decryptID(cryptedID){
     return new Promise((resolve,reject)=>{
         try{
-            let id = parseInt(cryptedID.split('0')[1].split('-')[0],16)
+            let idFirstPart = cryptedID.split('-')[0]
+            let secondPartInArray = idFirstPart.split('0')
+            let id=''
+            for(let x=1;x<secondPartInArray.length;x++){
+                id+=secondPartInArray[x]
+            }
+            id=parseInt(id,16)
             resolve(id)
         }catch(err){
             reject(err)
@@ -172,18 +181,6 @@ function checkBeforeTreatment(userID){
     })
 }
 
-
-/**
- * use to quickly send back error
- * automaticly handle if err is null or not
- */
-function respondError(req,res,err){
-    if(err){
-        res.status(500).send({error : err,methode: req.method})
-    }else{
-        res.status(500).send({error : "unknown"})
-    }
-}
 
 
 //curl GET 'https://149.91.81.151:3000/api/pin?userID=172304722'

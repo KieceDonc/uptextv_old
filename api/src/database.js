@@ -28,7 +28,6 @@ function getUser(userID){
                     reject(err)
                 }
                 if(doc!=null&&doc.ID!=null){
-
                     resolve(doc)
                 }else{
                     resolve(null)
@@ -109,6 +108,7 @@ module.exports= {
      * @param {*} streamerID 
      */
     addStreamer(userID,streamerID){
+        console.log(streamerID)
         return new Promise((resolve,reject)=>{
             getUser(userID).then((user)=>{
                 var pinnedStreamers = user.pinnedStreamers
