@@ -148,7 +148,7 @@ function decryptID(cryptedID){
             let secondPartInArray = idFirstPart.split('0')
             let id=''
             for(let x=1;x<secondPartInArray.length;x++){
-                id+=secondPartInArray[x]
+                id+='0'+secondPartInArray[x]
             }
             id=parseInt(id,16)
             resolve(id)

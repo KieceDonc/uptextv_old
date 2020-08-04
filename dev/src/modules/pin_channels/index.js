@@ -15,6 +15,35 @@ var userID
 var streamerID
 var pinnedStreamers = new Array() // array list of pinned streamers with their info
 
+var shortPinnedStreamerBy = [
+  function(){ // Viewer
+    let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
+    splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
+      if(a.viewer_count>b.viewer_count){
+        return -1
+      }else if(a.viewer_count<b.viewer_count){
+        return 1
+      }else{
+        return 0 
+      }
+    })
+    pinnedStreamers = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
+  },
+
+  function(){ // Streamer name
+    shortPinnedStreamerByPropertie('broadcaster_name')
+  },
+
+  function(){ // Game name
+    shortPinnedStreamerByPropertie('game_name')
+  },
+
+  function (){ // uptime
+    shortPinnedStreamerByPropertie('started_at')
+  },
+]
+var currentIndexShortBy=0; // index of the function to call to short by
+
 class PinChannelModule{
     constructor(){    
       watcher.on('load.sidenav',()=>{
@@ -22,7 +51,6 @@ class PinChannelModule{
       })
       watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
-        console.log("current streamer id : "+streamerID)
         if(shouldAddPinButton()){
           addPinButton()
         }
@@ -31,12 +59,11 @@ class PinChannelModule{
 
     sidenavload(){
       if(shouldAddPinSection()){
-        try{
           userID = twitch.getCurrentUser().id
           uptexAPI.getPinnedStreamers(userID).then((_pinnedStreamers)=>{
             pinnedStreamers = _pinnedStreamers   
             if(pinnedStreamers.length>0){
-              shortPinnedStreamersByViewers()
+              shortPinnedStreamerBy[0]()
             }
             addPinSection()
             setupPinSection()
@@ -44,9 +71,6 @@ class PinChannelModule{
           }).catch((err)=>{
             debug.error('error while trying to get pinned streamers through the api. err :',err )
           })
-        }catch(_){
-          console.log(_)
-        }
       }
     }
 }
@@ -61,10 +85,9 @@ function setupPinSection(){
 }
 
 // setup side nav pin section to welcome pinned streamer
-// pin section id ( main div ) = sideNavePinSection
+// pin section id ( main div ) = sideNavPinSection
 function addPinSection(){ 
-
-  let mainDivID = "sideNavePinSection"
+  let mainDivID = "sideNavPinSection"
 
   createBlueClassColor()
 
@@ -95,12 +118,14 @@ function addPinSection(){
     parentTitleDiv.appendChild(titleDiv)
     titleDiv.appendChild(titleH5)
     // End
+  }else{
+    console.log('parentdiv is null  ')
   }
 }
 
 // check if pin section exist
 function shouldAddPinSection(){
-  let mainDiv = document.getElementById('sideNavePinSection')
+  let mainDiv = document.getElementById('sideNavPinSection')
   return mainDiv==null
 }
 
@@ -205,19 +230,30 @@ function isStreamerPinnedByUser(){
   return getCurrentStreamerIndex()!=-1
 }
 
-// return the index in pinnedStreamer array
-function getCurrentStreamerIndex(){
-  if(pinnedStreamers.length==0){
+// get streamer index in pinned streamers array
+// _pinnedStreamers is not obligatory. If null it will parse pinnedStreamer array
+// return -1 if not founded
+function getStreamerIndex(_streamerID,_pinnedStreamers){
+
+  let arrayToParse
+  if(_pinnedStreamers){ // checking if we want to parse current pinnedStreamers array or a custom pinnedStreamers Array
+    arrayToParse = _pinnedStreamers
+  }else{
+    arrayToParse = pinnedStreamers
+  }
+
+
+  if(arrayToParse.length==0){
     return -1
   }else{
     let founded = false
     let cmpt = 0
     do{
-      if(streamerID==parseInt(pinnedStreamers[cmpt].broadcaster_id)){
+      if(_streamerID==parseInt(arrayToParse[cmpt].broadcaster_id)){
         founded=true
       }
       cmpt+=1
-    }while(!founded&cmpt<pinnedStreamers.length)
+    }while(!founded&cmpt<arrayToParse.length)
   
     if(founded){
       return cmpt
@@ -227,12 +263,18 @@ function getCurrentStreamerIndex(){
   }
 }
 
+// return the index of current streamer in pinnedStreamer array
+function getCurrentStreamerIndex(){
+  return getStreamerIndex(streamerID)
+}
+
 // handle front ( pin section ) and back ( api ) end way with some verification to add a streamer
 function addCurrentStreamer(){
   uptexAPI.getStreamerInfo(twitch.getCurrentChannel().id).then((currentStreamerInfo)=>{
     pinnedStreamers.push(currentStreamerInfo)
     addCurrentStreamerInAPI()
     addStreamerInPinSection(currentStreamerInfo)
+    updatePinSection()
   }).catch((err)=>{
     debug.error("error while trying to get current streamer info. err :",err)
   })
@@ -359,7 +401,7 @@ function addStreamerInPinSection(streamerInfo){
     span0.innerHTML="Disconnected"
   }
 
-  let mainDiv = document.getElementById("sideNavePinSection")
+  let mainDiv = document.getElementById("sideNavPinSection")
   mainDiv.appendChild(div0)
   div0.appendChild(div1)
   div1.appendChild(div2)
@@ -384,6 +426,15 @@ function addStreamerInPinSection(streamerInfo){
   }
 }
 
+// delete streamer in html / css
+function deleteStreamerInPinSection(streamerInfo){
+  let _streamerID = streamerInfo.broadcaster_id
+  let mainDiv = document.getElementById(_streamerID)
+  if(mainDiv){
+    mainDiv.remove()
+  }
+}
+
 // delete a streamer from pin section by his id
 function deleteCurrentStreamerInPinSection(){
   let mainDiv = document.getElementById(streamerID)
@@ -392,9 +443,29 @@ function deleteCurrentStreamerInPinSection(){
 
 // handle to update streamers info each 5 min
 function handleUpdateEach5min(){
-  setInterval(function(){
-    updateStreamersInfo()
+  setInterval(function(){    
+    updatePinSection()
   },300000)
+}
+
+// handle every thing in html / css about update
+// handle transition etc ....
+function updatePinSection(){
+  let oldPinnedStreamers = pinnedStreamers // use to calculate old and new position of pinned streamers
+  updateStreamersInfo() // update information of each streamers in the array 'pinnedStreamers'
+  shortPinnedStreamerBy[currentIndexShortBy]() // sort pinned streamers by desired fct ( ex : sort by viewver, game name, etc .....)
+  pinnedStreamers.forEach((currentStreamerInfo)=>{
+    let currentStreamerID = currentStreamerInfo.broadcaster_id
+    let oldPosition = getStreamerIndex(currentStreamerID,oldPinnedStreamers)
+    let newPosition = getStreamerIndex(currentStreamerID)
+    if(newPosition!=oldPosition&&oldPosition!=-1){
+      makeTranslateYForOneStreamerInPinSection(currentStreamerInfo,oldPosition,newPosition)
+      setTimeout(function () { // use to replace in good order in html  
+        deleteStreamerInPinSection(currentStreamerInfo)
+        addStreamerInPinSection(currentStreamerInfo)
+      }, 500);
+    }
+  })
 }
 
 // handle to update streamers info
@@ -407,18 +478,27 @@ function updateStreamersInfo(){
 
   uptexAPI.getPinnedStreamers(userID).then((newPinnedStreamers)=>{
     for(let x = 0;x<newPinnedStreamers.length;x++){
-      let oldStreamerInfo = oldPinnedStreamers[x]
+
       let newStreamerInfo = newPinnedStreamers[x]
 
-      if(oldStreamerInfo.isStreaming === newStreamerInfo.isStreaming){// streamer was offline - > streamer is offline or streamer was online - > streamer is online
-        if(newStreamerInfo.isStreaming == true){// streamer was online - > streamer is online
-          updateOnline.push(newStreamerInfo)
+      let oldStreamerInfo = -1
+      for(let y=0;y<oldPinnedStreamers.length;y++){
+        if(oldPinnedStreamers[y].broadcaster_id==newStreamerInfo.broadcaster_id){
+          oldStreamerInfo=oldPinnedStreamers[y]
         }
-      }else{
-        if(newStreamerInfo.isStreaming == true){// streamer was offline - > streamer is online
-          goesOnline.push(newStreamerInfo)
-        }else{// streamer was online - > streamer is offline
-          goesOffline.push(newStreamerInfo)
+      }
+      
+      if(oldStreamerInfo!=-1){ // checking is pinned streamer have been just added or not
+        if(oldStreamerInfo.isStreaming === newStreamerInfo.isStreaming){// streamer was offline - > streamer is offline or streamer was online - > streamer is online
+          if(newStreamerInfo.isStreaming == true){// streamer was online - > streamer is online
+            updateOnline.push(newStreamerInfo)
+          }
+        }else{
+          if(newStreamerInfo.isStreaming == true){// streamer was offline - > streamer is online
+            goesOnline.push(newStreamerInfo)
+          }else{// streamer was online - > streamer is offline
+            goesOffline.push(newStreamerInfo)
+          }
         }
       }
     }
@@ -441,6 +521,22 @@ function updateStreamersInfo(){
   })
 }
 
+// MAKE A SHORT BUT SO FUCKING COOL ANIMATION TO PLACE THE STREAMER IN THE CORRECT POSITION ACCORDING TO THE SORT CRITERIA
+// animation duration = 250 ms ( normaly, plz refer to css value 'transition-duration')
+function makeTranslateYForOneStreamerInPinSection(streamerInfo,oldPosition,newPosition){
+  let _streamerID = streamerInfo.broadcaster_id
+  let mainDiv = document.getElementById(_streamerID)
+
+  /*let size = getComputedStyle(document.documentElement).getPropertyValue('--button-size-large');
+  let sizePadding = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--button-padding-y'));
+  let sizeValue = parseFloat(size)
+  let sizeUnity = deleteNumbers(size).replace('.','')*/
+
+  let boxWidth = mainDiv.offsetHeight
+  let translateValue = (newPosition-oldPosition)*boxWidth
+  mainDiv.style.transform = "translateY("+translateValue+"px)";
+}
+
 // modify a streamer viewver count from pin section by his id
 function modifyStreamerViewerCount(streamerInfo){
   let _streamerID = streamerInfo.broadcaster_id
@@ -453,7 +549,7 @@ function modifyStreamerViewerCount(streamerInfo){
 function modifyStreamerGame(streamerInfo){
   let _streamerID = streamerInfo.broadcaster_id
   let streamerCurrentGame = streamerInfo.game_name
-  let p = document.getElementById((_streamerID+"currentgame"))
+  let p = document.getElementById(_streamerID+"currentgame")
   p.title=streamerCurrentGame
   p.innerHTML=streamerCurrentGame
 }
@@ -462,8 +558,8 @@ function modifyStreamerGame(streamerInfo){
 function streamerGoesOffline(streamerInfo){
   let _streamerID = streamerInfo.broadcaster_id
 
-  modifyStreamerGame(_streamerID,'')
-  modifyStreamerViewerCount(_streamerID,'Disconnected')
+  modifyStreamerGame(streamerInfo)
+  modifyStreamerViewerCount(streamerInfo)
   // changing css properties of picture profile ( make it grey )
   let div_profile_picture = document.getElementById(_streamerID+"profile_picture")
   div_profile_picture.className = css_picture_profile_offline
@@ -481,10 +577,8 @@ function streamerGoesOffline(streamerInfo){
 // modify & handle css change to make a streamer online in pin section
 function streamerGoesOnline(streamerInfo){
   let _streamerID = streamerInfo.broadcaster_id
-  let streamerGame = streamerInfo.game_name
-  let streamerViewerCount = streamerInfo.viewer_count
-  modifyStreamerGame(_streamerID,streamerGame)
-  modifyStreamerViewerCount(_streamerID,streamerViewerCount)
+  modifyStreamerGame(streamerInfo)
+  modifyStreamerViewerCount(modifyStreamerViewerCount)
 
   let div9 = document.createElement("div")
   div9.id=_streamerID+"unknow0"
@@ -499,37 +593,11 @@ function streamerGoesOnline(streamerInfo){
   div9.append(div11)
 }
 
-// short pinned streamers by viewers
-function shortPinnedStreamersByViewers(){
-    let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
-    console.log(splitByOnlineAndOffline)
-    splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
-      console.log(a,b)
-      return -1
-    })
+// short pinned streamer by a propertie
+function shortPinnedStreamerByPropertie(propertieName){
+  let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
+    splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy(propertieName))
     pinnedStreamers = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
-
-}
-
-// short pinned streamers by name
-function shortPinnedStreamersByName(){
-  let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
-  splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy('broadcaster_name'))
-  pinnedStreamers = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
-}
-
-// short pinned streamers by game name
-function shortPinnedStreamersByGameName(){
-  let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
-  splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy('game_name'))
-  pinnedStreamers = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
-}
-
-// short pinned streamers by uptime
-function shortPinnedStreamersByUptime(){
-  let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
-  splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy('started_at'))
-  pinnedStreamers = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
 }
 
 // return an object like this {online:ARRAY,offline:ARRAY}
@@ -548,7 +616,6 @@ function getOnlineAndOfflinePinnedStreamers(){
   return {'online' : online, 'offline' : offline}
 }
 
-
 // create the css class of the color of the live button
 // class name = .tw-channel-status-indicator-pin
 // color can be modify on the top of this script
@@ -561,6 +628,9 @@ function createBlueClassColor(){
 
 // params : 53210, return 53 120. params : 6543210, return : 6 543 210 etc etc etc 
 function getViewerCountWithSpaces(viewerCount){
+  if(!viewerCount){
+    return ''
+  }
   if (!(typeof viewerCount === 'string' || viewerCount instanceof String)){// it's not a string
     viewerCount=viewerCount.toString()
   }
@@ -573,6 +643,18 @@ function getViewerCountWithSpaces(viewerCount){
         withSpaces+=strSplit_n3[x]+' '  
     }
     return withSpaces.substring(0,withSpaces.length-1)
+}
+
+// return a string with deleted numbers
+function deleteNumbers(string){
+  let deletedNumberString=''
+  for(let x=0;x<string.length;x++){
+    let currentChar = string[x]
+    if(isNaN(currentChar)){
+      deletedNumberString+=currentChar
+    }
+  }
+  return deletedNumberString
 }
 
 
