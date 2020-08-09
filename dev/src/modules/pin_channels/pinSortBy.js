@@ -9,21 +9,57 @@ var sortPinnedStreamersFunction = [
     {
       'name':'Streamer name',
       'treatment': function(){ 
-        sortPinnedStreamersByPropertie('broadcaster_name')
+        let pinnedStreamers = pinChannelModule.getPinnedStreamers()
+        pinnedStreamers.sort(function(a,b){
+          let a_broadcaster_name = a["login"]
+          let b_broadcaster_name = b["login"]
+          if(a_broadcaster_name>b_broadcaster_name){
+            return 1
+          }else if(a_broadcaster_name<b_broadcaster_name){
+            return -1
+          }else{
+            return 0 
+          }
+        }) 
+        pinChannelModule.setPinnedStreamers(pinnedStreamers)
       }
     },
   
     {
       'name':'Game name',
       'treatment': function(){ 
-        sortPinnedStreamersByPropertie('game_name')
+        let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
+        splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
+          let a_broadcaster_name = a["game_name"].toLowerCase()
+          let b_broadcaster_name = b["game_name"].toLowerCase()
+          if(a_broadcaster_name>b_broadcaster_name){
+            return 1
+          }else if(a_broadcaster_name<b_broadcaster_name){
+            return -1
+          }else{
+            return 0 
+          }
+        })
+        pinChannelModule.setPinnedStreamers(splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline))
       }
     },
   
     {
       'name':'Uptime',
-      'treatment': function (){ 
-        sortPinnedStreamersByPropertie('started_at')
+      'treatment': function(){ 
+        let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
+        splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
+          let a_live_start = new Date(a["started_at"]).getTime() // date in second from 1970
+          let b_live_start = new Date(b["started_at"]).getTime() // date in second from 1970
+          if(a_live_start>b_live_start){
+            return 1
+          }else if(a_live_start<b_live_start){
+            return -1
+          }else{
+            return 0 
+          }
+        })
+        pinChannelModule.setPinnedStreamers(splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline))
       }
     }
 ]
@@ -120,7 +156,6 @@ function sortPinnedStreamersByPropertie(propertieName){
     let splitByOnlineAndOffline = getOnlineAndOfflinePinnedStreamers()
     splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy(propertieName))
     pinChannelModule.setPinnedStreamers(splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline))
-    console.log(pinChannelModule.getPinnedStreamers())
 }
 
 function sortBy(propertieName){

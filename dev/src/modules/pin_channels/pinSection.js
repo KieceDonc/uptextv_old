@@ -229,78 +229,85 @@ function handleUpdateEach5min(){
 // handle every thing in html / css about update
 // handle transition etc ....
 function updatePinSection(){
-    let pinnedStreamers = pinChannelModule.getPinnedStreamers()
-    let oldPinnedStreamers = pinnedStreamers // use to calculate old and new position of pinned streamers
-    updateStreamersInfo() // update information of each streamers in the array 'pinnedStreamers'
-    _pinSortBy.sort()
-    pinnedStreamers.forEach((currentStreamerInfo)=>{
-        let currentStreamerID = currentStreamerInfo.broadcaster_id
-        let oldPosition = pinChannelModule.getStreamerIndex(currentStreamerID,oldPinnedStreamers)
-        let newPosition = pinChannelModule.getStreamerIndex(currentStreamerID)
-        if(newPosition!=oldPosition&&oldPosition!=-1){
-        makeTranslateYForOneStreamer(currentStreamerInfo,oldPosition,newPosition)
-        setTimeout(function () { // use to replace in good order in html  
-            deleteStreamer(currentStreamerInfo)
-            addStreamer(currentStreamerInfo)
-        }, 500);
-        }
-    })
+    let oldPinnedStreamers = pinChannelModule.getPinnedStreamers().slice()// use to calculate old and new position of pinned streamers
+    updateStreamersInfo().then(()=>{
+        _pinSortBy.sort()
+        let pinnedStreamers = pinChannelModule.getPinnedStreamers() // needed cuz you need to update ur local array
+        pinnedStreamers.forEach((currentStreamerInfo)=>{
+            let currentStreamerID = currentStreamerInfo.broadcaster_id
+            let oldPosition = pinChannelModule.getStreamerIndex(currentStreamerID,oldPinnedStreamers)
+            let newPosition = pinChannelModule.getStreamerIndex(currentStreamerID)
+            if(newPosition!=oldPosition&&oldPosition!=-1){
+                makeTranslateYForOneStreamer(currentStreamerInfo,oldPosition,newPosition)
+                setTimeout(function () { // use to replace in good order in html  
+                    pinnedStreamers.forEach((currentStreamerInfo)=>{
+                        deleteStreamer(currentStreamerInfo)
+                        addStreamer(currentStreamerInfo)
+                    })
+                }, 500);
+            }
+        })
+    }) // update information of each streamers in the array 'pinnedStreamers'
 }
 
 // handle to update streamers info
 function updateStreamersInfo(){
-    let pinnedStreamers = pinChannelModule.getPinnedStreamers()
-    let userID = pinChannelModule.getUserID()
-
-
-    let goesOnline = new Array()
-    let goesOffline = new Array()
-    let updateOnline = new Array()
-
-    let oldPinnedStreamers = pinnedStreamers
-
-    uptexAPI.getPinnedStreamers(userID).then((newPinnedStreamers)=>{
-        for(let x = 0;x<newPinnedStreamers.length;x++){
-
-        let newStreamerInfo = newPinnedStreamers[x]
-
-        let oldStreamerInfo = -1
-        for(let y=0;y<oldPinnedStreamers.length;y++){
-            if(oldPinnedStreamers[y].broadcaster_id==newStreamerInfo.broadcaster_id){
-            oldStreamerInfo=oldPinnedStreamers[y]
+    return new Promise((resolve)=>{
+        let pinnedStreamers = pinChannelModule.getPinnedStreamers()
+        let userID = pinChannelModule.getUserID()
+    
+    
+        let goesOnline = new Array()
+        let goesOffline = new Array()
+        let updateOnline = new Array()
+    
+        let oldPinnedStreamers = pinnedStreamers
+    
+        uptexAPI.getPinnedStreamers(userID).then((newPinnedStreamers)=>{
+            pinChannelModule.setPinnedStreamers(newPinnedStreamers)
+            for(let x = 0;x<newPinnedStreamers.length;x++){
+    
+            let newStreamerInfo = newPinnedStreamers[x]
+    
+            let oldStreamerInfo = -1
+            for(let y=0;y<oldPinnedStreamers.length;y++){
+                if(oldPinnedStreamers[y].broadcaster_id==newStreamerInfo.broadcaster_id){
+                    oldStreamerInfo=oldPinnedStreamers[y]
+                }
             }
-        }
-        
-        if(oldStreamerInfo!=-1){ // checking is pinned streamer have been just added or not
-            if(oldStreamerInfo.isStreaming === newStreamerInfo.isStreaming){// streamer was offline - > streamer is offline or streamer was online - > streamer is online
-            if(newStreamerInfo.isStreaming == true){// streamer was online - > streamer is online
-                updateOnline.push(newStreamerInfo)
+            
+            if(oldStreamerInfo!=-1){ // checking is pinned streamer have been just added or not
+                if(oldStreamerInfo.isStreaming === newStreamerInfo.isStreaming){// streamer was offline - > streamer is offline or streamer was online - > streamer is online
+                    if(newStreamerInfo.isStreaming == true){// streamer was online - > streamer is online
+                        updateOnline.push(newStreamerInfo)
+                    }
+                }else{
+                    if(newStreamerInfo.isStreaming == true){// streamer was offline - > streamer is online
+                        goesOnline.push(newStreamerInfo)
+                    }else{// streamer was online - > streamer is offline
+                        goesOffline.push(newStreamerInfo)
+                    }
+                }
             }
-            }else{
-            if(newStreamerInfo.isStreaming == true){// streamer was offline - > streamer is online
-                goesOnline.push(newStreamerInfo)
-            }else{// streamer was online - > streamer is offline
-                goesOffline.push(newStreamerInfo)
             }
-            }
-        }
-        }
-
-        goesOnline.forEach(streamerInfo => {
-        streamerGoesOnline(streamerInfo)
-        });
-
-        goesOffline.forEach(streamerInfo =>{
-        streamerGoesOffline(streamerInfo)
+    
+            goesOnline.forEach(streamerInfo => {
+                streamerGoesOnline(streamerInfo)
+            });
+    
+            goesOffline.forEach(streamerInfo =>{
+                streamerGoesOffline(streamerInfo)
+            })
+    
+            updateOnline.forEach(streamerInfo=>{
+                modifyStreamerGame(streamerInfo)
+                modifyStreamerViewerCount(streamerInfo)
+            })
+    
+            resolve()
+        }).catch((err)=>{
+            debug.error('error while trying to get pinned streamers through the api. err :',err )
         })
-
-        updateOnline.forEach(streamerInfo=>{
-        modifyStreamerGame(streamerInfo)
-        modifyStreamerViewerCount(streamerInfo)
-        })
-
-    }).catch((err)=>{
-        debug.error('error while trying to get pinned streamers through the api. err :',err )
     })
 }
 
