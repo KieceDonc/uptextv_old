@@ -1,5 +1,5 @@
 const $ = require('jquery');
-const API_ENDPOINT = 'https://uptextv.com:3000/'
+const API_ENDPOINT = 'https://uptextv.com:3000/api'
 
 function request(method, path) {
     return new Promise((resolve, reject) => {

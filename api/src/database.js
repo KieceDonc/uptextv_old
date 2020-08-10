@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const url = "mongodb://localhost:27017"; // pe = pin extension
+const url = "mongodb://localhost:27017"; 
 const user_collection = "users"
 const dbName = 'pe_db';
 
@@ -39,17 +39,19 @@ function getUser(userID){
     })
 }
 
-function modifyPinnedStreamers(userID,_pinnedStreamers){
+function modifyGroup(groupID,userID,groupList){
     return new Promise((resolve,reject)=>{
         MongoClient.connect(url, function(err, client) {
             if(err){
                 reject(err)
             }
             var db = client.db(dbName);
+            let toReplace = {}
+            toReplace[groupID]=groupList
             db.collection(user_collection).updateOne(
                 {ID: userID}, 
                 {
-                    $set: {pinnedStreamers: _pinnedStreamers}
+                    $set: toReplace
                 }
             )
             resolve()
@@ -88,8 +90,7 @@ module.exports= {
 
                 var db = client.db(dbName);
                 db.collection(user_collection).insertOne({
-                    ID: userID,
-                    pinnedStreamers: []
+                    ID: userID
                 });
                 if(err){
                     reject(err)
@@ -101,27 +102,31 @@ module.exports= {
         })
     },
 
-
     /**
      * use to add streamer id in db corresponding to user
+     * @param {*} groupID 
      * @param {*} userID 
      * @param {*} streamerID 
      */
-    addStreamer(userID,streamerID){
-        console.log(streamerID)
+    addStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
             getUser(userID).then((user)=>{
-                var pinnedStreamers = user.pinnedStreamers
-                if(!pinnedStreamers.includes(streamerID)){ // value already exist, we don't save it
-                    pinnedStreamers.push(streamerID)
-                    modifyPinnedStreamers(userID,pinnedStreamers).then(()=>{
+                var groupList = user[groupID]
+                if(groupList){
+                    if(!groupList.includes(streamerID)){ // value already exist, we don't save it
+                        groupList.push(streamerID)                
+                    }else{
                         resolve()
-                    }).catch((err)=>{
-                        reject(err)
-                    })                    
+                    }
                 }else{
-                    resolve()
+                    groupList = new Array()
+                    groupList.push(streamerID)
                 }
+                modifyGroup(groupID,userID,groupList).then(()=>{
+                    resolve()
+                }).catch((err)=>{
+                    reject(err)
+                })    
             }).catch((err)=>{
                 reject(err)
             })
@@ -130,15 +135,16 @@ module.exports= {
 
     /**
      * use to delete streamer id in db corresponding to user
+     * @param {*} groupID 
      * @param {*} userID 
      * @param {*} streamerID 
      */
-    deleteStreamer(userID,streamerID){
+    deleteStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
             getUser(userID).then((user)=>{
-                var pinnedStreamers = user.pinnedStreamers
-                pinnedStreamers = pinnedStreamers.filter(e => e !== streamerID);
-                modifyPinnedStreamers(userID,pinnedStreamers).then(()=>{
+                var groupList = user[groupID]
+                groupList = groupList.filter(e => e !== streamerID);
+                modifyPinnedStreamers(groupID,userID,groupList).then(()=>{
                     resolve()
                 }).catch((err)=>{
                     reject(err)
@@ -150,13 +156,13 @@ module.exports= {
     },
 
     /**
-     * use to get streamers ids in db corresponding to user
+     * use to get streamers ids in db corresponding to 
      * @param {*} userID 
      */
     getStreamers(userID){
         return new Promise((resolve,reject)=>{
             getUser(userID).then((user)=>{
-                resolve(user.pinnedStreamers)
+                resolve(user)
             }).catch((err)=>{
                 reject(err)
             })

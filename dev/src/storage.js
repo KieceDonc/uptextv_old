@@ -6,7 +6,7 @@ class Storage extends SafeEventEmitter {
         super();
 
         this._cache = {};
-        this._prefix = 'bttv_';
+        this._prefix = 'uptex_';
         this._localStorageSupport = true;
 
         try {

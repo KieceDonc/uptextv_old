@@ -36,60 +36,96 @@ app.use((req, res, next) => {
 
 app.use(router);  
  
-app.delete('/pin',function(req,res){  // delete streamer to pinned streamers
+app.delete('/api',function(req,res){  // delete streamer from groupID
+    let cryptedGroupID = req.queri.groupID
     let cryptedUserID = req.query.userID
     let cryptedStreamerID = req.query.streamerID
-    decryptID(cryptedUserID).then((userID)=>{
-        decryptID(cryptedStreamerID).then((streamerID)=>{
-            checkBeforeTreatment((userID)).then(()=>{
-                database.deleteStreamer(userID,streamerID).then(()=>{
-                    res.status(200).send({response : "ok",methode: req.method})
+    decryptGroupID(cryptedGroupID).then((groupID)=>{
+        decryptID(cryptedUserID).then((userID)=>{
+            decryptID(cryptedStreamerID).then((streamerID)=>{
+                checkBeforeTreatment((userID)).then(()=>{
+                    database.deleteStreamer(userID,streamerID).then(()=>{
+                        res.status(200).send({response : "ok",methode: req.method})
+                    })
                 })
-            }).catch((err)=>{
-                res.status(500).send({error : err,methode: req.method})
             })
-        }).catch((err)=>{
-            res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
         })
-    }).catch((err)=>{
-        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
+    }).catch(()=>{
+        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
     })
-
 })
 
-app.put('/pin',function(req,res){ // add streamer to pinned streamers
+app.put('/api',function(req,res){ // add streamer from groupID
+    let cryptedGroupID = req.queri.groupID
     let cryptedUserID = req.query.userID
     let cryptedStreamerID = req.query.streamerID
-    decryptID(cryptedUserID).then((userID)=>{
-        decryptID(cryptedStreamerID).then((streamerID)=>{
-            checkBeforeTreatment((userID)).then(()=>{
-                database.addStreamer(userID,streamerID).then(()=>{
-                    res.status(200).send({response : "ok",methode: req.method})
+    decryptGroupID(cryptedGroupID).then((groupID)=>{
+        decryptID(cryptedUserID).then((userID)=>{
+            decryptID(cryptedStreamerID).then((streamerID)=>{
+                checkBeforeTreatment((userID)).then(()=>{
+                    database.addStreamer(userID,streamerID).then(()=>{
+                        res.status(200).send({response : "ok",methode: req.method})
+                    })
                 })
-            }).catch((err)=>{
-                res.status(500).send({error : err,methode: req.method})
             })
-        }).catch((err)=>{
-            res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
         })
-    }).catch((err)=>{
-        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
+    }).catch(()=>{
+        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
     })
 });
 
-app.get('/pin',function(req,res){ // get pinned streamers with their information
+app.get('/api/groups',function(req,res){ // get streamers info from all group id
     let cryptedUserID = req.query.userID
     decryptID(cryptedUserID).then((userID)=>{
         checkBeforeTreatment((userID)).then((userExistedBefore)=>{
             if(userExistedBefore){
-                database.getStreamers(userID).then((pinnedStreamers)=>{
-                    let getStreamersInfo = new Array()
-                    for(let x=0;x<pinnedStreamers.length;x++){
-                        getStreamersInfo.push(twitchAPI.getStreamer(pinnedStreamers[x]))
+                database.getStreamers(userID).then((userObject)=>{
+                    let streamers = new Array() // we will add each streamer from each group in this array in purpose to get their information. Doesn't contains duplicate
+                    for(var group in userObject) { 
+                        if(group!=='ID'){
+                            var groupList = userObject[group];
+                            groupList.forEach((streamer)=>{
+                                let indexOfStreamInStreamers = streamers.indexOf(streamer)
+                                if(indexOfStreamInStreamers==-1){ // streamer isn't in array
+                                    streamers.push(streamer)
+                                }
+                            })
+                        }
                     }
-                    Promise.all(getStreamersInfo).then((pinnedStreamersInfo)=>{
+
+                    let getStreamersInfo = new Array() // push each promise get streamer info into an arrat
+                    streamers.forEach((streamer)=>{
+                        getStreamersInfo.push(twitchAPI.getStreamer(streamer))
+                    })                        
+                    Promise.all(getStreamersInfo).then((streamersInfo)=>{ // we've got streamersInfo 
+                        /* we are trying to return this kind of array
+                        [{
+                            name:'pinned streamers',
+                            list:'[streamer_info_0,streamer_info_1,streamer_info_2]
+                        },
+                        {
+                            name:'chess group',
+                            list:'[streamer_info_0,streamer_info_2,streamer_info_3]
+                        }]
+
+                        */
+                        let arrayToReturn = new Array()
+                        for(var group in userObject) { 
+                            if(group!=='ID'){
+                                var groupListWithStreamerInfo = new Array() // for this group creating an array which contain all streamer info of this groupe
+                                var groupListWithID = userObject[group]; // getting all streamers id of this group
+                                groupListWithID.forEach((streamerID)=>{ 
+                                    let desireStreamerInfo = streamersInfo.filter( streamersInfo => streamersInfo['broadcast_id'] === streamerID ) // getting the desire streamer info of the list of all streamers info
+                                    groupListWithStreamerInfo.push(desireStreamerInfo[0]) // pushing the desire streamer info in the array of the current streamers group
+                                })
+                                arrayToReturn.push({
+                                    'name':group,
+                                    'list':groupListWithStreamerInfo
+                                })
+                            }
+                        }
                         res.status(200)
-                        res.json({pinnedStreamers : pinnedStreamersInfo,methode: req.method})
+                        res.json({result : arrayToReturn,methode: req.method})
                     }).catch((err)=>{
                         res.status(500).send({error : err,methode: req.method})
                     })
@@ -97,17 +133,15 @@ app.get('/pin',function(req,res){ // get pinned streamers with their information
                     res.status(500).send({error : err,methode: req.method})
                 })
             }else{
-                res.json({pinnedStreamers : [{}], methode : req.method});
+                res.json({result : [], methode : req.method});
             }
-        }).catch((err)=>{
-            res.status(500).send({error : err,methode: req.method})
         })
     }).catch((err)=>{
-        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
+        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
     })
 })
 
-app.get('/streamerInfo',function(req,res){ // get pinned streamer information ( streamInfo & streamerInfo )
+app.get('/api/streamer',function(req,res){ // get streamer info
     let cryptedStreamerID = req.query.streamerID
     decryptID(cryptedStreamerID).then((streamerID)=>{
         if(streamerID){
@@ -155,6 +189,24 @@ function decryptID(cryptedID){
         }catch(err){
             reject(err)
         }
+    })
+}
+
+/**
+ * group id is in ascii code and each letter is separate by _
+ * ex:
+ * 116_116_116 
+ * ttt
+ */
+
+function decryptGroupID(cryptedGroupID){
+    return new Promise((resolve)=>{
+        let groupID = ''
+        let eachLetterInASCII = cryptedGroupID.split('_')
+        eachLetterInASCII.forEach((currentASCIICode)=>{
+            groupID+=String.fromCharCode(currentASCIICode)
+        })
+        resolve(groupID)
     })
 }
 

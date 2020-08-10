@@ -1,19 +1,24 @@
 const uptexAPI = require('./uptex-api')
-const pinSortBy = require('./pinSortBy')
+const groupSortBy = require('./groupSortBy')
 
 const css_picture_profile_online = "side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
 const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar--offline tw-align-items-center tw-flex-shrink-0"
 
-var pinChannelModule
-var _pinSortBy
+var currentGroupID // convert current group name in ASCII code with '_' between each nulbers
+var currentGroup // object of this style {'name':'pinned streamers','list':ARRAY}
+var currentGroupIndex // index of the group regarding to the list of groups in side groups module
+var sideGroupsModule // parent instance 
+var _currentGroupSortBy
 
-class PinSection{
-    constructor(_pinChannelModule){
-        pinChannelModule = _pinChannelModule
+class groupSection{
+    constructor(_sideGroupsModule,_currentGroup,_currentGroupIndex){
+        sideGroupsModule = _sideGroupsModule
+        currentGroup = _currentGroup
+        currentGroupIndex = _currentGroupIndex
+        currentGroupID = getGroupCryptedId(currentGroup.name)
         if(shouldSetup()){
-
             setup()
-            _pinSortBy = pinSortBy.setup(pinChannelModule)
+            _currentGroupSortBy = currentGroupSortBy.setup(sideGroupsModule)
             setupStreamers()
         }
     }
@@ -27,26 +32,38 @@ class PinSection{
     }
 
     update(){
-        updatePinSection()
+        updateGroupSection()
     }
 
-    getPinSortBy(){
-        return pinSortBy
+    getGroupSortBy(){
+        return _currentGroupSortBy
+    }
+
+    getCurrentList(){
+        return currentGroup.list
+    }
+
+    setCurrentList(list){
+        currentGroup['list'] = list
+    }
+
+    getCurrentGroupID(){
+        return currentGroupID
     }
 }
 
-// setup side nav pin section to welcome pinned streamer
-// pin section id ( main div ) = sideNavPinSection
+// setup side nav group section to welcome current group streamers
+// group section id ( main div ) =(GROUP NAME IN ASCII)_sideNavGroupSection
 function setup(){ 
-    let mainDivID = "sideNavPinSection"  
+    let mainDivID = currentGroupID+"_sideNavGroupSection"
     let parentDiv = document.getElementsByClassName('side-nav-section')[0] // getting div parent
   
     if(parentDiv!=null){
-      // Start : Creating pin section
-      let pinSection = document.createElement("div") 
-      pinSection.className="tw-relative tw-transition-group"
-      pinSection.id=mainDivID
-      parentDiv.prepend(pinSection) // placing pinSection on the top
+      // Start : Creating group section
+      let groupSection = document.createElement("div") 
+      groupSection.className="tw-relative tw-transition-group"
+      groupSection.id=mainDivID
+      parentDiv.prepend(groupSection) // placing groupSection on the top
       // End
   
       // Start : Creating title like " chaines épinglées "
@@ -59,7 +76,7 @@ function setup(){
   
       let titleH5 = document.createElement("h5")
       titleH5.className="tw-font-size-6 tw-semibold tw-upcase"
-      titleH5.innerHTML="PINNED CHANNELS"
+      titleH5.innerHTML=currentGroup.name
   
   
       parentDiv.prepend(parentTitleDiv)
@@ -68,29 +85,29 @@ function setup(){
       handleUpdateEach5min()
       // End
     }else{
-      console.log('parentdiv is null  ')
+        debug.error('parentdiv is null, you should look at css properties about getElementsByClassName')
     }
 }
 
-// use right after pinnedstreamers received. It basically add pinned streamers in pin section
+// use right after currentGroup received. It basically add current group streamers in group section
 function setupStreamers(){
-    let pinnedStreamers = pinChannelModule.getPinnedStreamers()
-    for(let x=0;x<pinnedStreamers.length;x++){
-      addStreamer(pinnedStreamers[x])
+    for(let x=0;x<currentGroup.list.length;x++){
+      addStreamer(currentGroup.list[x])
     }
 }
   
-// check if pin section exist
+// check if group section exist
 function shouldSetup(){
-    let mainDiv = document.getElementById('sideNavPinSection')
+    let idToFind =  currentGroupID+"_sideNavGroupSection"
+    let mainDiv = document.getElementById(idToFind)
     return mainDiv==null
 }
 
 // use to add streamer in html / css 
-// top div have the id of the streamerID 
-// div with css properties of picture profile have the id of streamerID+ "picture_profile"
-// span of number of viewer have the id of = streamerID + "viewercount"
-// p of the current game of the id of = streamerID + "currentgame"
+// top div have the id of the (GROUP NAME IN ASCII)_+streamerID 
+// div with css properties of picture profile have the id of (GROUP NAME IN ASCII)_+streamerID+ "picture_profile"
+// span of number of viewer have the id of = (GROUP NAME IN ASCII)_+streamerID + "viewercount"
+// p of the current game of the id of = (GROUP NAME IN ASCII)_+streamerID + "currentgame"
 function addStreamer(streamerInfo){
 
     let _streamerID = streamerInfo.broadcaster_id
@@ -103,7 +120,7 @@ function addStreamer(streamerInfo){
     let div0 = document.createElement("div")
     div0.className="tw-transition tw-transition--enter-done tw-transition__scale-over tw-transition__scale-over--enter-done"
     div0.style="transition-property: transform, opacity; transition-timing-function: ease; transition-duration: 250ms;"
-    div0.id=_streamerID
+    div0.id=currentGroupID+_streamerID
 
     let div1 = document.createElement("div")
 
@@ -149,7 +166,7 @@ function addStreamer(streamerInfo){
 
     let p1 = document.createElement("p")
     p1.className="tw-c-text-alt-2 tw-ellipsis tw-font-size-6 tw-line-height-heading"
-    p1.id=_streamerID+"currentgame"
+    p1.id=currentGroupID+_streamerID+"currentgame"
     if(streamerIsStreaming){
         p1.title=streamerGame
         p1.innerHTML=streamerGame
@@ -157,15 +174,15 @@ function addStreamer(streamerInfo){
 
 
     let div8 = document.createElement("div")
-    div8.id=_streamerID+"usedForUnknow"
+    div8.id=currentGroupID+_streamerID+"usedForUnknow"
     div8.className="side-nav-card__live-status tw-flex-shrink-0 tw-mg-l-05"
 
     let div9 = document.createElement("div")
-    div9.id=_streamerID+"unknow0"
+    div9.id=currentGroupID+_streamerID+"unknow0"
     let div10 = document.createElement("div")
-    div10.id=_streamerID+"unknow1"
+    div10.id=currentGroupID+_streamerID+"unknow1"
     let div11 = document.createElement("div")
-    div11.id=_streamerID+"unknow2"
+    div11.id=currentGroupID+_streamerID+"unknow2"
     if(streamerIsStreaming){
 
         div9.className = "tw-align-items-center tw-flex"
@@ -178,14 +195,14 @@ function addStreamer(streamerInfo){
 
     let span0 = document.createElement("span")
     span0.className="tw-c-text-alt tw-font-size-6"
-    span0.id=_streamerID+"viewercount"
+    span0.id=currentGroupID+_streamerID+"viewercount"
     if(streamerIsStreaming){
         span0.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
     }else{
         span0.innerHTML="Disconnected"
     }
 
-    let mainDiv = document.getElementById("sideNavPinSection")
+    let mainDiv = document.getElementById("sideNavGroupSection")
     mainDiv.appendChild(div0)
     div0.appendChild(div1)
     div1.appendChild(div2)
@@ -213,7 +230,8 @@ function addStreamer(streamerInfo){
 // delete streamer in html / css
 function deleteStreamer(streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
-    let mainDiv = document.getElementById(_streamerID)
+    let idToFind = currentGroupID+_streamerID
+    let mainDiv = document.getElementById(idToFind)
     if(mainDiv){
         mainDiv.remove()
     }
@@ -222,46 +240,43 @@ function deleteStreamer(streamerInfo){
 // handle to update streamers info each 5 min
 function handleUpdateEach5min(){
     setInterval(function(){    
-        updatePinSection()
+        updateGroupSection()
     },300000)
 }
 
 // handle every thing in html / css about update
 // handle transition etc ....
-function updatePinSection(){
-    let oldPinnedStreamers = pinChannelModule.getPinnedStreamers().slice()// use to calculate old and new position of pinned streamers
+function updateGroupSection(){
+    let oldGroup = currentGroup.list.slice()// use to calculate old and new position of streamers in current group
     updateStreamersInfo().then(()=>{
-        _pinSortBy.sort()
-        let pinnedStreamers = pinChannelModule.getPinnedStreamers() // needed cuz you need to update ur local array
-        pinnedStreamers.forEach((currentStreamerInfo)=>{
+        _currentGroupSortBy.sort()
+        currentGroup.list.forEach((currentStreamerInfo)=>{
             let currentStreamerID = currentStreamerInfo.broadcaster_id
-            let oldPosition = pinChannelModule.getStreamerIndex(currentStreamerID,oldPinnedStreamers)
-            let newPosition = pinChannelModule.getStreamerIndex(currentStreamerID)
+            let oldPosition = getStreamerIndex(currentStreamerID,oldGroup)
+            let newPosition = getStreamerIndex(currentStreamerID)
             if(newPosition!=oldPosition&&oldPosition!=-1){
                 makeTranslateYForOneStreamer(currentStreamerInfo,oldPosition,newPosition)
                 setTimeout(function () { // use to replace in good order in html  
-                    pinnedStreamers.forEach((currentStreamerInfo)=>{
+                    currentGroup.list.forEach((currentStreamerInfo)=>{
                         deleteStreamer(currentStreamerInfo)
                         addStreamer(currentStreamerInfo)
                     })
                 }, 500);
             }
         })
-    }) // update information of each streamers in the array 'pinnedStreamers'
+    }) // update information of each streamers in the array 'currentGroup.list'
 }
 
 // handle to update streamers info
 function updateStreamersInfo(){
     return new Promise((resolve)=>{
-        let pinnedStreamers = pinChannelModule.getPinnedStreamers()
-        let userID = pinChannelModule.getUserID()
-    
+        let userID = sideGroupsModule.getUserID()
     
         let goesOnline = new Array()
         let goesOffline = new Array()
         let updateOnline = new Array()
     
-        let oldPinnedStreamers = pinnedStreamers
+        let oldGroup = currentGroup.list
     
         uptexAPI.getPinnedStreamers(userID).then((newPinnedStreamers)=>{
             pinChannelModule.setPinnedStreamers(newPinnedStreamers)
@@ -270,9 +285,9 @@ function updateStreamersInfo(){
             let newStreamerInfo = newPinnedStreamers[x]
     
             let oldStreamerInfo = -1
-            for(let y=0;y<oldPinnedStreamers.length;y++){
-                if(oldPinnedStreamers[y].broadcaster_id==newStreamerInfo.broadcaster_id){
-                    oldStreamerInfo=oldPinnedStreamers[y]
+            for(let y=0;y<oldGroup.length;y++){
+                if(oldGroup[y].broadcaster_id==newStreamerInfo.broadcaster_id){
+                    oldStreamerInfo=oldGroup[y]
                 }
             }
             
@@ -315,64 +330,64 @@ function updateStreamersInfo(){
 // animation duration = 250 ms ( normaly, plz refer to css value 'transition-duration')
 function makeTranslateYForOneStreamer(streamerInfo,oldPosition,newPosition){
     let _streamerID = streamerInfo.broadcaster_id
-    let mainDiv = document.getElementById(_streamerID)
+    let mainDiv = document.getElementById(currentGroupID+_streamerID)
 
     let boxWidth = mainDiv.offsetHeight
     let translateValue = (newPosition-oldPosition)*boxWidth
     mainDiv.style.transform = "translateY("+translateValue+"px)";
 }
 
-// modify a streamer viewver count from pin section by his id
+// modify a streamer viewver count from group section by his id
 function modifyStreamerViewerCount(streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
     let streamerViewerCount = streamerInfo.viewer_count
-    let span = document.getElementById((_streamerID+"viewercount"))
+    let span = document.getElementById((currentGroupID+_streamerID+"viewercount"))
     span.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
 }
 
-// modify the streamer game from pin section by his id
+// modify the streamer game from group section by his id
 function modifyStreamerGame(streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
     let streamerCurrentGame = streamerInfo.game_name
-    let p = document.getElementById(_streamerID+"currentgame")
+    let p = document.getElementById(currentGroupID+_streamerID+"currentgame")
     p.title=streamerCurrentGame
     p.innerHTML=streamerCurrentGame
 }
 
-// modify & handle css change to make a streamer offline in pin section
+// modify & handle css change to make a streamer offline in group section
 function streamerGoesOffline(streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
 
     modifyStreamerGame(streamerInfo)
     modifyStreamerViewerCount(streamerInfo)
     // changing css properties of picture profile ( make it grey )
-    let div_profile_picture = document.getElementById(_streamerID+"profile_picture")
+    let div_profile_picture = document.getElementById(currentGroupID+_streamerID+"profile_picture")
     div_profile_picture.className = css_picture_profile_offline
 
     // if you want to go offline you must delete this div
     // i think this div are used for the red online circle 
-    let div_unknow_0 = document.getElementById(_streamerID+"unknow_0")
-    let div_unknow_1 = document.getElementById(_streamerID+"unknow_1")
-    let div_unknow_2 = document.getElementById(_streamerID+"unknow_2")
+    let div_unknow_0 = document.getElementById(currentGroupID+_streamerID+"unknow_0")
+    let div_unknow_1 = document.getElementById(currentGroupID+_streamerID+"unknow_1")
+    let div_unknow_2 = document.getElementById(currentGroupID+_streamerID+"unknow_2")
     div_unknow_0.parentElement.removeChild(div_unknow_0)
     div_unknow_1.parentElement.removeChild(div_unknow_1)
     div_unknow_2.parentElement.removeChild(div_unknow_2)
 }
 
-// modify & handle css change to make a streamer online in pin section
+// modify & handle css change to make a streamer online in group section
 function streamerGoesOnline(streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
     modifyStreamerGame(streamerInfo)
-    modifyStreamerViewerCount(modifyStreamerViewerCount)
+    modifyStreamerViewerCount(streamerInfo)
 
     let div9 = document.createElement("div")
-    div9.id=_streamerID+"unknow0"
+    div9.id= currentGroupID+_streamerID+"unknow0"
     let div10 = document.createElement("div")
-    div10.id=_streamerID+"unknow1"
+    div10.id=currentGroupID+_streamerID+"unknow1"
     let div11 = document.createElement("div")
-    div11.id=_streamerID+"unknow2"
+    div11.id=currentGroupID+_streamerID+"unknow2"
 
-    let divUsedForUnknow = document.getElementById(_streamerID+"usedForUnknow")
+    let divUsedForUnknow = document.getElementById(currentGroupID+_streamerID+"usedForUnknow")
     divUsedForUnknow.appendChild(div9)
     div9.append(div10)
     div9.append(div11)
@@ -399,8 +414,52 @@ function getViewerCountWithSpaces(viewerCount){
     return withSpaces.substring(0,withSpaces.length-1)
 }
 
+
+// get streamer index in current group list streamers array
+// _currentGroupList is not obligatory. If null it will parse _currentGroupList array
+// return -1 if not founded
+function getStreamerIndex(_streamerID,_currentGroupList){
+    let arrayToParse
+    if(_currentGroupList){ // checking if we want to parse current group list array or a custom group list Array
+        arrayToParse = _currentGroupList
+    }else{
+        arrayToParse = currentGroup.list
+    }
+  
+  
+    if(arrayToParse.length==0){
+        return -1
+    }else{
+        let founded = false
+        let cmpt = 0
+        do{
+            if(_streamerID==parseInt(arrayToParse[cmpt].broadcaster_id)){
+                founded=true
+            }
+            cmpt+=1
+        }while(!founded&cmpt<arrayToParse.length)
+  
+        if(founded){
+            return cmpt
+        }else{
+            return -1
+        }
+    }
+  }
+  
+// from ttt to 156_156_156 
+// plz refer to ascii table
+function getGroupCryptedId(groupID){
+    let final = ''
+    for(let x=0;x<groupID.length;x++){
+        final+=groupID.charCodeAt(x)+'_'
+    }
+    return final.substring(0,final.length)
+}
+
+
 module.exports = {
-    setup:function(_pinChannelModule){
-        return new PinSection(_pinChannelModule)
+    setup:function(_sideGroupsModule,_currentGroup,_currentGroupIndex){
+        return new groupSection(_sideGroupsModule,_currentGroup,_currentGroupIndex)
     }
 }
