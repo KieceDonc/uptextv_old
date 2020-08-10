@@ -10,8 +10,8 @@ class Storage extends SafeEventEmitter {
         this._localStorageSupport = true;
 
         try {
-            window.localStorage.setItem('bttv_test', 'it works!');
-            window.localStorage.removeItem('bttv_test');
+            window.localStorage.setItem('uptex_test', 'it works!');
+            window.localStorage.removeItem('uptex_test');
         } catch (e) {
             this._localStorageSupport = false;
         }
@@ -25,7 +25,7 @@ class Storage extends SafeEventEmitter {
         }
 
         Object.keys(window.localStorage)
-            .filter(id => id.startsWith('bttv_'))
+            .filter(id => id.startsWith(this._prefix))
             .forEach(id => {
                 storage[id] = this.get(id, null);
             });
