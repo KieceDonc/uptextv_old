@@ -4,39 +4,30 @@ const uptexAPI = require('./uptex-api')
 const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
-const { group } = require('console');
-
-const groupLiveColor = '#007aa3'
-
 
 var groupsSection = new Array()
-var _pinButton
+var groups = new Array()
 
 var userID // id of current user
 var streamerID // id of streamerID
 
 class SideGroupsModule{
     constructor(){   
-      createBlueClassColor() 
       watcher.on('load.sidenav',()=>{
-        uptexAPI.getGroupsStreamers(userID)(userID).then((groups)=>{
-          let index = 0;
+        uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
+          groups = _groups
           groups.forEach((currentGroup)=>{
-            currentGroupSection = groupSection.setup(this,index,currentGroup)
-            groupsSection.push(currentGroupSection)
+            setupGroupSection(this,currentGroup)
           })
+          handleUpdateEach5min()
         }).catch((err)=>{
           debug.error('error while trying to get pinned streamers through the api. err :',err )
         })
       })
-      watcher.on('load.followbutton',()=>{
+      /*watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
         _pinButton = pinButton.setup(this)
-      })      
-    }
-
-    getGroupLiveColor(){
-      return groupLiveCOlor
+      })*/     
     }
 
     getUserID(){
@@ -46,26 +37,53 @@ class SideGroupsModule{
     getStreamerID(){
       return streamerID
     }
-
-    getGroupSection(index){
-      return groupsSection[index]
-    }
-
-    getStreamerIndex(_streamerID,_pinnedStreamers){
-      return getStreamerIndex(_streamerID,_pinnedStreamers)
-    }
 }
 
-// create the css class of the color of the live button
-// class name = .tw-channel-status-indicator-pin
-// color can be modify on the top of this script
-function createBlueClassColor(){
-  var style = document.createElement('style');
-  style.type = 'text/css';
-  style.innerHTML = '.tw-channel-status-indicator-pin { background-color: '+pinLiveColor+'; }';
-  document.getElementsByTagName('head')[0].appendChild(style);
+// for one group setup a side nav group section
+function setupGroupSection(currentGroup){
+  let currentGroupSection = groupSection.setup(this,currentGroup)
+  groupsSection.push(currentGroupSection)
+}
+
+// handle to update streamers info each 5 min
+function handleUpdateEach5min(){
+  setInterval(function(){    
+    updateStreamersInfo()
+  },300000)
+}
+
+// handle to update streamers info
+function updateStreamersInfo(){
+    let oldGroups = groups.slice()
+
+    uptexAPI.getGroupsStreamers(userID).then((newGroups)=>{
+      groups = newGroups
+      // your purpose here is to find the old group section index 
+      // if not exist before ( a bit strange but this case could exist if, in the future, you allow user to add groups from the website version)
+      groups.forEach((currentNewGroup)=>{ // parsing newGroups
+          let groupAlreadyExist = false
+          let index = 0 
+          let currentOldGroup = null
+          oldGroups.forEach((_currentOldGroup)=>{ // trying to find old group index
+            if(_currentOldGroup.name===currentNewGroup.name){
+              groupAlreadyExist=true
+              currentOldGroup = _currentOldGroup
+            }else{
+              index++
+            }
+          })
+          if(!groupAlreadyExist){ // if doesn't exist you setup it
+            setupGroupSection(currentNewGroup)
+          }else{ // exist so u update it
+            groupsSection[index].currentGroupUpdate(currentOldGroup,currentNewGroup)
+          }
+        })
+        
+    }).catch((err)=>{
+        debug.error('error while trying to get pinned streamers through the api. err :',err )
+    })
 }
 
 
-module.exports = new PinChannelModule()
+module.exports = new SideGroupsModule()
 

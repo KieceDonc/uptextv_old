@@ -67,10 +67,9 @@ module.exports = {
 
     addStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
-            let groupCryptedID = getGroupCryptedId(groupID)
             let userCryptedID = getCryptedId(userID)
             let streamerCryptedID = getCryptedId(streamerID)
-            uptexAPI.put('groupID='+groupCryptedID+'userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
+            uptexAPI.put('/groups?groupID='+groupID+'userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)
@@ -79,11 +78,21 @@ module.exports = {
     },
 
     deleteStreamer(groupID,userID,streamerID){
-        return new Promise((resolve,reject)=>{ù
-            let groupCryptedID = getGroupCryptedId(groupID)
+        return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
             let streamerCryptedID = getCryptedId(streamerID)
-            uptexAPI.delete('?groupID='+groupCryptedID+'userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
+            uptexAPI.delete('/groups?groupID='+groupID+'userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
+                resolve()
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
+    },
+
+    modifyLiveColor(groupID,userID,liveColor){
+        return new Promise((resolve,reject)=>{
+            let userCryptedID = getCryptedId(userID)
+            uptexAPI.put('/groups/livecolor?groupID='+groupID+'userID='+userCryptedID+'&liveColor='+liveColor).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)

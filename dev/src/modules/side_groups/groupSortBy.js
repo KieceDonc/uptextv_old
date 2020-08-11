@@ -142,7 +142,7 @@ function htmlSetup(){
 function selectOnChange(){
     let sel = document.getElementById('groupSelect')
     currentIndexSortBy = sel.value
-    currentGroupSection.update()
+    currentGroupSection.updateVisual()
 }
 
 

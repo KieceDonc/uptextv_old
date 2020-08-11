@@ -1,20 +1,19 @@
 const uptexAPI = require('./uptex-api')
 const groupSortBy = require('./groupSortBy')
+const { update } = require('.')
 
 const css_picture_profile_online = "side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
 const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar--offline tw-align-items-center tw-flex-shrink-0"
 
 var currentGroupID // convert current group name in ASCII code with '_' between each nulbers
 var currentGroup // object of this style {'name':'pinned streamers','list':ARRAY}
-var currentGroupIndex // index of the group regarding to the list of groups in side groups module
 var sideGroupsModule // parent instance 
 var _currentGroupSortBy
 
 class groupSection{
-    constructor(_sideGroupsModule,_currentGroup,_currentGroupIndex){
+    constructor(_sideGroupsModule,_currentGroup){
         sideGroupsModule = _sideGroupsModule
         currentGroup = _currentGroup
-        currentGroupIndex = _currentGroupIndex
         currentGroupID = getGroupCryptedId(currentGroup.name)
         if(shouldSetup()){
             setup()
@@ -23,32 +22,12 @@ class groupSection{
         }
     }
 
-    addStreamer(streamerInfo){
-        addStreamer(streamerInfo)
+    currentGroupUpdate(oldGroup,newGroup){ // use to update currentGroup and them html / css 
+        onCurrentGroupUpdate(oldGroup,newGroup)
     }
 
-    deleteStreamer(streamerInfo){
-        deleteStreamer(streamerInfo)
-    }
-
-    update(){
-        updateGroupSection()
-    }
-
-    getGroupSortBy(){
-        return _currentGroupSortBy
-    }
-
-    getCurrentList(){
-        return currentGroup.list
-    }
-
-    setCurrentList(list){
-        currentGroup['list'] = list
-    }
-
-    getCurrentGroupID(){
-        return currentGroupID
+    updateVisual(){ // use to update html / css
+        updateVisual(null)
     }
 }
 
@@ -187,7 +166,8 @@ function addStreamer(streamerInfo){
 
         div9.className = "tw-align-items-center tw-flex"
 
-        div10.className="tw-border-radius-rounded tw-channel-status-indicator-pin tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
+        div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
+        div10.style.setProperty("background-color", currentGroup.liveColor, "important");
 
         div11.className="tw-mg-l-05"
     }
@@ -236,93 +216,77 @@ function deleteStreamer(streamerInfo){
         mainDiv.remove()
     }
 }
-  
-// handle to update streamers info each 5 min
-function handleUpdateEach5min(){
-    setInterval(function(){    
-        updateGroupSection()
-    },300000)
+
+// currentGroup has been update
+// you must parse it and make thing with it 
+function onCurrentGroupUpdate(oldGroup,newGroup){
+    let goesOnline = new Array()
+    let goesOffline = new Array()
+    let updateOnline = new Array()
+    currentGroup = newGroup
+    newGroup.forEach((newStreamerInfo)=>{
+        let oldStreamerInfo = -1
+        for(let y=0;y<oldGroup.length;y++){ // trying to find oldStreamerInfo in oldGroup
+            if(oldGroup[y].broadcaster_id==newStreamerInfo.broadcaster_id){
+                oldStreamerInfo=oldGroup[y]
+            }
+        }
+        
+        if(oldStreamerInfo!=-1){ // checking if streamer have been just added or not
+            if(oldStreamerInfo.isStreaming === newStreamerInfo.isStreaming){// streamer was offline - > streamer is offline or streamer was online - > streamer is online
+                if(newStreamerInfo.isStreaming == true){// streamer was online - > streamer is online
+                    updateOnline.push(newStreamerInfo)
+                }
+            }else{
+                if(newStreamerInfo.isStreaming == true){// streamer was offline - > streamer is online
+                    goesOnline.push(newStreamerInfo)
+                }else{// streamer was online - > streamer is offline
+                    goesOffline.push(newStreamerInfo)
+                }
+            }
+        }
+        
+
+        goesOnline.forEach(streamerInfo => {
+            streamerGoesOnline(streamerInfo)
+        });
+
+        goesOffline.forEach(streamerInfo =>{
+            streamerGoesOffline(streamerInfo)
+        })
+
+        updateOnline.forEach(streamerInfo=>{
+            modifyStreamerGame(streamerInfo)
+            modifyStreamerViewerCount(streamerInfo)
+        })
+    })
+    updateVisual(oldGroup)
 }
 
 // handle every thing in html / css about update
 // handle transition etc ....
-function updateGroupSection(){
-    let oldGroup = currentGroup.list.slice()// use to calculate old and new position of streamers in current group
-    updateStreamersInfo().then(()=>{
-        _currentGroupSortBy.sort()
-        currentGroup.list.forEach((currentStreamerInfo)=>{
-            let currentStreamerID = currentStreamerInfo.broadcaster_id
-            let oldPosition = getStreamerIndex(currentStreamerID,oldGroup)
-            let newPosition = getStreamerIndex(currentStreamerID)
-            if(newPosition!=oldPosition&&oldPosition!=-1){
-                makeTranslateYForOneStreamer(currentStreamerInfo,oldPosition,newPosition)
-                setTimeout(function () { // use to replace in good order in html  
-                    currentGroup.list.forEach((currentStreamerInfo)=>{
-                        deleteStreamer(currentStreamerInfo)
-                        addStreamer(currentStreamerInfo)
-                    })
-                }, 500);
-            }
-        })
-    }) // update information of each streamers in the array 'currentGroup.list'
-}
-
-// handle to update streamers info
-function updateStreamersInfo(){
-    return new Promise((resolve)=>{
-        let userID = sideGroupsModule.getUserID()
-    
-        let goesOnline = new Array()
-        let goesOffline = new Array()
-        let updateOnline = new Array()
-    
-        let oldGroup = currentGroup.list
-    
-        uptexAPI.getPinnedStreamers(userID).then((newPinnedStreamers)=>{
-            pinChannelModule.setPinnedStreamers(newPinnedStreamers)
-            for(let x = 0;x<newPinnedStreamers.length;x++){
-    
-            let newStreamerInfo = newPinnedStreamers[x]
-    
-            let oldStreamerInfo = -1
-            for(let y=0;y<oldGroup.length;y++){
-                if(oldGroup[y].broadcaster_id==newStreamerInfo.broadcaster_id){
-                    oldStreamerInfo=oldGroup[y]
-                }
-            }
-            
-            if(oldStreamerInfo!=-1){ // checking is pinned streamer have been just added or not
-                if(oldStreamerInfo.isStreaming === newStreamerInfo.isStreaming){// streamer was offline - > streamer is offline or streamer was online - > streamer is online
-                    if(newStreamerInfo.isStreaming == true){// streamer was online - > streamer is online
-                        updateOnline.push(newStreamerInfo)
-                    }
-                }else{
-                    if(newStreamerInfo.isStreaming == true){// streamer was offline - > streamer is online
-                        goesOnline.push(newStreamerInfo)
-                    }else{// streamer was online - > streamer is offline
-                        goesOffline.push(newStreamerInfo)
-                    }
-                }
-            }
-            }
-    
-            goesOnline.forEach(streamerInfo => {
-                streamerGoesOnline(streamerInfo)
-            });
-    
-            goesOffline.forEach(streamerInfo =>{
-                streamerGoesOffline(streamerInfo)
-            })
-    
-            updateOnline.forEach(streamerInfo=>{
-                modifyStreamerGame(streamerInfo)
-                modifyStreamerViewerCount(streamerInfo)
-            })
-    
-            resolve()
-        }).catch((err)=>{
-            debug.error('error while trying to get pinned streamers through the api. err :',err )
-        })
+function updateVisual(oldGroup){
+    if(!oldGroup){ 
+        // sometimes you update currentGroup from onCurrentUpdate so you need it. 
+        // sometimes you just want to update from groupSortBy so you don't need it
+        oldGroup = currentGroup.slice()// use to calculate old and new position of streamers in current group
+    }else{
+        
+    }
+    _currentGroupSortBy.sort()
+    currentGroup.list.forEach((currentStreamerInfo)=>{
+        let currentStreamerID = currentStreamerInfo.broadcaster_id
+        let oldPosition = getStreamerIndex(currentStreamerID,oldGroup.list)
+        let newPosition = getStreamerIndex(currentStreamerID)
+        if(newPosition!=oldPosition&&oldPosition!=-1){
+            makeTranslateYForOneStreamer(currentStreamerInfo,oldPosition,newPosition)
+            setTimeout(function () { // use to replace in good order in html  
+                currentGroup.list.forEach((currentStreamerInfo)=>{
+                    deleteStreamer(currentStreamerInfo)
+                    addStreamer(currentStreamerInfo)
+                })
+            }, 500);
+        }
     })
 }
 
@@ -416,12 +380,12 @@ function getViewerCountWithSpaces(viewerCount){
 
 
 // get streamer index in current group list streamers array
-// _currentGroupList is not obligatory. If null it will parse _currentGroupList array
+// _currentGroupList is not obligatory. If null it will parse _currentGroup.list array
 // return -1 if not founded
-function getStreamerIndex(_streamerID,_currentGroupList){
+function getStreamerIndex(_streamerID,_currentGroup){
     let arrayToParse
     if(_currentGroupList){ // checking if we want to parse current group list array or a custom group list Array
-        arrayToParse = _currentGroupList
+        arrayToParse = _currentGroup.list
     }else{
         arrayToParse = currentGroup.list
     }
@@ -459,7 +423,7 @@ function getGroupCryptedId(groupID){
 
 
 module.exports = {
-    setup:function(_sideGroupsModule,_currentGroup,_currentGroupIndex){
-        return new groupSection(_sideGroupsModule,_currentGroup,_currentGroupIndex)
+    setup:function(_sideGroupsModule,_currentGroup){
+        return new groupSection(_sideGroupsModule,_currentGroup)
     }
 }
