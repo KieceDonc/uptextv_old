@@ -1,23 +1,24 @@
 const uptexAPI = require('./uptex-api')
 const groupSortBy = require('./groupSortBy')
-const { update } = require('.')
 
 const css_picture_profile_online = "side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
 const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar--offline tw-align-items-center tw-flex-shrink-0"
 
 var currentGroupID // convert current group name in ASCII code with '_' between each nulbers
+var currentGroupID_normal = '' // current group id but normal and not in ascii
 var currentGroup // object of this style {'name':'pinned streamers','list':ARRAY}
 var sideGroupsModule // parent instance 
-var _currentGroupSortBy
+var currentGroupSortBy
 
 class groupSection{
     constructor(_sideGroupsModule,_currentGroup){
         sideGroupsModule = _sideGroupsModule
         currentGroup = _currentGroup
-        currentGroupID = getGroupCryptedId(currentGroup.name)
+        currentGroupID = currentGroup.name
+        currentGroupID_normal = decryptGroupID(currentGroupID)
         if(shouldSetup()){
             setup()
-            _currentGroupSortBy = currentGroupSortBy.setup(sideGroupsModule)
+            currentGroupSortBy = groupSortBy.setup(sideGroupsModule)
             setupStreamers()
         }
     }
@@ -28,6 +29,34 @@ class groupSection{
 
     updateVisual(){ // use to update html / css
         updateVisual(null)
+    }
+
+    addStreamer(_streamerID){
+        uptexAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
+            addStreamerInHTML(streamerInfo)
+        }).catch((err)=>{
+            debug.error('error while calling api',err)
+        })
+        addStreamerInAPI(_streamerID)
+    }
+
+    deleteStreamer(_streamerID){
+        deleteStreamerInHTML(_streamerID)
+        deleteStreamerInAPI(_streamerID)
+    }
+
+    getCurrentGroupID(){
+        return currentGroupID
+    }
+    
+    getCurrentGroupID_normal(){
+        return currentGroupID_normal
+    }
+
+    getStreamerIndex(_streamerID){ 
+        // getting the index of the _streamerID in currentGroup.list
+        // normally use to check if streamer is / isn't in list
+        getStreamerIndex(_streamerID,null)
     }
 }
 
@@ -71,7 +100,7 @@ function setup(){
 // use right after currentGroup received. It basically add current group streamers in group section
 function setupStreamers(){
     for(let x=0;x<currentGroup.list.length;x++){
-      addStreamer(currentGroup.list[x])
+        addStreamerInHTML(currentGroup.list[x])
     }
 }
   
@@ -87,7 +116,7 @@ function shouldSetup(){
 // div with css properties of picture profile have the id of (GROUP NAME IN ASCII)_+streamerID+ "picture_profile"
 // span of number of viewer have the id of = (GROUP NAME IN ASCII)_+streamerID + "viewercount"
 // p of the current game of the id of = (GROUP NAME IN ASCII)_+streamerID + "currentgame"
-function addStreamer(streamerInfo){
+function addStreamerInHTML(streamerInfo){
 
     let _streamerID = streamerInfo.broadcaster_id
     let streamerIsStreaming = streamerInfo.isStreaming
@@ -207,14 +236,25 @@ function addStreamer(streamerInfo){
     }
 }
 
+function addStreamerInAPI(_streamerID){
+    uptexAPI.addStreamer(currentGroupID,sideGroupsModule.getUserID(),_streamerID).catch((err)=>{
+        debug.error("failed in adding pinned streamer (api call failed). err :",err)
+    }) 
+}
+
 // delete streamer in html / css
-function deleteStreamer(streamerInfo){
-    let _streamerID = streamerInfo.broadcaster_id
+function deleteStreamerInHTML(_streamerID){
     let idToFind = currentGroupID+_streamerID
     let mainDiv = document.getElementById(idToFind)
     if(mainDiv){
         mainDiv.remove()
     }
+}
+
+function deleteStreamerInAPI(_streamerID){
+    uptexAPI.deleteStreamer(currentGroupID,sideGroupsModule.getUserID(),_streamerID).catch((err)=>{
+        debug.error("failed in adding pinned streamer (api call failed). err :",err)
+    }) 
 }
 
 // currentGroup has been update
@@ -273,7 +313,7 @@ function updateVisual(oldGroup){
     }else{
         
     }
-    _currentGroupSortBy.sort()
+    currentGroupSortBy.sort()
     currentGroup.list.forEach((currentStreamerInfo)=>{
         let currentStreamerID = currentStreamerInfo.broadcaster_id
         let oldPosition = getStreamerIndex(currentStreamerID,oldGroup.list)
@@ -282,8 +322,8 @@ function updateVisual(oldGroup){
             makeTranslateYForOneStreamer(currentStreamerInfo,oldPosition,newPosition)
             setTimeout(function () { // use to replace in good order in html  
                 currentGroup.list.forEach((currentStreamerInfo)=>{
-                    deleteStreamer(currentStreamerInfo)
-                    addStreamer(currentStreamerInfo)
+                    deleteStreamerInHTML(currentStreamerInfo.broadcaster_id)
+                    addStreamerInHTML(currentStreamerInfo)
                 })
             }, 500);
         }
@@ -410,15 +450,21 @@ function getStreamerIndex(_streamerID,_currentGroup){
         }
     }
   }
-  
-// from ttt to 156_156_156 
-// plz refer to ascii table
-function getGroupCryptedId(groupID){
-    let final = ''
-    for(let x=0;x<groupID.length;x++){
-        final+=groupID.charCodeAt(x)+'_'
-    }
-    return final.substring(0,final.length)
+
+/**
+ * group id is in ascii code and each letter is separate by _
+ * ex:
+ * 116_116_116 
+ * ttt
+ */
+
+function decryptGroupID(cryptedGroupID){
+    let groupID = ''
+    let eachLetterInASCII = cryptedGroupID.split('_')
+    eachLetterInASCII.forEach((currentASCIICode)=>{
+        groupID+=String.fromCharCode(currentASCIICode)
+    })
+    return groupID
 }
 
 

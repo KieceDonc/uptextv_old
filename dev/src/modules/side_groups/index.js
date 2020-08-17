@@ -4,6 +4,9 @@ const uptexAPI = require('./uptex-api')
 const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
+const sideBottomBar = require('./sideBottomBar')
+
+const defaultLiveColor = '#007aa3'
 
 var groupsSection = new Array()
 var groups = new Array()
@@ -14,6 +17,8 @@ var streamerID // id of streamerID
 class SideGroupsModule{
     constructor(){   
       watcher.on('load.sidenav',()=>{
+        sideBottomBar.setup()
+        userID = twitch.getCurrentUser(this).id
         uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
           groups = _groups
           groups.forEach((currentGroup)=>{
@@ -36,6 +41,25 @@ class SideGroupsModule{
 
     getStreamerID(){
       return streamerID
+    }
+
+    getGroupsSection(){
+      return groupsSection
+    }
+
+    // add a new group section on top from id
+    // id must be in ASCII CODE
+    addNewGroupSection(groupID){
+      uptexAPI.addGroup(groupID,userID).then(()=>{
+        let newGroupObject = {
+          name:groupID,
+          list:[],
+          liveColor:defaultLiveColor
+        }
+        setupGroupSection(this,newGroupObject)
+      }).catch((err)=>{
+        debug.error('error while trying to add a new group in index.js',err)
+      })
     }
 }
 

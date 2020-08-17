@@ -7,7 +7,7 @@
     const debug = require('./utils/debug');
     const watcher = require('./watcher');
 
-    require('./modules/pin_channels/index.js', {mode: (base, files) => {
+    require('./modules/side_groups/index.js', {mode: (base, files) => {
         return files.map(module => {
             return `
                 try {
@@ -19,7 +19,7 @@
         }).join(' ');
     }});
 
-    debug.log(`BetterTTV v${debug.version} loaded. ${process.env.NODE_ENV} @ ${process.env.GIT_REV}`);
+    debug.log(`Uptex v${debug.version} loaded. ${process.env.NODE_ENV} @ ${process.env.GIT_REV}`);
 
     window.BetterTTV = {
         version: debug.version,

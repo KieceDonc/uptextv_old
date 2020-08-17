@@ -52,7 +52,7 @@ module.exports = {
    *    user_name 	          |string| 	Display name corresponding to user_id.
    *    viewer_count          | int  |  Number of viewers watching the stream at the time of the query.
    * }
-   * @param {*} streamerID 
+   * @param {*} streamerID normal
    */
     getStreamerInfo(streamerID){
         return new Promise((resolve,reject)=>{
@@ -65,6 +65,12 @@ module.exports = {
         })
     },
 
+    /**
+     * 
+     * @param {*} groupID IN ASCII
+     * @param {*} userID normal
+     * @param {*} streamerID normal
+     */
     addStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
@@ -77,6 +83,12 @@ module.exports = {
         })
     },
 
+    /**
+     * 
+     * @param {*} groupID IN ASCII
+     * @param {*} userID normal
+     * @param {*} streamerID normal
+     */
     deleteStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
@@ -89,10 +101,48 @@ module.exports = {
         })
     },
 
+    /**
+     * 
+     * @param {*} groupID IN ASCII
+     * @param {*} userID normal
+     * @param {*} liveColor like this :'#ffffff'
+     */
     modifyLiveColor(groupID,userID,liveColor){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
             uptexAPI.put('/groups/livecolor?groupID='+groupID+'userID='+userCryptedID+'&liveColor='+liveColor).then(()=>{
+                resolve()
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
+    },
+
+    /**
+     * 
+     * @param {*} groupID  IN ASCII
+     * @param {*} userID normal
+     */
+    isGroupAlreadyExist(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            let userCryptedID = getCryptedId(userID)
+            uptexAPI.get('/group_exist?groupID='+groupID+'userID='+userCryptedID).then((res)=>{
+                resolve(res.boolean)
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
+    },
+
+    /**
+     * 
+     * @param {*} groupID IN ASCII
+     * @param {*} userID normal
+     */
+    addGroup(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            let userCryptedID = getCryptedId(userID)
+            uptexAPI.put('/groups?groupID='+groupID+'userID='+userCryptedID).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)

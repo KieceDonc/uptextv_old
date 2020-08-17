@@ -2,11 +2,11 @@ const uptexAPI = require('./uptex-api')
 const debug = require('../../utils/debug')
 const pin_icon_mouse_over_url = "https://uptextv.com/pe/pin-icon.svg"
 
-var pinChannelModule
+var sideGroupsModule
 
 class pinButton{
-    constructor(_pinChannelModule){
-        pinChannelModule = _pinChannelModule
+    constructor(_sideGroupsModule){
+        sideGroupsModule = _sideGroupsModule
         if(shouldSetup()){
             setup()
         }
@@ -35,11 +35,12 @@ function setup(){
   
       let div2 = document.createElement("div") // ADD MOUSE OVER / LEFT
       div2.addEventListener("mouseover",function(){
-        button0.style.backgroundColor=pinChannelModule.getPinLiveColor()
+        changePinButtonBackgroundColorToBlue()
       })
       div2.addEventListener("mouseleave",function(){
-        let style = getComputedStyle(document.body);
-        button0.style.backgroundColor= style.getPropertyValue("var(--color-background-base) !important")
+        if(!isMenuToPinSetup()){
+            changePinButtonBackgroundColorToNormal()
+        }
       })
   
       let div3 = document.createElement("div")
@@ -99,65 +100,121 @@ function setup(){
     }
 }
 
-// handle pin / unpin, modification of colors etc 
-function buttonTreatment(){
-    let pinSection = pinChannelModule.getPinSection()
-    let pinnedStreamers = pinChannelModule.getPinnedStreamers()
-    let userID = pinChannelModule.getUserID()
-    let streamerID = pinChannelModule.getStreamerID()
+// title of function prelly clear
+function changePinButtonBackgroundColorToBlue(){
+    document.getElementById('pin-button').style.backgroundColor='#007aa3'
+}
 
-    if(isStreamerPinnedByUser(streamerID)){
-        deleteCurrentStreamer(userID,streamerID,pinnedStreamers,pinSection)
+// title of function prelly clear
+function changePinButtonBackgroundColorToNormal(){
+    let style = getComputedStyle(document.body);
+    document.getElementById('pin-button').style.backgroundColor=style.getPropertyValue("var(--color-background-base) !important")
+}
+
+// call when user click on pin button 
+function buttonTreatment(){
+    if(isMenuToPinSetup()){
+        deleteMenuToPin()
+        changePinButtonBackgroundColorToNormal()
     }else{
-        addCurrentStreamer(userID,streamerID,pinnedStreamers,pinSection)
-        
+        addMenuToPin()
+        changePinButtonBackgroundColorToBlue()
     }
 }
 
-// function name is preally clear
-function isStreamerPinnedByUser(streamerID){
-    return pinChannelModule.getStreamerIndex(streamerID)!=-1
+function isMenuToPinSetup(){
+    return document.getElementById('menu-to-pin')==null
 }
 
-// handle front ( pin section ) and back ( api ) end way with some verification to add a streamer
-function addCurrentStreamer(userID,streamerID,pinnedStreamers,pinSection){
-    uptexAPI.getStreamerInfo(streamerID).then((currentStreamerInfo)=>{
-        pinnedStreamers.push(currentStreamerInfo)
-        addCurrentStreamerInAPI(userID,streamerID)
-        pinSection.addStreamer(currentStreamerInfo)
-        pinSection.update()
-    }).catch((err)=>{
-        debug.error("error while trying to get current streamer info. err :",err)
+function addMenuToPin(){
+    let coords = document.getElementById('pin-button')
+    coords.getBoundingClientRect()
+
+    // it's seems like their is a security
+    // you need to have an empty div and modify it later
+
+    /*
+    <div class="tooltip-layer" style="transform: translate(1265px, 386px); width: 40px; height: 30px;">
+        <div aria-describedby="78bed2e1b312703011f9d904af2a1698" class="tw-inline-flex tw-relative tw-tooltip-wrapper tw-tooltip-wrapper--show">
+            <div style="width: 40px; height: 30px;">
+            </div>
+            <div class="tw-tooltip tw-tooltip--align-center tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip" id="78bed2e1b312703011f9d904af2a1698">
+                to replace
+            </div>
+        </div>
+    </div>
+
+    temp0.getBoundingClientRect()
+
+DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right: 1355.2166748046875, bottom: 416, left: 1315.2166748046875 }
+    */
+
+    let div0 = document.createElement('div')
+    let root = document.getElementById('root')
+    root.children[0].append(div0)
+
+    div0.className="tooltip-layer"
+    div0.id="menu-to-pin"
+
+    let div0_translate_x = Math.round(coords.x)
+    let div0_translate_y = Math.round(coords.y)
+    let div0_width = Math.round(coords.width)
+    let div0_height = Math.round(coords.height)
+    div0.style.transform="translate("+div0_translate_x+"px, "+div0_translate_y+"px)"
+    div0.style.width = div0_width
+    div0.style.height = div0_height
+
+    let div1 = document.createElement('div')
+    div1.className="tw-inline-flex tw-relative tw-tooltip-wrapper tw-tooltip-wrapper--show"
+
+    let div2 = document.createElement('div')
+    div2.style.width = div0_width
+    div2.style.height = div0_height
+
+    let div3 = document.createElement('div')
+    div3.className="tw-tooltip tw-tooltip--align-center tw-tooltip--up"
+    sideGroupsModule.getGroupsSection().forEach((currentGroupSection)=>{
+        let currentGroupID = currentGroupSection.getCurrentGroupID()
+        let currentGroupID_normal = currentGroupSection.getCurrentGroupID_normal()
+
+        /*
+        <div>
+            <input type="checkbox" style="vertical-align:middle;"/>
+            <label>pinned streamers</label>
+        </div>
+        */
+
+        let div_current_group = document.createElement('div')
+        div_current_group.id = currentGroupID
+
+        let input_current_group = document.createElement('input') // checkbox of the current group ( permit to add / delete streamer from current group )
+        input_current_group.type='checkbox'
+        input_current_group.style.verticalAlign='middle'
+        input_current_group.style.pointerEvents='all'
+        let currentStreamerIndexInCurrentGroupSection = currentGroupSection.getStreamerIndex(sideGroupsModule.getStreamerID()) 
+        // return -1 if streamer isn't in list in current group section
+        if(currentStreamerIndexInCurrentGroupSection!=-1){ 
+            input_current_group.checked="checked"
+        }
+        input_current_group.addEventListener('change', (event) => { // detect if checked to unchecked or unchecked to checked
+            if (event.target.checked) { // need to add streamer
+                currentGroupSection.addStreamer(currentGroupSection.getStreamerID())
+            } else { // need to delete streamer
+                currentGroupSection.deleteStreamer(currentGroupSection.getStreamerID())
+            }
+        })
+
+        let label_current_group = document.createElement('label')
+        label_current_group.innerHTML = currentGroupID_normal
     })
 }
 
-// add the streamer in the database in api
-function addCurrentStreamerInAPI(userID,streamerID){
-    uptexAPI.addStreamer(userID,streamerID).catch((err)=>{
-        debug.error("failed in adding pinned streamer (api call failed). err :",err)
-    })    
-}
-
-// handle front and back end way ( with some verification ) to delete a streamer
-function deleteCurrentStreamer(userID,streamerID,pinnedStreamers,pinSection){
-    uptexAPI.getStreamerInfo(streamerID).then((currentStreamerInfo)=>{
-        pinnedStreamers = pinnedStreamers.filter(e => e.broadcaster_id !== streamerID);
-        deleteCurrentStreamerInAPI()
-        pinSection.deleteStreamer(currentStreamerInfo)
-    }).catch((err)=>{
-        debug.error("error while trying to get current streamer info. err :",err)
-    })
-}
-    
-    // delete the streamer in the database in api
-function deleteCurrentStreamerInAPI(userID,streamerID){
-    uptexAPI.deleteStreamer(userID,streamerID).catch((err)=>{
-        debug.error("failed in deleting pinned streamer (api call failed). err :",err)
-    })
+function deleteMenuToPin(){
+    document.getElementById('menu-to-pin').remove()
 }
 
 module.exports = {
-    setup:function(_pinChannelModule){
-        return new pinButton(_pinChannelModule)
+    setup:function(_sideGroupsModule){
+        return new pinButton(_sideGroupsModule)
     }
 }

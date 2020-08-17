@@ -28,14 +28,13 @@ function getDB(){
 function getUser(userID){
     return new Promise((resolve,reject)=>{
         getDB().then((db)=>{
-            var db = client.db(dbName);
             var cursor=db.collection(user_collection).find({ID: userID})
 
             cursor.each(function(err, doc) {
                 if(err){
                     reject(err)
                 }
-                if(doc!=null&&doc.ID!=null){
+                if(doc!=null&&doc.ID!=null&&doc.ID!=0){
                     resolve(doc)
                 }else{
                     resolve(null)
@@ -93,6 +92,25 @@ function addDefaultLiveColorIfNeeded(groupID,userID){
 
 module.exports= {
 
+    isGroupExist(groupID,userID){
+        getDB().then((db)=>{
+            var cursor=db.collection(user_collection).find({ID: userID})
+
+            cursor.each(function(err, doc) {
+                if(err){
+                    reject(err)
+                }
+                if(doc!=null&&doc[(groupID)]!=null){ 
+                    resolve(true)
+                }else{
+                    resolve(false)
+                }
+            });  
+        }).catch((err)=>{
+            reject(err)
+        })    
+    },
+
     isUserExist(userID){
         return new Promise((resolve,reject)=>{
             getUser(userID).then((user)=>{
@@ -128,22 +146,12 @@ module.exports= {
     addNewUser(userID){
         return new Promise((resolve,reject)=>{
             getDB().then((db)=>{
-                db.collection(user_collection).insertOne({
-                    ID: userID
-                });
-                let pinnedGroup={}
-                let toAdd = pinnedGroup['112_105_110_110_101_100_32_115_116_114_101_97_109_101_114_115']=[] // crypted id of pinned streamers
-                db.collection(user_collection).updateOne(
-                    {ID: userID}, 
-                    {
-                        $set: toAdd
-                    }
-                )
-                if(err){
-                    reject(err)
-                }else{
-                    resolve()
-                }
+                let newUser = {}
+                newUser['ID']=userID
+                newUser['112_105_110_110_101_100_32_115_116_114_101_97_109_101_114_115']=[]
+                newUser['112_105_110_110_101_100_32_115_116_114_101_97_109_101_114_115_liveColor']=defaultLiveColor
+                db.collection(user_collection).insertOne(newUser);
+                resolve()
             }).catch((err)=>{
                 reject(err)
             })
