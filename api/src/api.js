@@ -36,47 +36,33 @@ app.use((req, res, next) => {
 
 app.use(router);  
  
-app.delete('/api/groups',function(req,res){  // delete streamer from groupID
-    let cryptedGroupID = req.queri.groupID
+app.delete('/api/streamer_delete_group',function(req,res){  // delete streamer from groupID
+    let cryptedGroupID = req.query.groupID
     let cryptedUserID = req.query.userID
     let cryptedStreamerID = req.query.streamerID
-    decryptID(cryptedUserID).then((userID)=>{
-        decryptID(cryptedStreamerID).then((streamerID)=>{
-            checkBeforeTreatment((userID)).then(()=>{
-                database.deleteStreamer(cryptedGroupID,userID,streamerID).then(()=>{
-                    res.status(200).send({response : "ok",methode: req.method})
-                })
-            })
+    decryptIDS(cryptedUserID,cryptedStreamerID).then((arrayOfIDS)=>{
+        let userID = arrayOfIDS[0]
+        let streamerID = arrayOfIDS[1]
+        checkBeforeTreatment((userID)).then(()=>{
+            database.deleteStreamer(cryptedGroupID,userID,streamerID).then(()=>{
+                res.status(200).send({response : "ok",methode: req.method})
+            })        
         })
     }).catch(()=>{
         res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
     })
 })
 
-app.put('/api/groups',function(req,res){ // add streamer in a group from a groupID
-    let cryptedGroupID = req.queri.groupID
+app.put('/api/streamer_in_group',function(req,res){ // add streamer in a group from a groupID
+    let cryptedGroupID = req.query.groupID
     let cryptedUserID = req.query.userID
     let cryptedStreamerID = req.query.streamerID
-    decryptID(cryptedUserID).then((userID)=>{
-        decryptID(cryptedStreamerID).then((streamerID)=>{
-            checkBeforeTreatment((userID)).then(()=>{
-                database.modifyGroup(cryptedGroupID,userID,streamerID).then(()=>{
-                    res.status(200).send({response : "ok",methode: req.method})
-                })
-            })
-        })  
-    }).catch(()=>{
-        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
-    })
-});
-
-app.get('/api/group_exist',function(req,res){ // check if group exist in db 
-    let cryptedGroupID = req.queri.groupID
-    let cryptedUserID = req.query.userID
-    decryptID(cryptedUserID).then((userID)=>{
+    decryptIDS(cryptedUserID,cryptedStreamerID).then((arrayOfIDS)=>{
+        let userID = arrayOfIDS[0]
+        let streamerID = arrayOfIDS[1]
         checkBeforeTreatment((userID)).then(()=>{
-            database.isGroupExist(cryptedGroupID,userID).then((groupExistBoolean)=>{
-                res.status(200).send({response : "ok",methode: req.method,boolean:groupExistBoolean})
+            database.addStreamer(cryptedGroupID,userID,streamerID).then(()=>{
+                res.status(200).send({response : "ok",methode: req.method}) 
             })
         })
     }).catch(()=>{
@@ -84,23 +70,27 @@ app.get('/api/group_exist',function(req,res){ // check if group exist in db
     })
 });
 
-app.get('/api/groups',function(req,res){ // get streamers info from all group id
+app.get('/api/group_exist',function(req,res){ // check if group exist in db 
+    let cryptedGroupID = req.query.groupID
     let cryptedUserID = req.query.userID
-    decryptID(cryptedUserID).then((userID)=>{
+    try{
+        let userID = decryptID(cryptedUserID)
         checkBeforeTreatment((userID)).then(()=>{
-            database.getStreamers(userID).then((userObject)=>{
-                let streamers = new Array() // we will add each streamer from each group in this array in purpose to get their information. Doesn't contains duplicate
-                for(var cryptedGroupID in userObject) { 
-                    if(!cryptedGroupID.includes('_liveColor')&&cryptedGroupID!=='ID'&&cryptedGroupID!=='_id'){
-                        var groupList = userObject[cryptedGroupID];
-                        groupList.forEach((streamer)=>{
-                            let indexOfStreamInStreamers = streamers.indexOf(streamer)
-                            if(indexOfStreamInStreamers==-1){ // streamer isn't in array
-                                streamers.push(streamer)
-                            }
-                        })
-                    }
-                }
+            database.isGroupExist(cryptedGroupID,userID).then((groupExistBoolean)=>{
+                res.status(200).send({response : "ok",methode: req.method,boolean:groupExistBoolean})
+            })
+        })
+    }catch{
+        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
+    }
+});
+
+app.get('/api/streamers',function(req,res){ // get streamers info from all group id
+    let cryptedUserID = req.query.userID
+    try{
+        let userID = decryptID(cryptedUserID)
+        checkBeforeTreatment((userID)).then(()=>{
+            database.getStreamers(userID).then((streamers)=>{
 
                 let getStreamersInfo = new Array() // push each promise get streamer info into an arrat
                 streamers.forEach((streamer)=>{
@@ -122,74 +112,73 @@ app.get('/api/groups',function(req,res){ // get streamers info from all group id
 
                     */
                     let arrayToReturn = new Array()
+                    let currentGroupList // for this group creating an array which contain all streamer info of this group
+                    
+                    database.getGroups(userID).then((groups)=>{
 
-                    for(var cryptedGroupID in userObject) { // searching all streamersInformation for all streamers in group
-                        if(!cryptedGroupID.includes('_liveColor')&&cryptedGroupID!=='ID'&&cryptedGroupID!=='_id'){ 
-                            var groupListWithStreamerInfo = new Array() // for this group creating an array which contain all streamer info of this groupe
-                            var groupListWithID = userObject[cryptedGroupID]; // getting all streamers id of this group
-                            groupListWithID.forEach((streamerID)=>{ 
+                        groups.forEach((currentGroup)=>{
+                            currentGroupList = new Array()
+                            currentGroup['list'].forEach((streamerID)=>{ 
                                 let desireStreamerInfo = streamersInfo.filter( streamersInfo => streamersInfo['broadcast_id'] === streamerID ) // getting the desire streamer info of the list of all streamers info
-                                groupListWithStreamerInfo.push(desireStreamerInfo[0]) // pushing the desire streamer info in the array of the current streamers group
+                                currentGroupList.push(desireStreamerInfo[0]) // pushing the desire streamer info in the array of the current streamers group
                             })
                         
                             arrayToReturn.push({
-                                'name':cryptedGroupID,
-                                'list':groupListWithStreamerInfo
+                                'name':getGroupCryptedID(currentGroup['name']),
+                                'list':currentGroupList,
+                                'liveColor':currentGroup['liveColor']
                             })
+                        })
                             
-                        }
-                    }
-
-                    for(var cryptedGroupID in userObject) {  // searching for live color
-                        if(cryptedGroupID.includes('_liveColor')){ 
-                            let currentGroupID = cryptedGroupID.substring(0,cryptedGroupID.length-10) // -10 because of '_liveColor'.length                               
-                            arrayToReturn.forEach((currentGroupObject)=>{
-                                if(currentGroupObject.name===currentGroupID){
-                                    currentGroupObject['liveColor']=userObject[cryptedGroupID] // adding liveColor:'#ff0000'
-                                }
-                            })
-                        }
-                    }
-
-                    arrayToReturn.forEach((currentGroupObject)=>{ // encrypt all group name
-                        currentGroupObject['name']=decryptGroupID(currentGroupObject.name)
+                        res.status(200)
+                        res.json({result : arrayToReturn,methode: req.method})
                     })
-
-                    res.status(200)
-                    res.json({result : arrayToReturn,methode: req.method})
-                }).catch((err)=>{
-                    console.log(err)
-                    res.status(500).send({error : err,methode: req.method})
                 })
             }).catch((err)=>{
                 res.status(500).send({error : err,methode: req.method})
             })
         })
-    }).catch((err)=>{
+    }catch{
         res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
-    })
+    }
 })
 
 app.put('/api/group/livecolor',function(req,res){ // modify live color
     let cryptedUserID = req.query.userID
-    let cryptedGroupID = req.queri.groupID
+    let cryptedGroupID = req.query.groupID
     let livecolor = req.query.liveColor
-    decryptID(cryptedUserID).then((userID)=>{
+    try{
+        let userID = decryptID(cryptedUserID)
         database.modifyLiveColor(cryptedGroupID,userID,livecolor).then(()=>{
             res.status(200).send()
         }).catch((err)=>{
             res.status(500).send({error : err,methode: req.method})
         })
-    }).catch(()=>{
+    }catch{
         res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
-    })
+    }
 })
 
 
+app.put('/api/group',function(req,res){ // add group
+    let cryptedUserID = req.query.userID
+    let cryptedGroupID = req.query.groupID
+    try{
+        let userID = decryptID(cryptedUserID)
+        database.addGroup(cryptedGroupID,userID).then(()=>{
+            res.status(200).send()
+        }).catch((err)=>{
+            res.status(500).send({error : err,methode: req.method})
+        })
+    }catch{
+        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
+    }
+})
 
 app.get('/api/streamer',function(req,res){ // get streamer info
     let cryptedStreamerID = req.query.streamerID
-    decryptID(cryptedStreamerID).then((streamerID)=>{
+    try{
+        let streamerID = decryptID(cryptedStreamerID)
         if(streamerID){
             twitchAPI.getStreamer(streamerID).then((_streamerInfo)=>{
                 res.status(200)
@@ -200,10 +189,24 @@ app.get('/api/streamer',function(req,res){ // get streamer info
         }else{
             res.status(500).send({error : "streamerID not define",methode: req.method})
         }
-    }).catch((err)=>{
-        res.status(500).send({error:"stop trying to this api, you are going to be ban",methode:req.method})
-    })
+    }catch{
+        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
+    }
 })
+
+function decryptIDS(){
+    return new Promise((resolve,reject)=>{
+        try{
+            arrayNormalID = new Array()
+            arguments.forEach((crpytedID)=>{
+                arrayNormalID.push(decryptID(cryptedID))
+            })
+            resolve(arrayNormalID)
+        }catch(_){
+            reject(_)
+        }
+    })
+}
 
 /**
  * encrypt id
@@ -222,38 +225,19 @@ app.get('/api/streamer',function(req,res){ // get streamer info
  * @param {*} cryptedID 
  */
 function decryptID(cryptedID){
-    return new Promise((resolve,reject)=>{
-        try{
-            let idFirstPart = cryptedID.split('-')[0]
-            let secondPartInArray = idFirstPart.split('0')
-            let id=''
-            for(let x=1;x<secondPartInArray.length;x++){
-                id+='0'+secondPartInArray[x]
-            }
-            id=parseInt(id,16)
-            resolve(id)
-        }catch(err){
-            reject(err)
+    try{
+        let idFirstPart = cryptedID.split('-')[0]
+        let secondPartInArray = idFirstPart.split('0')
+        let id=''
+        for(let x=1;x<secondPartInArray.length;x++){
+            id+='0'+secondPartInArray[x]
         }
-    })
+        id=parseInt(id,16)
+        return id
+    }catch(err){
+        throw 'stop trying to this api, you are going to be ban'
+    }
 }
-
-/**
- * group id is in ascii code and each letter is separate by _
- * ex:
- * 116_116_116 
- * ttt
- */
-
-function decryptGroupID(cryptedGroupID){
-    let groupID = ''
-    let eachLetterInASCII = cryptedGroupID.split('_')
-    eachLetterInASCII.forEach((currentASCIICode)=>{
-        groupID+=String.fromCharCode(currentASCIICode)
-    })
-    return groupID
-}
-
 
 /**
  * check if user exist in database. If not create it
@@ -276,6 +260,18 @@ function checkBeforeTreatment(userID){
         })
     })
 }
+
+
+// from ttt to 156_156_156 
+function getGroupCryptedID(groupID){
+    let final = ''
+    for(let x=0;x<groupID.length;x++){
+        final+=groupID.charCodeAt(x)+'_'
+    }
+    return final.substring(0,final.length)
+}
+
+
 
 
 

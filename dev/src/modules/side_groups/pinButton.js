@@ -49,7 +49,6 @@ function setup(){
       let button0 = document.createElement("button") // HANDLE PIN / UNPIN / ADD TO SIDE SECTION / DELETE FROM SIDE SECTION
       button0.id=buttonID
       button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-      //button0.onclick=console.log("log")
       button0.addEventListener('click', function(){
         buttonTreatment()
       })
@@ -108,7 +107,7 @@ function changePinButtonBackgroundColorToBlue(){
 // title of function prelly clear
 function changePinButtonBackgroundColorToNormal(){
     let style = getComputedStyle(document.body);
-    document.getElementById('pin-button').style.backgroundColor=style.getPropertyValue("var(--color-background-base) !important")
+    document.getElementById('pin-button').style.backgroundColor=style.getPropertyValue("--color-background-base")
 }
 
 // call when user click on pin button 
@@ -123,12 +122,11 @@ function buttonTreatment(){
 }
 
 function isMenuToPinSetup(){
-    return document.getElementById('menu-to-pin')==null
+    return document.getElementById('menu-to-pin')!=null
 }
 
 function addMenuToPin(){
-    let coords = document.getElementById('pin-button')
-    coords.getBoundingClientRect()
+    let coords = document.getElementById('pin-button').getBoundingClientRect()
 
     // it's seems like their is a security
     // you need to have an empty div and modify it later
@@ -160,6 +158,8 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     let div0_translate_y = Math.round(coords.y)
     let div0_width = Math.round(coords.width)
     let div0_height = Math.round(coords.height)
+    div0_translate_x+=div0_width/2
+    div0_translate_y-=div0_height/2
     div0.style.transform="translate("+div0_translate_x+"px, "+div0_translate_y+"px)"
     div0.style.width = div0_width
     div0.style.height = div0_height
@@ -173,6 +173,10 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
 
     let div3 = document.createElement('div')
     div3.className="tw-tooltip tw-tooltip--align-center tw-tooltip--up"
+
+    div0.append(div1)
+    div1.append(div2)
+    div1.append(div3)
     sideGroupsModule.getGroupsSection().forEach((currentGroupSection)=>{
         let currentGroupID = currentGroupSection.getCurrentGroupID()
         let currentGroupID_normal = currentGroupSection.getCurrentGroupID_normal()
@@ -186,6 +190,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
 
         let div_current_group = document.createElement('div')
         div_current_group.id = currentGroupID
+        div_current_group.style.margin='0.25rem'
 
         let input_current_group = document.createElement('input') // checkbox of the current group ( permit to add / delete streamer from current group )
         input_current_group.type='checkbox'
@@ -198,14 +203,19 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         }
         input_current_group.addEventListener('change', (event) => { // detect if checked to unchecked or unchecked to checked
             if (event.target.checked) { // need to add streamer
-                currentGroupSection.addStreamer(currentGroupSection.getStreamerID())
+                currentGroupSection.addStreamer(sideGroupsModule.getStreamerID())
             } else { // need to delete streamer
-                currentGroupSection.deleteStreamer(currentGroupSection.getStreamerID())
+                currentGroupSection.deleteStreamer(sideGroupsModule.getStreamerID())
             }
         })
 
         let label_current_group = document.createElement('label')
         label_current_group.innerHTML = currentGroupID_normal
+        label_current_group.style.marginLeft='0.125rem'
+
+        div_current_group.append(input_current_group)
+        div_current_group.append(label_current_group)
+        div3.append(div_current_group)
     })
 }
 

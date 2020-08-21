@@ -107,9 +107,8 @@ function htmlSetup(){
   
     let select0 = document.createElement('select')
     select0.className="tw-font-size-6"
-    select0.id=currentGroupSection.getCurrentId()+'groupSelect'
     select0.addEventListener('change', function(){
-        selectOnChange()
+        selectOnChange(select0)
     })
   
     let toAdd = new Array()
@@ -127,7 +126,7 @@ function htmlSetup(){
       index++
     })
   
-    let mainDiv = document.getElementById(currentGroupSection.getCurrentId()+"_sideNavGroupSection")
+    let mainDiv = document.getElementById(currentGroupSection.getCurrentGroupID()+"_sideNavGroupSection")
     if(mainDiv!=null){
         mainDiv.prepend(div0)
         div0.append(div1)
@@ -139,9 +138,8 @@ function htmlSetup(){
   }
   
 // call back of onChange() of groupSelect
-function selectOnChange(){
-    let sel = document.getElementById('groupSelect')
-    currentIndexSortBy = sel.value
+function selectOnChange(selectElement){
+    currentIndexSortBy = selectElement.value
     currentGroupSection.updateVisual()
 }
 

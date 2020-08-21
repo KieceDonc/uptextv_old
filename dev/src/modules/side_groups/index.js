@@ -17,22 +17,22 @@ var streamerID // id of streamerID
 class SideGroupsModule{
     constructor(){   
       watcher.on('load.sidenav',()=>{
-        sideBottomBar.setup()
-        userID = twitch.getCurrentUser(this).id
+        sideBottomBar.setup(this)
+        userID = twitch.getCurrentUser().id
         uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
           groups = _groups
           groups.forEach((currentGroup)=>{
-            setupGroupSection(this,currentGroup)
+            setupGroupSection(currentGroup)
           })
           handleUpdateEach5min()
         }).catch((err)=>{
           debug.error('error while trying to get pinned streamers through the api. err :',err )
         })
       })
-      /*watcher.on('load.followbutton',()=>{
+      watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
         _pinButton = pinButton.setup(this)
-      })*/     
+      })     
     }
 
     getUserID(){
@@ -56,7 +56,7 @@ class SideGroupsModule{
           list:[],
           liveColor:defaultLiveColor
         }
-        setupGroupSection(this,newGroupObject)
+        setupGroupSection(newGroupObject)
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
       })

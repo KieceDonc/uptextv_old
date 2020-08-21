@@ -5,9 +5,9 @@ module.exports = {
     getGroupsStreamers(userID){
         return new Promise((resolve,reject)=>{
             let cryptedID = getCryptedId(userID)
-            uptexAPI.get("/groups?userID="+cryptedID).then((data)=>{  
-                if(data.length>0){ // checking if api hasn't return empty object. 
-                  resolve(data)
+            uptexAPI.get("/streamers?userID="+cryptedID).then((data)=>{
+                if(data.result.length>0){ // checking if api hasn't return empty object. 
+                  resolve(data.result)
                 }else{ // has return empty object ( no pinned streamer )
                   // we return new Array cuz data.pinnedStreamers contain a array with one empty object
                   // and it does boring stuff 
@@ -75,7 +75,7 @@ module.exports = {
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
             let streamerCryptedID = getCryptedId(streamerID)
-            uptexAPI.put('/groups?groupID='+groupID+'userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
+            uptexAPI.put('/streamer_in_group?groupID='+groupID+'&userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)
@@ -93,7 +93,7 @@ module.exports = {
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
             let streamerCryptedID = getCryptedId(streamerID)
-            uptexAPI.delete('/groups?groupID='+groupID+'userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
+            uptexAPI.delete('/streamer_delete_group?groupID='+groupID+'&userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)
@@ -110,7 +110,7 @@ module.exports = {
     modifyLiveColor(groupID,userID,liveColor){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
-            uptexAPI.put('/groups/livecolor?groupID='+groupID+'userID='+userCryptedID+'&liveColor='+liveColor).then(()=>{
+            uptexAPI.put('/groups/livecolor?groupID='+groupID+'&userID='+userCryptedID+'&liveColor='+liveColor).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)
@@ -126,7 +126,7 @@ module.exports = {
     isGroupAlreadyExist(groupID,userID){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
-            uptexAPI.get('/group_exist?groupID='+groupID+'userID='+userCryptedID).then((res)=>{
+            uptexAPI.get('/group_exist?groupID='+groupID+'&userID='+userCryptedID).then((res)=>{
                 resolve(res.boolean)
             }).catch((err)=>{
                 reject(err)
@@ -142,7 +142,7 @@ module.exports = {
     addGroup(groupID,userID){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
-            uptexAPI.put('/groups?groupID='+groupID+'userID='+userCryptedID).then(()=>{
+            uptexAPI.put('/group?groupID='+groupID+'&userID='+userCryptedID).then(()=>{
                 resolve()
             }).catch((err)=>{
                 reject(err)

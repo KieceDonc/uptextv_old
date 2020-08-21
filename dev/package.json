@@ -10,16 +10,15 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "browserify": "^16.5.1"
+    "browserify": "^16.5.2"
   },
   "dependencies": {
-    "@babel/core": "^7.10.4",
-    "@babel/plugin-transform-runtime": "^7.10.4",
-    "@babel/preset-env": "^7.10.4",
-    "@babel/runtime": "^7.10.4",
-    "autoprefixer": "^9.8.4",
+    "@babel/core": "^7.11.1",
+    "@babel/plugin-transform-runtime": "^7.11.0",
+    "@babel/preset-env": "^7.11.0",
+    "@babel/runtime": "^7.11.2",
+    "autoprefixer": "^9.8.6",
     "babelify": "^10.0.0",
-    "browserify": "^16.5.1",
     "cookies-js": "^1.2.3",
     "del": "^5.1.0",
     "emojilib": "^2.4.0",
@@ -47,7 +46,7 @@
     "precss": "^4.0.0",
     "request": "^2.88.2",
     "require-globify": "^1.4.1",
-    "twemoji": "^13.0.0",
+    "twemoji": "^13.0.1",
     "twitch-chat-emotes": "github:night/twitch-chat-emotes#bd48f71811b9b22a4c4ee9615e5f387739655baa",
     "uglify-save-license": "^0.4.1",
     "vinyl-buffer": "^1.0.1",

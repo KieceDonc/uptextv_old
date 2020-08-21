@@ -1,5 +1,6 @@
 const uptexAPI = require('./uptex-api')
 const groupSortBy = require('./groupSortBy')
+const debug = require('../../utils/debug')
 
 const css_picture_profile_online = "side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
 const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar--offline tw-align-items-center tw-flex-shrink-0"
@@ -18,7 +19,7 @@ class groupSection{
         currentGroupID_normal = decryptGroupID(currentGroupID)
         if(shouldSetup()){
             setup()
-            currentGroupSortBy = groupSortBy.setup(sideGroupsModule)
+            currentGroupSortBy = groupSortBy.setup(this)
             setupStreamers()
         }
     }
@@ -53,6 +54,14 @@ class groupSection{
         return currentGroupID_normal
     }
 
+    getCurrentList(){
+        return currentGroup.list
+    }
+
+    setCurrentList(_list){
+        currentGroup.list = _list
+    }
+
     getStreamerIndex(_streamerID){ 
         // getting the index of the _streamerID in currentGroup.list
         // normally use to check if streamer is / isn't in list
@@ -60,13 +69,20 @@ class groupSection{
     }
 }
 
+// check if group section exist
+function shouldSetup(){
+    let idToFind =  currentGroupID+"_sideNavGroupSection"
+    let mainDiv = document.getElementById(idToFind)
+    return mainDiv==null
+}
+
 // setup side nav group section to welcome current group streamers
 // group section id ( main div ) =(GROUP NAME IN ASCII)_sideNavGroupSection
 function setup(){ 
     let mainDivID = currentGroupID+"_sideNavGroupSection"
-    let parentDiv = document.getElementsByClassName('side-nav-section')[0] // getting div parent
+    let parentDiv = document.getElementsByClassName('side-bar-contents')[0].firstChild.firstChild.firstChild // getting div parent
   
-    if(parentDiv!=null){
+    if(parentDiv){
       // Start : Creating group section
       let groupSection = document.createElement("div") 
       groupSection.className="tw-relative tw-transition-group"
@@ -84,13 +100,12 @@ function setup(){
   
       let titleH5 = document.createElement("h5")
       titleH5.className="tw-font-size-6 tw-semibold tw-upcase"
-      titleH5.innerHTML=currentGroup.name
+      titleH5.innerHTML=currentGroupID_normal
   
   
       parentDiv.prepend(parentTitleDiv)
       parentTitleDiv.appendChild(titleDiv)
       titleDiv.appendChild(titleH5)
-      handleUpdateEach5min()
       // End
     }else{
         debug.error('parentdiv is null, you should look at css properties about getElementsByClassName')
@@ -102,13 +117,6 @@ function setupStreamers(){
     for(let x=0;x<currentGroup.list.length;x++){
         addStreamerInHTML(currentGroup.list[x])
     }
-}
-  
-// check if group section exist
-function shouldSetup(){
-    let idToFind =  currentGroupID+"_sideNavGroupSection"
-    let mainDiv = document.getElementById(idToFind)
-    return mainDiv==null
 }
 
 // use to add streamer in html / css 
@@ -424,7 +432,7 @@ function getViewerCountWithSpaces(viewerCount){
 // return -1 if not founded
 function getStreamerIndex(_streamerID,_currentGroup){
     let arrayToParse
-    if(_currentGroupList){ // checking if we want to parse current group list array or a custom group list Array
+    if(_currentGroup){ // checking if we want to parse current group list array or a custom group list Array
         arrayToParse = _currentGroup.list
     }else{
         arrayToParse = currentGroup.list

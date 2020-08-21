@@ -9,6 +9,13 @@ const defaultLiveColor = '#007aa3'
  * https://www.guru99.com/node-js-mongodb.html
  */
 
+ /**
+  *             {
+                    name:decryptGroupID(groupID),
+                    list:[],
+                    liveColor:defaultLiveColor
+                } group object look like this
+  */
 var db = null
 
 function getDB(){
@@ -46,6 +53,31 @@ function getUser(userID){
     })
 }
 
+function getGroup(groupID,userID){
+    return new Promise((resolve,reject)=>{
+        getDB().then((db)=>{
+            var cursor=db.collection(user_collection).find({ID: userID})
+
+            cursor.each(function(err, doc) {
+                if(err){
+                    reject(err)
+                }
+                if(doc!=null&&doc.ID!=null&&doc.ID!=0){
+                    if(doc[groupID]!=null){
+                        resolve(doc[groupID])
+                    }else{
+                        resolve(null)
+                    }
+                }else{
+                    resolve(null)
+                }
+            });
+        }).catch((err)=>{
+            reject(err)
+        })
+    })
+}
+
 function modifyGroup(groupID,userID,groupList){
     return new Promise((resolve,reject)=>{
         getDB().then((db)=>{
@@ -57,58 +89,60 @@ function modifyGroup(groupID,userID,groupList){
                     $set: toReplace
                 }
             )
-            addDefaultLiveColorIfNeeded(groupID,userID).then(()=>{
-                resolve()
-            }).catch((err)=>{
-                reject(err)
-            })
+            resolve()
         }).catch((err)=>{
             reject(err)
         })
     })
 }
 
-function addDefaultLiveColorIfNeeded(groupID,userID){
-    return new Promise((resolve,reject)=>{
-        getDB().then((db)=>{
-            var cursor=db.collection(user_collection).find({ID: userID})
 
-            cursor.each(function(err, doc) {
-                if(err){
-                    reject(err)
-                }
-                if(doc!=null&&doc[(groupID+'_liveColor')]!=null){ // checking if a live color is already present
-                    resolve(true)
-                    modifyLiveColor(groupID,userID,defaultLiveColor)
-                }else{
-                    resolve(false)
-                }
-            });  
-        }).catch((err)=>{
-            reject(err)
-        })
+function decryptGroupID(cryptedGroupID){
+    let groupID = ''
+    let eachLetterInASCII = cryptedGroupID.split('_')
+    eachLetterInASCII.forEach((currentASCIICode)=>{
+        groupID+=String.fromCharCode(currentASCIICode)
     })
+    return groupID
 }
 
 module.exports= {
 
     isGroupExist(groupID,userID){
-        getDB().then((db)=>{
-            var cursor=db.collection(user_collection).find({ID: userID})
-
-            cursor.each(function(err, doc) {
-                if(err){
-                    reject(err)
-                }
-                if(doc!=null&&doc[(groupID)]!=null){ 
-                    resolve(true)
-                }else{
-                    resolve(false)
-                }
-            });  
-        }).catch((err)=>{
-            reject(err)
+        return new Promise((resolve,reject)=>{
+            getDB().then((db)=>{
+                var cursor=db.collection(user_collection).find({ID: userID})
+    
+                cursor.each(function(err, doc) {
+                    if(err){
+                        reject(err)
+                    }
+                    if(doc!=null&&doc[(groupID)]!=null){ 
+                        resolve(true)
+                    }else{
+                        resolve(false)
+                    }
+                });  
+            }).catch((err)=>{
+                reject(err)
+            })
         })    
+    },
+
+    addGroup(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            modifyGroup(groupID,userID,
+                {
+                    name:decryptGroupID(groupID),
+                    list:[],
+                    liveColor:defaultLiveColor
+                }
+                ).then(()=>{
+                    resolve()
+                }).catch((err)=>{
+                    reject(err)
+                })
+            })
     },
 
     isUserExist(userID){
@@ -127,16 +161,13 @@ module.exports= {
 
     modifyLiveColor(groupID,userID,LiveColor){
         return new Promise((resolve,reject)=>{
-            getDB().then((db)=>{
-                let toReplace = {}
-                toReplace[(groupID+'_liveColor')]=LiveColor
-                db.collection(user_collection).updateOne(
-                    {ID: userID}, 
-                    {
-                        $set: toReplace
-                    }
-                )
-                resolve()
+            getGroup(groupID,userID).then((groupObject)=>{
+                if(groupID!=null){        
+                    groupObject['liveColor']=LiveColor
+                    modifyGroup(groupID,userID,groupObject).then(()=>{
+                        resolve()
+                    })
+                }
             }).catch((err)=>{
                 reject(err)
             })
@@ -148,8 +179,11 @@ module.exports= {
             getDB().then((db)=>{
                 let newUser = {}
                 newUser['ID']=userID
-                newUser['112_105_110_110_101_100_32_115_116_114_101_97_109_101_114_115']=[]
-                newUser['112_105_110_110_101_100_32_115_116_114_101_97_109_101_114_115_liveColor']=defaultLiveColor
+                newUser['112_105_110_110_101_100_32_115_116_114_101_97_109_101_114_115']={
+                    name:'pinned streamers',
+                    list:[],
+                    liveColor:defaultLiveColor
+                }
                 db.collection(user_collection).insertOne(newUser);
                 resolve()
             }).catch((err)=>{
@@ -166,26 +200,23 @@ module.exports= {
      */
     addStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
-            getUser(userID).then((user)=>{
-                var groupList = user[groupID]
-                if(groupList){
-                    if(!groupList.includes(streamerID)){ // value already exist, we don't save it
-                        groupList.push(streamerID)                
+            getGroup(cryptedGroupID,userID).then((groupObject)=>{
+                if(groupObject['list']){
+                    if(!groupObject['list'].includes(streamerID)){ // value already exist, we don't save it
+                    groupObject['list'].push(streamerID)                
                     }else{
                         resolve()
                     }
                 }else{
-                    groupList = new Array()
-                    groupList.push(streamerID)
+                    groupObject['list'] = new Array()
+                    groupObject['list'].push(streamerID)
                 }
-                modifyGroup(groupID,userID,groupList).then(()=>{
+                modifyGroup(groupID,userID,groupObject).then(()=>{
                     resolve()
-                }).catch((err)=>{
-                    reject(err)
-                })    
+                })
             }).catch((err)=>{
                 reject(err)
-            })
+            })  
         })
     },
 
@@ -197,17 +228,14 @@ module.exports= {
      */
     deleteStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
-            getUser(userID).then((user)=>{
-                var groupList = user[groupID]
-                groupList = groupList.filter(e => e !== streamerID);
-                modifyPinnedStreamers(groupID,userID,groupList).then(()=>{
+            getGroup(cryptedGroupID,userID).then((groupObject)=>{
+                groupObject['list'].filter(e => e !== streamerID);
+                modifyGroup(groupID,userID,groupObject).then(()=>{
                     resolve()
-                }).catch((err)=>{
-                    reject(err)
                 })
             }).catch((err)=>{
                 reject(err)
-            })
+            })  
         })
     },
 
@@ -217,8 +245,36 @@ module.exports= {
      */
     getStreamers(userID){
         return new Promise((resolve,reject)=>{
-            getUser(userID).then((user)=>{
-                resolve(user)
+            getUser(userID).then((userObject)=>{
+                let streamers = new Array() // we will add each streamer from each group in this array in purpose to get their information. Doesn't contains duplicate
+                for(var cryptedGroupID in userObject) { 
+                    if(cryptedGroupID!=='ID'&&cryptedGroupID!=='_id'){
+                        var groupList = userObject[cryptedGroupID]['list'];
+                        groupList.forEach((streamer)=>{
+                            let indexOfStreamInStreamers = streamers.indexOf(streamer)
+                            if(indexOfStreamInStreamers==-1){ // streamer isn't in array
+                                streamers.push(streamer)
+                            }
+                        })
+                    }
+                }
+                resolve(streamers)
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
+    },
+
+    getGroups(userID){
+        return new Promise((resolve,reject)=>{
+            getUser(userID).then((userObject)=>{
+                let groups = new Array()
+                for(var cryptedGroupID in userObject) {  // searching for live color
+                    if(cryptedGroupID!=='ID'&&cryptedGroupID!=='_id'){
+                        groups.push(userObject[cryptedGroupID])
+                    }
+                }
+                resolve(groups)
             }).catch((err)=>{
                 reject(err)
             })

@@ -164,7 +164,6 @@ function onAddClick(){
 
             let input_input = document.createElement('input')
             input_input.className="tw-input tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6tw-input tw-pd-r-1 tw-pd-y-05 tw-pd-l-1"
-            input_input.id="add_group_input_id"
             input_input.type='search'
             input_input.autocapitalize='off'
             input_input.autocomplete='off'
@@ -201,26 +200,28 @@ function onAddClick(){
                 </div>
             */
            
-            let input_imgs_width = parseFloat(input_input.width)*0.8+'rem' // 80 % of input_input width
+            let input_imgs_height = parseFloat(input_input.offsetHeight)*0.8+'px' // 80 % of input_input width
 
             let input_valid_img = document.createElement('img')
             input_valid_img.src=valid_img_url
             input_valid_img.style.filter='brightness(0) invert(1)'
-            input_valid_img.style.width = input_imgs_width
+            input_valid_img.style.width = input_imgs_height
             input_valid_img.style.verticalAlign='middle'
             input_valid_img.style.cursor='pointer'
+            input_valid_img.style.marginLeft='0.5rem'
+            input_valid_img.style.marginRight='0.5rem'
             input_valid_img.addEventListener('click', function(){
-                onValidClick()
+                onValidClick(input_input,mainDiv)
             })
 
             let input_cancel_img = document.createElement('img')
             input_cancel_img.src=cancel_img_url
             input_cancel_img.style.filter='brightness(0) invert(1)'
-            input_cancel_img.style.width = input_imgs_width
+            input_cancel_img.style.width = input_imgs_height
             input_cancel_img.style.verticalAlign='middle'
             input_cancel_img.style.cursor='pointer'
             input_cancel_img.addEventListener('click',function(){
-                onCancelClick()
+                onCancelClick(mainDiv)
             })
 
             input_div1.append(input_valid_img)
@@ -233,43 +234,54 @@ function onAddClick(){
 
 // call when a temporary side group is create and user valid his action
 // first you need to check if this name is valid ( name / not already in db, etc ) and when add a groupSection
-function onValidClick(){
-    let input = document.getElementById('add_group_input_id')
-    if(input.value()>0){
-        uptexAPI.isGroupAlreadyExist(input.value,sideGroupsModule.getUserID()).then((isGroupExist)=>{
+function onValidClick(input,inputMainDiv){
+    if(input.value.length>0){
+        let groupCryptedID = getGroupCryptedID(input.value)
+        uptexAPI.isGroupAlreadyExist(groupCryptedID,sideGroupsModule.getUserID()).then((isGroupExist)=>{
             if(isGroupExist){
-                unvalidInput('this group name is already taken, you must choose an other one')
+                unvalidInput('This group name is already taken, you must choose an other one',inputMainDiv)
             }else{
-                sideGroupsModule.addNewGroupSection(getGroupCryptedId(input.value))
+                sideGroupsModule.addNewGroupSection(groupCryptedID)
+                inputMainDiv.remove()
             }
         }).catch((err)=>{
             debug.error('error while trying to check if side group already exist or not', err)
         })
     }else{
-        unvalidInput('Your group name must be at least contain one letter')
+        unvalidInput('Your group name must be at least contain one letter',inputMainDiv)
     }
 }
 
 // you detect an invalid group name for some reason
 // you handle it here 
-function unvalidInput(err){
-
+function unvalidInput(err,inputMainDiv){
+    let p0 = document.getElementById('add_group_err')
+    if(p0){ // checking is p already exist
+        p0.innerHTML = err
+    }else{
+        p0 = document.createElement('p')
+        p0.className='tw-c-text-alt-2 tw-font-size-6 tw-line-height-heading'
+        p0.id = 'add_group_err'
+        p0.innerHTML = err
+        p0.style.marginTop='0.5rem'
+        inputMainDiv.children[1].append(p0)
+    }
 }
 
 // call when a temporary side group is create and user cancel his action
 // first you need to delete temporary group
-function onCancelClick(){
-
+function onCancelClick(inputMainDiv){
+    inputMainDiv.remove()
 }
 
 // from ttt to 156_156_156 
 // plz refer to ascii table
-function getGroupCryptedId(groupID){
+function getGroupCryptedID(groupID){
     let final = ''
     for(let x=0;x<groupID.length;x++){
         final+=groupID.charCodeAt(x)+'_'
     }
-    return final.substring(0,final.length)
+    return final.substring(0,final.length-1)
 }
 
 module.exports = {
