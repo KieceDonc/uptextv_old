@@ -1,5 +1,3 @@
-const uptexAPI = require('./uptex-api')
-const debug = require('../../utils/debug')
 const pin_icon_mouse_over_url = "https://uptextv.com/pe/pin-icon.svg"
 
 var sideGroupsModule
@@ -107,7 +105,7 @@ function changePinButtonBackgroundColorToBlue(){
 // title of function prelly clear
 function changePinButtonBackgroundColorToNormal(){
     let style = getComputedStyle(document.body);
-    document.getElementById('pin-button').style.backgroundColor=style.getPropertyValue("--color-background-base")
+    document.getElementById('pin-button').style.backgroundColor=style.getPropertyValue("--color-background-button-secondary-default")
 }
 
 // call when user click on pin button 
@@ -177,9 +175,10 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     div0.append(div1)
     div1.append(div2)
     div1.append(div3)
-    sideGroupsModule.getGroupsSection().forEach((currentGroupSection)=>{
-        let currentGroupID = currentGroupSection.getCurrentGroupID()
-        let currentGroupID_normal = currentGroupSection.getCurrentGroupID_normal()
+    let groupsSection = sideGroupsModule.getGroupsSection().slice().reverse() // slice is needed so you can .reverse() each time to get each groupSection name in the same order as displayed
+    groupsSection.forEach((currentGroupSection)=>{
+        let currentGroupID = currentGroupSection.getGroupID()
+        let currentGroupID_normal = currentGroupSection.getGroupID_normal()
 
         /*
         <div>
@@ -196,7 +195,8 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         input_current_group.type='checkbox'
         input_current_group.style.verticalAlign='middle'
         input_current_group.style.pointerEvents='all'
-        let currentStreamerIndexInCurrentGroupSection = currentGroupSection.getStreamerIndex(sideGroupsModule.getStreamerID()) 
+        let currentStreamerIndexInCurrentGroupSection = currentGroupSection.getStreamerIndex(sideGroupsModule.getStreamerID())
+        
         // return -1 if streamer isn't in list in current group section
         if(currentStreamerIndexInCurrentGroupSection!=-1){ 
             input_current_group.checked="checked"
@@ -211,7 +211,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
 
         let label_current_group = document.createElement('label')
         label_current_group.innerHTML = currentGroupID_normal
-        label_current_group.style.marginLeft='0.125rem'
+        label_current_group.style.marginLeft='0.25rem'
 
         div_current_group.append(input_current_group)
         div_current_group.append(label_current_group)

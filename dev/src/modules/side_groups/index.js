@@ -4,7 +4,7 @@ const uptexAPI = require('./uptex-api')
 const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
-const sideBottomBar = require('./sideBottomBar')
+const sideBottomBar = require('./sideBottomBar');
 
 const defaultLiveColor = '#007aa3'
 
@@ -14,24 +14,25 @@ var groups = new Array()
 var userID // id of current user
 var streamerID // id of streamerID
 
+
 class SideGroupsModule{
-    constructor(){   
+    constructor(){  
       watcher.on('load.sidenav',()=>{
-        sideBottomBar.setup(this)
         userID = twitch.getCurrentUser().id
+        sideBottomBar.setup(this)
         uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
           groups = _groups
           groups.forEach((currentGroup)=>{
-            setupGroupSection(currentGroup)
-          })
-          handleUpdateEach5min()
+            setupGroupSection(currentGroup,this)
+          }) 
+          handleUpdateEach5min(this)
         }).catch((err)=>{
-          debug.error('error while trying to get pinned streamers through the api. err :',err )
+          debug.error('error while trying to get groups through the api. err :',err )
         })
       })
       watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
-        _pinButton = pinButton.setup(this)
+        pinButton.setup(this)
       })     
     }
 
@@ -56,28 +57,33 @@ class SideGroupsModule{
           list:[],
           liveColor:defaultLiveColor
         }
-        setupGroupSection(newGroupObject)
+        setupGroupSection(newGroupObject,this)
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
       })
     }
+
+    deleteGroupSection(indexOfGroup){  
+      groupsSection = groupsSection.splice(indexOfGroup, 1);
+      groups = groups.splice(indexOfGroup,1)
+    }
 }
 
-// for one group setup a side nav group section
-function setupGroupSection(currentGroup){
-  let currentGroupSection = groupSection.setup(this,currentGroup)
+// setup for one group setup a side nav group section
+function setupGroupSection(currentGroup,sideGroupsModule){
+  var currentGroupSection = groupSection.setup(currentGroup,groupsSection.length,sideGroupsModule) // groupsSection.length represent the position of the currentGroup
   groupsSection.push(currentGroupSection)
 }
 
 // handle to update streamers info each 5 min
-function handleUpdateEach5min(){
+function handleUpdateEach5min(sideGroupsModule){
   setInterval(function(){    
-    updateStreamersInfo()
+    updateStreamersInfo(sideGroupsModule)
   },300000)
 }
 
 // handle to update streamers info
-function updateStreamersInfo(){
+function updateStreamersInfo(sideGroupsModule){
     let oldGroups = groups.slice()
 
     uptexAPI.getGroupsStreamers(userID).then((newGroups)=>{
@@ -97,9 +103,9 @@ function updateStreamersInfo(){
             }
           })
           if(!groupAlreadyExist){ // if doesn't exist you setup it
-            setupGroupSection(currentNewGroup)
+            setupGroupSection(currentNewGroup,sideGroupsModule)
           }else{ // exist so u update it
-            groupsSection[index].currentGroupUpdate(currentOldGroup,currentNewGroup)
+            groupsSection[index].onGroupUpdate(currentOldGroup['list'],currentNewGroup['list'])
           }
         })
         

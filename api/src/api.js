@@ -65,7 +65,7 @@ app.put('/api/streamer_in_group',function(req,res){ // add streamer in a group f
                 res.status(200).send({response : "ok",methode: req.method}) 
             })
         })
-    }).catch(()=>{
+    }).catch((err)=>{
         res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
     })
 });
@@ -96,7 +96,8 @@ app.get('/api/streamers',function(req,res){ // get streamers info from all group
                 streamers.forEach((streamer)=>{
                     getStreamersInfo.push(twitchAPI.getStreamer(streamer))
                 })                        
-                
+                 
+
                 Promise.all(getStreamersInfo).then((streamersInfo)=>{ // we've got streamersInfo 
                     /* we are trying to return this kind of array
                     [{
@@ -111,15 +112,15 @@ app.get('/api/streamers',function(req,res){ // get streamers info from all group
                     }]
 
                     */
-                    let arrayToReturn = new Array()
-                    let currentGroupList // for this group creating an array which contain all streamer info of this group
-                    
                     database.getGroups(userID).then((groups)=>{
+                                
+                        let arrayToReturn = new Array()
+                        let currentGroupList // for this group creating an array which contain all streamer info of this group   
 
                         groups.forEach((currentGroup)=>{
                             currentGroupList = new Array()
-                            currentGroup['list'].forEach((streamerID)=>{ 
-                                let desireStreamerInfo = streamersInfo.filter( streamersInfo => streamersInfo['broadcast_id'] === streamerID ) // getting the desire streamer info of the list of all streamers info
+                            currentGroup['list'].forEach((streamerID)=>{
+                                let desireStreamerInfo = streamersInfo.filter( streamerInfo => streamerInfo['broadcaster_id'] == streamerID ) // getting the desire streamer info of the list of all streamers info
                                 currentGroupList.push(desireStreamerInfo[0]) // pushing the desire streamer info in the array of the current streamers group
                             })
                         
@@ -129,11 +130,11 @@ app.get('/api/streamers',function(req,res){ // get streamers info from all group
                                 'liveColor':currentGroup['liveColor']
                             })
                         })
-                            
                         res.status(200)
                         res.json({result : arrayToReturn,methode: req.method})
                     })
                 })
+            
             }).catch((err)=>{
                 res.status(500).send({error : err,methode: req.method})
             })
@@ -175,6 +176,21 @@ app.put('/api/group',function(req,res){ // add group
     }
 })
 
+app.delete('/api/group',function(req,res){ // delete group
+    let cryptedUserID = req.query.userID
+    let cryptedGroupID = req.query.groupID
+    try{
+        let userID = decryptID(cryptedUserID)
+        database.deleteGroup(cryptedGroupID,userID).then(()=>{
+            res.status(200).send()
+        }).catch((err)=>{
+            res.status(500).send({error : err,methode: req.method})
+        })
+    }catch{
+        res.status(500).send({error:"stop trying to hack this api, you are going to be ban",methode:req.method})
+    }
+})
+
 app.get('/api/streamer',function(req,res){ // get streamer info
     let cryptedStreamerID = req.query.streamerID
     try{
@@ -198,9 +214,10 @@ function decryptIDS(){
     return new Promise((resolve,reject)=>{
         try{
             arrayNormalID = new Array()
-            arguments.forEach((crpytedID)=>{
+            for(let x=0;x<arguments.length;x++){
+                let cryptedID = arguments[x]
                 arrayNormalID.push(decryptID(cryptedID))
-            })
+            }
             resolve(arrayNormalID)
         }catch(_){
             reject(_)
@@ -268,7 +285,7 @@ function getGroupCryptedID(groupID){
     for(let x=0;x<groupID.length;x++){
         final+=groupID.charCodeAt(x)+'_'
     }
-    return final.substring(0,final.length)
+    return final.substring(0,final.length-1 )
 }
 
 

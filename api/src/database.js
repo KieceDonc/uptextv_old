@@ -145,6 +145,24 @@ module.exports= {
             })
     },
 
+    deleteGroup(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            getDB().then((db)=>{
+                let objectToDelete={}
+                objectToDelete[groupID]=1
+                db.collection(user_collection).updateOne(                
+                    {ID: userID}, 
+                    {
+                        $unset: objectToDelete
+                    }, 
+                false, true)
+                resolve()                    
+            }).catch((err)=>{
+                reject(err)
+            })
+        })    
+    },
+
     isUserExist(userID){
         return new Promise((resolve,reject)=>{
             getUser(userID).then((user)=>{
@@ -200,7 +218,7 @@ module.exports= {
      */
     addStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
-            getGroup(cryptedGroupID,userID).then((groupObject)=>{
+            getGroup(groupID,userID).then((groupObject)=>{
                 if(groupObject['list']){
                     if(!groupObject['list'].includes(streamerID)){ // value already exist, we don't save it
                     groupObject['list'].push(streamerID)                
@@ -228,8 +246,8 @@ module.exports= {
      */
     deleteStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
-            getGroup(cryptedGroupID,userID).then((groupObject)=>{
-                groupObject['list'].filter(e => e !== streamerID);
+            getGroup(groupID,userID).then((groupObject)=>{
+                groupObject['list']= groupObject['list'].filter(e => e != streamerID);
                 modifyGroup(groupID,userID,groupObject).then(()=>{
                     resolve()
                 })

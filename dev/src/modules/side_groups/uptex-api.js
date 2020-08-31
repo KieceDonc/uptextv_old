@@ -148,6 +148,17 @@ module.exports = {
                 reject(err)
             })
         })
+    },
+
+    deleteGroup(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            let userCryptedID= getCryptedId(userID)
+            uptexAPI.delete('/group?groupID='+groupID+'&userID='+userCryptedID).then(()=>{
+                resolve()
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
     }
 }
 
