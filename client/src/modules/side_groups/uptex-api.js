@@ -1,7 +1,10 @@
+const io = require('socket.io-client')
+const socket = io('https://uptextv.com:3000');
 const uptexAPI = require('../../utils/uptex-api.js')
 
 module.exports = {
     // make an api call to get all pinned streamers by user
+    
     getGroupsStreamers(userID){
         return new Promise((resolve,reject)=>{
             let cryptedID = getCryptedId(userID)
@@ -69,18 +72,55 @@ module.exports = {
      * 
      * @param {*} groupID IN ASCII
      * @param {*} userID normal
-     * @param {*} streamerID normal
+     */
+    addGroup(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            let userCryptedID = getCryptedId(userID)
+            socket.emit('add_group',groupID,userCryptedID)
+            socket.on('callback_add_group',(reply)=>{
+                console.log('reply'+reply)
+                if(reply==='done'){ // no error
+                    resolve()
+                }else{ 
+                    reject(reply)
+                }
+            })
+        })
+    },
+
+    deleteGroup(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            let userCryptedID = getCryptedId(userID)
+            socket.emit('delete_group',groupID,userCryptedID)
+            socket.on('callback_delete_group',(reply)=>{
+                if(reply==='done'){ // no error
+                    resolve()
+                }else{ 
+                    reject(reply)
+                }
+            })
+        })
+    },
+
+    /**
+     * 
+     * @param {String} groupID IN ASCII
+     * @param {String} userID normal
+     * @param {String} streamerID normal
      */
     addStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
-            let userCryptedID = getCryptedId(userID)
             let streamerCryptedID = getCryptedId(streamerID)
-            uptexAPI.put('/streamer_in_group?groupID='+groupID+'&userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
-                resolve()
-            }).catch((err)=>{
-                reject(err)
+            let userCryptedID = getCryptedId(userID)
+            socket.emit('add_streamer_in_group',groupID,userCryptedID,streamerCryptedID)
+            socket.on('callback_add_streamer_in_group',(reply)=>{
+                if(reply==='done'){ // no error
+                    resolve()
+                }else{ 
+                    reject(reply)
+                }
             })
-        })
+        });
     },
 
     /**
@@ -91,12 +131,15 @@ module.exports = {
      */
     deleteStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
-            let userCryptedID = getCryptedId(userID)
             let streamerCryptedID = getCryptedId(streamerID)
-            uptexAPI.delete('/streamer_delete_group?groupID='+groupID+'&userID='+userCryptedID+'&streamerID='+streamerCryptedID).then(()=>{
-                resolve()
-            }).catch((err)=>{
-                reject(err)
+            let userCryptedID = getCryptedId(userID)
+            socket.emit('delete_streamer_in_group',groupID,userCryptedID,streamerCryptedID)
+            socket.on('callback_delete_streamer_in_group',(reply)=>{
+                if(reply==='done'){ // no error
+                    resolve()
+                }else{ 
+                    reject(reply)
+                }
             })
         })
     },
@@ -128,33 +171,6 @@ module.exports = {
             let userCryptedID = getCryptedId(userID)
             uptexAPI.get('/group_exist?groupID='+groupID+'&userID='+userCryptedID).then((res)=>{
                 resolve(res.boolean)
-            }).catch((err)=>{
-                reject(err)
-            })
-        })
-    },
-
-    /**
-     * 
-     * @param {*} groupID IN ASCII
-     * @param {*} userID normal
-     */
-    addGroup(groupID,userID){
-        return new Promise((resolve,reject)=>{
-            let userCryptedID = getCryptedId(userID)
-            uptexAPI.put('/group?groupID='+groupID+'&userID='+userCryptedID).then(()=>{
-                resolve()
-            }).catch((err)=>{
-                reject(err)
-            })
-        })
-    },
-
-    deleteGroup(groupID,userID){
-        return new Promise((resolve,reject)=>{
-            let userCryptedID= getCryptedId(userID)
-            uptexAPI.delete('/group?groupID='+groupID+'&userID='+userCryptedID).then(()=>{
-                resolve()
             }).catch((err)=>{
                 reject(err)
             })
@@ -218,14 +234,5 @@ function getRamdomLetter(){
 
 function randomIntFromInterval(min, max) { // min and max included 
     return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
-// from ttt to 156_156_156 
-function getGroupCryptedId(groupID){
-    let final = ''
-    for(let x=0;x<groupID.length;x++){
-        final+=groupID.charCodeAt(x)+'_'
-    }
-    return final.substring(0,final.length)
 }
 

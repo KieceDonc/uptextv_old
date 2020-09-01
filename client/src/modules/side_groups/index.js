@@ -6,6 +6,9 @@ const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
 const sideBottomBar = require('./sideBottomBar');
 
+const io = require('socket.io-client')
+const socket = io('https://uptextv.com:3000');
+
 const defaultLiveColor = '#007aa3'
 
 var groupsSection = new Array()
@@ -19,6 +22,7 @@ class SideGroupsModule{
     constructor(){  
       watcher.on('load.sidenav',()=>{
         userID = twitch.getCurrentUser().id
+        socket.emit('setup',userID)
         sideBottomBar.setup(this)
         uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
           groups = _groups
@@ -71,6 +75,7 @@ class SideGroupsModule{
 
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){
+  console.log('called')
   var currentGroupSection = groupSection.setup(currentGroup,groupsSection.length,sideGroupsModule) // groupsSection.length represent the position of the currentGroup
   groupsSection.push(currentGroupSection)
 }

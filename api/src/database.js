@@ -219,7 +219,7 @@ module.exports= {
     addStreamer(groupID,userID,streamerID){
         return new Promise((resolve,reject)=>{
             getGroup(groupID,userID).then((groupObject)=>{
-                if(groupObject['list']){
+                if(groupObject['list']!=null){
                     if(!groupObject['list'].includes(streamerID)){ // value already exist, we don't save it
                     groupObject['list'].push(streamerID)                
                     }else{
