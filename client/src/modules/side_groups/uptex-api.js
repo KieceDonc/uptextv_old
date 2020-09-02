@@ -4,20 +4,31 @@ const uptexAPI = require('../../utils/uptex-api.js')
 
 module.exports = {
     // make an api call to get all pinned streamers by user
+
+    setup(userID){
+        return new Promise((resolve,reject)=>{
+            let cryptedUserID = getCryptedId(userID)
+            socket.emit('setup',cryptedUserID)
+            socket.on('callback_setup',(reply)=>{
+                if(reply==='done'){
+                    resolve()
+                }else{
+                    reject(reply)
+                }
+            })
+        })
+    },
     
     getGroupsStreamers(userID){
         return new Promise((resolve,reject)=>{
-            let cryptedID = getCryptedId(userID)
-            uptexAPI.get("/streamers?userID="+cryptedID).then((data)=>{
-                if(data.result.length>0){ // checking if api hasn't return empty object. 
-                  resolve(data.result)
-                }else{ // has return empty object ( no pinned streamer )
-                  // we return new Array cuz data.pinnedStreamers contain a array with one empty object
-                  // and it does boring stuff 
-                  resolve(new Array()) 
+            let cryptedUserID = getCryptedId(userID)
+            socket.emit('get_groups',cryptedUserID)
+            socket.on('callback_get_groups',(reply,groups)=>{
+                if(reply==='done'){ // no error
+                    resolve(groups)
+                }else{ 
+                    reject(reply)
                 }
-            }).catch((err)=>{
-                reject(err)
             })
         })
     },
@@ -59,11 +70,33 @@ module.exports = {
    */
     getStreamerInfo(streamerID){
         return new Promise((resolve,reject)=>{
-            let cryptedID = getCryptedId(streamerID)
-            uptexAPI.get("/streamer?streamerID="+cryptedID).then((data)=>{
-                resolve(data.info)
-            }).catch((err)=>{
-                reject(err)
+            let cryptedStreamerID = getCryptedId(streamerID)
+            socket.emit('get_streamer_info',cryptedStreamerID)
+            socket.on('callback_get_streamer_info',(reply,streamerInfo)=>{
+                if(reply==='done'){ // no error
+                    resolve(streamerInfo)
+                }else{ 
+                    reject(reply)
+                }
+            })
+        })
+    },
+
+    /**
+     * 
+     * @param {*} groupID IN ASCII
+     * @param {*} userID normal
+     */
+    isGroupAlreadyExist(groupID,userID){
+        return new Promise((resolve,reject)=>{
+            let userCryptedID = getCryptedId(userID)
+            socket.emit('group_exist',groupID,userCryptedID)
+            socket.on('callback_group_exist',(reply,isGroupAlreadyExist)=>{
+                if(reply==='done'){ // no error
+                    resolve(isGroupAlreadyExist)
+                }else{ 
+                    reject(reply)
+                }
             })
         })
     },
@@ -78,7 +111,6 @@ module.exports = {
             let userCryptedID = getCryptedId(userID)
             socket.emit('add_group',groupID,userCryptedID)
             socket.on('callback_add_group',(reply)=>{
-                console.log('reply'+reply)
                 if(reply==='done'){ // no error
                     resolve()
                 }else{ 
@@ -148,34 +180,48 @@ module.exports = {
      * 
      * @param {*} groupID IN ASCII
      * @param {*} userID normal
-     * @param {*} liveColor like this :'#ffffff'
+     * @param {*} propertyName liveColor,sortByIndex,isGroupHiden,groupIndex
+     * @param {*} propertyValue correspondy to type of propertyName
      */
-    modifyLiveColor(groupID,userID,liveColor){
+    setGroupProperty(groupID,userID,propertyName,propertyValue){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
-            uptexAPI.put('/groups/livecolor?groupID='+groupID+'&userID='+userCryptedID+'&liveColor='+liveColor).then(()=>{
-                resolve()
-            }).catch((err)=>{
-                reject(err)
+            socket.emit('set_group_property',groupID,userCryptedID,propertyName,propertyValue)
+            socket.on('callback_set_group_property',(_propertyName,reply)=>{
+                if(propertyName===_propertyName){
+                    if(reply==='done'){ // no error
+                        resolve()
+                    }else{ 
+                        reject(reply)
+                    }
+                }
             })
         })
     },
 
     /**
      * 
-     * @param {*} groupID  IN ASCII
-     * @param {*} userID normal
+     * @param {*} groupID 
+     * @param {*} userID 
+     * @param {*} propertyName liveColor,sortByIndex,isGroupHiden,groupIndex 
+     * @return {*} correspondy to type of propertyName
      */
-    isGroupAlreadyExist(groupID,userID){
+    getGroupProperty(groupID,userID,propertyName){
         return new Promise((resolve,reject)=>{
             let userCryptedID = getCryptedId(userID)
-            uptexAPI.get('/group_exist?groupID='+groupID+'&userID='+userCryptedID).then((res)=>{
-                resolve(res.boolean)
-            }).catch((err)=>{
-                reject(err)
+            socket.emit('get_group_property',groupID,userCryptedID,propertyName)
+            socket.on('callback_get_group_property',(_propertyName,reply,_propertyValue)=>{
+                if(propertyName===_propertyName){
+                    if(reply=='done'){
+                        resolve(_propertyValue)
+                    }else{
+                        reject(reply)
+                    }
+                }
             })
         })
     }
+
 }
 
   

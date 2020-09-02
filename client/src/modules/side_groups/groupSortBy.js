@@ -1,4 +1,5 @@
-var currentIndexSortBy=0; 
+const uptexAPI = require('./uptex-api')
+const twitch = require('../../utils/twitch')
 
 class groupSortBy{
 
@@ -6,8 +7,9 @@ class groupSortBy{
   currentGroupSection = null
   currentIndexSortBy = 0 // index of the function to call to sort by
 
-  constructor(_currentGroupSection){
+  constructor(_currentGroupSection,_currentIndexSortBy){
     this.currentGroupSection = _currentGroupSection
+    this.currentIndexSortBy = _currentIndexSortBy
     this.sortGroupStreamersFunction = getSortGroupStreamersFunctions(this)
     this.htmlSetup()
     this.sortCurrentGroupStreamersByWithCurrentIndexSortBy()
@@ -30,7 +32,7 @@ class groupSortBy{
     let select0 = document.createElement('select')
     select0.className="tw-font-size-6"
     let temp_this = this
-    select0.addEventListener('change', function(){
+    select0.addEventListener('change', ()=>{
         temp_this.selectOnChange(select0)
     })
   
@@ -57,12 +59,14 @@ class groupSortBy{
         toAdd.forEach((optionToAdd)=>{
           select0.append(optionToAdd)
         })
+        select0.value=this.currentIndexSortBy // use to set the saved option by user
     }
   }
     
   // call back of onChange() of groupSelect
   selectOnChange(selectElement){
       this.currentIndexSortBy = selectElement.value
+      uptexAPI.setGroupProperty(this.currentGroupSection.getGroupID(),twitch.getCurrentUser().id,'sortByIndex',this.currentIndexSortBy)
       this.currentGroupSection.updateVisual(null)
   }
 
@@ -183,7 +187,7 @@ function sortBy(propertieName){
 }
 
 module.exports = {
-    setup:function(_currentGroupSection){
-        return new groupSortBy(_currentGroupSection)
+    setup:function(_currentGroupSection,_currentIndexSortBy){
+        return new groupSortBy(_currentGroupSection,_currentIndexSortBy)
     }
 }     

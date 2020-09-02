@@ -24,9 +24,16 @@ class groupSection{
         this.sideGroupsModule=_sideGroupsModule
 
         if(shouldSetup(this.groupID)){
-            setup(this.groupID,this.groupID_normal,this.groupIndex,this.sideGroupsModule)
-            this.groupSortBy = groupSortBy.setup(this)
-            setupStreamers(this.groupObject)
+            let isGroupHiden = this.groupObject['isGroupHiden']
+            setup(this.groupID,this.groupID_normal,this.groupIndex,this.sideGroupsModule,isGroupHiden)
+            let sortByIndexValue = this.groupObject['sortByIndex']
+            this.groupSortBy = groupSortBy.setup(this,sortByIndexValue)
+            setupStreamers(this.groupObject,()=>{
+                if(isGroupHiden){
+                    hideInHTML(this.groupID,null)
+                }
+            })
+
         }
     }  
 
@@ -51,7 +58,7 @@ class groupSection{
      * @param {String} _streamerID 
      */
     deleteStreamer(_streamerID){
-        this.groupObject['list']= this.groupObject['list'].filter(e => e.broadcaster_id != _streamerID);
+        this.groupObject['list']= this.groupObject['list'].filter(e => e.broadcaster_id != _streamerID)
         deleteStreamerInHTML(this.groupID,_streamerID,true)
         deleteStreamerInAPI(this.groupID,_streamerID)
     }
@@ -94,11 +101,11 @@ class groupSection{
             
             if(oldStreamerInfo!=-1){ // checking if streamer have been just added or not
                 if(oldStreamerInfo.isStreaming === newStreamerInfo.isStreaming){// streamer was offline - > streamer is offline or streamer was online - > streamer is online
-                    if(newStreamerInfo.isStreaming == true){// streamer was online - > streamer is online
+                    if(newStreamerInfo.isStreaming){// streamer was online - > streamer is online
                         updateOnline.push(newStreamerInfo)
                     }
                 }else{
-                    if(newStreamerInfo.isStreaming == true){// streamer was offline - > streamer is online
+                    if(newStreamerInfo.isStreaming){// streamer was offline - > streamer is online
                         goesOnline.push(newStreamerInfo)
                     }else{// streamer was online - > streamer is offline
                         goesOffline.push(newStreamerInfo)
@@ -134,14 +141,10 @@ class groupSection{
         }
         let temp_groupSection = this
         this.groupSortBy.sort()
-        console.log(oldGroup)
-        console.log(temp_groupSection.groupObject['list'])
         temp_groupSection.groupObject['list'].forEach((currentStreamerInfo)=>{
             let currentStreamerID = currentStreamerInfo.broadcaster_id
             let oldPosition = this.getStreamerIndex(currentStreamerID,oldGroup)
             let newPosition = this.getStreamerIndex(currentStreamerID)
-            console.log(currentStreamerInfo)
-            console.log(newPosition+" "+oldPosition)
             if(newPosition!=oldPosition&&oldPosition!=-1){
                 makeTranslateYForOneStreamer(this.groupID,currentStreamerInfo,oldPosition,newPosition)
                 setTimeout(function () { // use to replace in good order in html  
@@ -209,8 +212,9 @@ function shouldSetup(groupID){
  * @param {String} groupID_normal groupID in normal 
  * @param {Int} groupIndex 
  * @param {SideGroupsModule} sideGroupsModule 
+ * @param {boolean} isGroupHiden
  */
-function setup(groupID,groupID_normal,groupIndex,sideGroupsModule){ 
+function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){ 
     let mainDivID = groupID+"_sideNavGroupSection"
     let parentDiv = document.getElementsByClassName('side-bar-contents')[0].firstChild.firstChild.firstChild // getting div parent
 
@@ -253,14 +257,27 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule){
         element.style.transitionDuration='250ms'
     }
 
+    let imgHide_Show = document.createElement('img')
+    giveImgsDesireStyle(imgHide_Show)
+    giveTransitionStyle(imgHide_Show)
+    if(isGroupHiden){ // group is hide 
+        imgHide_Show.src = 'https://uptextv.com/pe/show.png'
+    }else{
+        imgHide_Show.src= 'https://uptextv.com/pe/hide.png'
+    }
+    imgHide_Show.addEventListener('click',()=>{
+        onHide_ShowButtonClic(imgHide_Show,groupID)
+    })
+    
+
     let imgSettings = document.createElement('img') // use to display the settings button of the current group section
     imgSettings.src='https://uptextv.com/pe/settings.png'
     giveImgsDesireStyle(imgSettings)
     giveTransitionStyle(imgSettings)
 
-    let divSettingsMenu = document.createElement('div')
+    let divSettingsMenu = document.createElement('div') // handle the settings menu 
     giveTransitionStyle(divSettingsMenu)
-    divSettingsMenu.style.display='inline-flex'
+    divSettingsMenu.style.display='none'
     divSettingsMenu.style.transform='scale(0)'
 
     let imgBackArrowSettingsMenu = document.createElement('img')
@@ -294,6 +311,7 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule){
     parentDiv.prepend(parentTitleDiv)
     parentTitleDiv.appendChild(titleDiv);
     titleDiv.appendChild(titleH5)
+    titleDiv.appendChild(imgHide_Show)
     titleDiv.appendChild(imgSettings)
     titleDiv.appendChild(divSettingsMenu)
     divSettingsMenu.appendChild(imgBackArrowSettingsMenu)
@@ -309,10 +327,11 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule){
  * use right after groupObject received. It basically add current group streamers in group section
  * @param {Object} groupObject 
  */
-function setupStreamers(groupObject){
+function setupStreamers(groupObject,callback){
     for(let x=0;x<groupObject.list.length;x++){
         addStreamerInHTML(groupObject,groupObject.list[x])
     }
+    callback()
 }
 
 /**
@@ -369,6 +388,7 @@ function onSettingsButtonClick(imgSettings,divSettingsMenu){
     imgSettings.style.transform='scale(0)'
     setTimeout(function(){
         imgSettings.style.display='none'
+        divSettingsMenu.style.display='inline-flex'
         divSettingsMenu.style.transform='scale(1)'
     },250)
 
@@ -381,6 +401,7 @@ function onSettingsButtonClick(imgSettings,divSettingsMenu){
 function onBackArrowSettingsMenuButtonClick(divSettingsMenu,imgSettings){
     divSettingsMenu.style.transform='scale(0)'
     setTimeout(function(){
+        divSettingsMenu.style.display='none'
         imgSettings.style.display=''
         imgSettings.style.transform='scale(1)'
     },250)
@@ -404,6 +425,26 @@ function onDeleteButtonClick(groupID,groupIndex,sideGroupsModule){
         sideGroupsModule.deleteGroupSection(groupIndex)
         uptexAPI.deleteGroup(groupID,twitch.getCurrentUser().id)
     })
+}
+
+function onHide_ShowButtonClic(imgHide_Show,groupID){
+    if(imgHide_Show.src=='https://uptextv.com/pe/hide.png'){ // you must hide the group Section
+        hideInHTML(groupID,null)
+        imgHide_Show.style.transform='scale(0)'
+        setTimeout(()=>{
+            imgHide_Show.src='https://uptextv.com/pe/show.png'      
+            imgHide_Show.style.transform='scale(1)'
+        },250)
+        uptexAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',true)
+    }else{// you must show the group Section
+        showInHTML(groupID,null)
+        imgHide_Show.style.transform='scale(0)'
+        setTimeout(()=>{
+            imgHide_Show.src='https://uptextv.com/pe/hide.png'      
+            imgHide_Show.style.transform='scale(1)'
+        },250)
+        uptexAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',false)
+    }
 }
 
 /**
@@ -605,6 +646,7 @@ function modifyStreamerViewerCount(groupID,streamerInfo){
  * @param {Object} streamerInfo 
  */
 function modifyStreamerGame(groupID,streamerInfo){
+    console.log(streamerInfo)
     let _streamerID = streamerInfo.broadcaster_id
     let streamerCurrentGame = streamerInfo.game_name
     let p = document.getElementById(groupID+_streamerID+"currentgame")

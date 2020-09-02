@@ -34,9 +34,8 @@ function getDB(){
  
 function getUser(userID){
     return new Promise((resolve,reject)=>{
-        getDB().then((db)=>{
+        getDB().then((db)=>{        
             var cursor=db.collection(user_collection).find({ID: userID})
-
             cursor.each(function(err, doc) {
                 if(err){
                     reject(err)
@@ -68,8 +67,6 @@ function getGroup(groupID,userID){
                     }else{
                         resolve(null)
                     }
-                }else{
-                    resolve(null)
                 }
             });
         }).catch((err)=>{
@@ -78,11 +75,11 @@ function getGroup(groupID,userID){
     })
 }
 
-function modifyGroup(groupID,userID,groupList){
+function modifyGroup(groupID,userID,groupObject){
     return new Promise((resolve,reject)=>{
         getDB().then((db)=>{
             let toReplace = {}
-            toReplace[groupID]=groupList
+            toReplace[groupID]=groupObject
             db.collection(user_collection).updateOne(
                 {ID: userID}, 
                 {
@@ -95,7 +92,6 @@ function modifyGroup(groupID,userID,groupList){
         })
     })
 }
-
 
 function decryptGroupID(cryptedGroupID){
     let groupID = ''
@@ -128,14 +124,17 @@ module.exports= {
             })
         })    
     },
-
+    
     addGroup(groupID,userID){
         return new Promise((resolve,reject)=>{
             modifyGroup(groupID,userID,
                 {
                     name:decryptGroupID(groupID),
                     list:[],
-                    liveColor:defaultLiveColor
+                    liveColor:defaultLiveColor,
+                    sortByIndex:0,
+                    isGroupHiden:false,
+                    groupIndex:0
                 }
                 ).then(()=>{
                     resolve()
@@ -177,15 +176,23 @@ module.exports= {
         })
     },
 
-    modifyLiveColor(groupID,userID,LiveColor){
+    setGroupProperty(groupID,userID,propertyName,propertyValue){
+        return new Promise((resolve,reject)=>{
+            getGroup(groupID,userID).then((groupObject)=>{       
+                groupObject[propertyName]=propertyValue
+                modifyGroup(groupID,userID,groupObject).then(()=>{
+                    resolve()
+                })
+            }).catch((err)=>{
+                reject(err)
+            })  
+        })
+    },
+
+    getGroupProperty(groupID,userID,propertyName){
         return new Promise((resolve,reject)=>{
             getGroup(groupID,userID).then((groupObject)=>{
-                if(groupID!=null){        
-                    groupObject['liveColor']=LiveColor
-                    modifyGroup(groupID,userID,groupObject).then(()=>{
-                        resolve()
-                    })
-                }
+                resolve(groupObject[propertyName])
             }).catch((err)=>{
                 reject(err)
             })
@@ -200,7 +207,10 @@ module.exports= {
                 newUser['112_105_110_110_101_100_32_115_116_114_101_97_109_101_114_115']={
                     name:'pinned streamers',
                     list:[],
-                    liveColor:defaultLiveColor
+                    liveColor:defaultLiveColor,
+                    sortByIndex:0,
+                    isGroupHiden:false,
+                    groupIndex:0
                 }
                 db.collection(user_collection).insertOne(newUser);
                 resolve()
@@ -260,6 +270,7 @@ module.exports= {
     /**
      * use to get groups 
      * @param {*} userID 
+     * @returns {Array} streamersID
      */
     getStreamers(userID){
         return new Promise((resolve,reject)=>{

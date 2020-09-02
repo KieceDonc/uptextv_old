@@ -22,17 +22,18 @@ class SideGroupsModule{
     constructor(){  
       watcher.on('load.sidenav',()=>{
         userID = twitch.getCurrentUser().id
-        socket.emit('setup',userID)
-        sideBottomBar.setup(this)
-        uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
-          groups = _groups
-          groups.forEach((currentGroup)=>{
-            setupGroupSection(currentGroup,this)
-          }) 
-          handleUpdateEach5min(this)
+        uptexAPI.setup(userID).then(()=>{
+          uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
+            groups = _groups
+            groups.forEach((currentGroup)=>{
+              setupGroupSection(currentGroup,this)
+            }) 
+            handleUpdateEach5min(this)
+          })
         }).catch((err)=>{
-          debug.error('error while trying to get groups through the api. err :',err )
+          debug.error('error:',err )
         })
+        sideBottomBar.setup(this)
       })
       watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
@@ -59,7 +60,10 @@ class SideGroupsModule{
         let newGroupObject = {
           name:groupID,
           list:[],
-          liveColor:defaultLiveColor
+          liveColor:defaultLiveColor,
+          sortByIndex:0,
+          isGroupHiden:false,
+          groupIndex:0
         }
         setupGroupSection(newGroupObject,this)
       }).catch((err)=>{
@@ -75,7 +79,6 @@ class SideGroupsModule{
 
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){
-  console.log('called')
   var currentGroupSection = groupSection.setup(currentGroup,groupsSection.length,sideGroupsModule) // groupsSection.length represent the position of the currentGroup
   groupsSection.push(currentGroupSection)
 }

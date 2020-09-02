@@ -238,7 +238,7 @@ class AddButton{
             let groupCryptedID = getGroupCryptedID(input.value)
             uptexAPI.isGroupAlreadyExist(groupCryptedID,sideGroupsModule.getUserID()).then((isGroupExist)=>{
                 if(isGroupExist){
-                    this.onInputvalidInput('This group name is already taken, you must choose an other one',inputMainDiv)
+                    this.onInvalidInput('This group name is already taken, you must choose an other one',inputMainDiv)
                 }else{
                     sideGroupsModule.addNewGroupSection(groupCryptedID)
                     inputMainDiv.remove()
