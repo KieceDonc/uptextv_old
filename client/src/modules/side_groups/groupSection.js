@@ -112,20 +112,19 @@ class groupSection{
                     }
                 }
             }
-            
+        })
+        console.log(this.groupObject)
+        goesOnline.forEach(streamerInfo => {
+            streamerGoesOnline(this.groupID,streamerInfo)
+        });
 
-            goesOnline.forEach(streamerInfo => {
-                streamerGoesOnline(this.groupID,streamerInfo)
-            });
+        goesOffline.forEach(streamerInfo =>{
+            streamerGoesOffline(this.groupID,streamerInfo)
+        })
 
-            goesOffline.forEach(streamerInfo =>{
-                streamerGoesOffline(this.groupID,streamerInfo)
-            })
-
-            updateOnline.forEach(streamerInfo=>{
-                modifyStreamerGame(this.groupID,streamerInfo)
-                modifyStreamerViewerCount(this.groupID,streamerInfo)
-            })
+        updateOnline.forEach(streamerInfo=>{
+            modifyStreamerGame(this.groupID,streamerInfo)
+            modifyStreamerViewerCount(this.groupID,streamerInfo)
         })
         this.updateVisual(oldGroup)
     }
@@ -192,6 +191,130 @@ class groupSection{
                 return -1
             }
         }
+    }
+}
+
+
+// this class is the tooltip display right to streamerInHTLM to show their streamt title
+// just call new streamerTitleToolTipHandler() to handle this option
+class streamTileToolTipHandler{
+    streamerInfo = null
+    aElement = null
+    elementToolTip = null
+    
+    thisInstance = this
+
+    constructor(_streamerInfo,_aElement){
+        this.streamerInfo = _streamerInfo
+        this.aElement = _aElement
+        this.setup();
+    }
+
+    setup(){
+        let setTimeOutDelete = null
+        let setTimeOutShow = null
+        this.aElement.addEventListener('mouseenter',()=>{
+            // so because you want to do cool animation like twitch you have here a problem
+            // when a stream title tooltip is already show ( you switch from a streamer to another) twitch delete the previous one and instanly show the over one
+            // so you're checking if streamer is streaming and then check if a tooltip already exist and handle it if yes
+            if(this.streamerInfo.isStreaming){
+                let elementToolTipAlreadyExist = document.getElementById('tooltip-layer-stream-title')
+                if(elementToolTipAlreadyExist!=null){
+                    elementToolTipAlreadyExist.remove()
+                    clearTimeout(setTimeOutDelete)
+                    this.showElement()
+                }else{
+                    setTimeOutShow = setTimeout(()=>{
+                        this.showElement()
+                    },2000)
+                }
+            }
+        })
+        this.aElement.addEventListener('mouseleave',()=>{
+            // for explication plz see commentary in addEventListener 'mouseover'
+
+            setTimeOutDelete = setTimeout(()=>{
+                if(this.elementToolTip!=null){
+                    this.elementToolTip.remove()
+                }
+            },100)
+            clearTimeout(setTimeOutShow)
+        })
+    }
+
+    showElement(){
+        let aRectTop = this.aElement.getBoundingClientRect().top
+        let aWidth = this.aElement.offsetWidth
+        let aHeight = this.aElement.offsetHeight
+        this.elementToolTip = this.getElement(aRectTop,aWidth,aHeight)
+        document.getElementById('root').children[0].appendChild(this.elementToolTip)
+    }
+
+    getElement(aRectTop,aWidth,aHeight){
+        /*
+        div0 <div class="tooltip-layer" style="transform: translate(0px, 356px); width: 242px; height: 42px;">
+        div1     <div class="rich-content-tooltip">
+        div2        <div style="width: 242px; height: 42px;">
+                    </div>
+        div3        <div class="tw-absolute tw-balloon tw-balloon--center tw-balloon--right tw-block" role="dialog">
+        div4            <div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2">
+        div5                <div class="rich-content-tooltip__pointer-target">
+        div6                    <div class="tw-pd-05">
+        div7                        <div class="online-side-nav-channel-tooltip__body tw-pd-x-05">
+        p0                               <p class="tw-c-text-base tw-ellipsis tw-line-clamp-2">
+                                                LIVE: Complexity vs. Astralis - ESL Pro League Season 12 - Group B - EU
+                                            </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        */
+
+        let div0 = document.createElement('div')
+        div0.className='tooltip-layer'
+        div0.id='tooltip-layer-stream-title'
+        div0.style.transform='translate('+(aWidth+5)+'px,'+(aRectTop+aHeight/2)+'px)'
+        div0.style.width = aWidth
+        div0.style.height = aHeight
+        
+        let div1 = document.createElement('div')
+        div1.className='rich-content-tooltip'
+        
+        let div2 = document.createElement('div')
+        div2.style.width = aWidth
+        div2.style.height = aHeight
+        
+        let div3 = document.createElement('div')
+        div3.className='tw-absolute tw-balloon tw-balloon--center tw-balloon--right tw-block'
+        
+        let div4 = document.createElement('div')
+        div4.className='tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2'
+        
+        let div5 = document.createElement('div')
+        div5.className='rich-content-tooltip__pointer-target'
+        
+        let div6 = document.createElement('div')
+        div6.className='tw-pd-05'
+        
+        let div7 = document.createElement('div')
+        div7.className='online-side-nav-channel-tooltip__body tw-pd-x-05'
+        
+        let p0 = document.createElement('p')
+        p0.className='tw-c-text-base tw-ellipsis tw-line-clamp-2'
+        p0.innerHTML=this.streamerInfo.title
+        
+        div0.appendChild(div1)
+        div1.appendChild(div2)
+        div1.appendChild(div3)
+        div3.appendChild(div4)
+        div4.appendChild(div5)
+        div5.appendChild(div6)
+        div6.appendChild(div7)
+        div7.appendChild(p0)
+        return div0
     }
 }
 
@@ -440,7 +563,7 @@ function onHide_ShowButtonClic(imgHide_Show,groupID){
         showInHTML(groupID,null)
         imgHide_Show.style.transform='scale(0)'
         setTimeout(()=>{
-            imgHide_Show.src='https://uptextv.com/pe/hide.png'      
+            imgHide_Show.src='https://uptextv.com/pe/hide.png'
             imgHide_Show.style.transform='scale(1)'
         },250)
         uptexAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',false)
@@ -479,6 +602,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     div0.style="transition-property: transform, opacity; transition-timing-function: ease; transition-duration: 250ms;"
     div0.id=groupObject['name']+_streamerID
 
+
     let div1 = document.createElement("div")
 
     let div2 = document.createElement("div")
@@ -486,7 +610,20 @@ function addStreamerInHTML(groupObject,streamerInfo){
 
     let a0 = document.createElement("a")
     a0.className = "side-nav-card__link tw-align-items-center tw-flex tw-flex-nowrap tw-full-width tw-interactive tw-link tw-link--hover-underline-none tw-pd-x-1 tw-pd-y-05"
-    a0.href="/"+streamerName.toLowerCase()
+    //a0.href="/"+streamerName.toLowerCase()
+    a0.style.cursor='pointer'
+
+    a0.addEventListener('click',()=>{
+        // https://stackoverflow.com/questions/40781219/calling-react-router-from-vanilla-js
+        // simulate navigation to where you want to be (changes URL but doesn't navigate)
+        window.history.pushState("","",'/'+streamerName);
+        // simulate navigation again so that
+        window.history.pushState("","",'/'+streamerName);
+        // when you simulate back, the router tries to get BACK to "/url"
+        window.history.go(-1);
+    
+    })
+    new streamTileToolTipHandler(streamerInfo,a0)
 
     let div3 = document.createElement("div")
     div3.id=groupObject['name']+_streamerID+"picture_profile"
@@ -650,6 +787,7 @@ function modifyStreamerGame(groupID,streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
     let streamerCurrentGame = streamerInfo.game_name
     let p = document.getElementById(groupID+_streamerID+"currentgame")
+    console.log(groupID+_streamerID+"currentgame")
     p.title=streamerCurrentGame
     p.innerHTML=streamerCurrentGame
 }
@@ -662,8 +800,8 @@ function modifyStreamerGame(groupID,streamerInfo){
 function streamerGoesOffline(groupID,streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
 
-    modifyStreamerGame(streamerInfo)
-    modifyStreamerViewerCount(streamerInfo)
+    modifyStreamerGame(groupID,streamerInfo)
+    modifyStreamerViewerCount(groupID,streamerInfo)
     // changing css properties of picture profile ( make it grey )
     let div_profile_picture = document.getElementById(groupID+_streamerID+"profile_picture")
     div_profile_picture.className = css_picture_profile_offline
@@ -685,8 +823,8 @@ function streamerGoesOffline(groupID,streamerInfo){
  */
 function streamerGoesOnline(groupID,streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
-    modifyStreamerGame(streamerInfo)
-    modifyStreamerViewerCount(streamerInfo)
+    modifyStreamerGame(groupID,streamerInfo)
+    modifyStreamerViewerCount(groupID,streamerInfo)
 
     let div9 = document.createElement("div")
     div9.id= groupID+_streamerID+"unknow0"

@@ -37,7 +37,7 @@ module.exports = {
    * {
    *    broadcaster_type      |string| 	User’s broadcaster type: "partner", "affiliate", or "".
    *    -------------------------------------------------------------------------------------------------------------- Overwrites      description 	         |string| 	User’s channel description.
-   *    display_name 	        |string| 	User’s display name.
+   *    display_name 	      |string| 	User’s display name.
    *    email 	              |string| 	User’s email address. Returned if the request includes the user:read:email scope.
    *    -------------------------------------------------------------------------------------------------------------- Overwrites      id 	                 |string| 	User’s ID.
    *    login 	              |string| 	User’s login name.
@@ -46,23 +46,23 @@ module.exports = {
    *    -------------------------------------------------------------------------------------------------------------- Overwrites      type 	                 |string| 	User’s type: "staff", "admin", "global_mod", or "".
    *    view_count 	          | int  |  Total number of views of the user’s channel.
    *    broadcaster_id 	      |string| 	Twitch User ID of this channel owner
-   *    broadcaster_name 	    |string| 	Twitch User name of this channel owner
+   *    broadcaster_name 	  |string| 	Twitch User name of this channel owner
    *    MAY NOT BE OVERWRITE IF STREAM IS OFFLINE -------------------------------------------------------------------- Overwrites      game_id 	             |string| 	Current game ID being played on the channel
    *    broadcaster_language  |string| 	Language of the channel
    *    title 	              |string| 	Title of the stream
-   *    description 	        |string| 	Description of the stream
+   *    description 	      |string| 	Description of the stream
    *    isStreaming           |boolean| if streaming = true else = false
    *    FROM THIS PART MAY NOT APPEAR IF STREAM OFFLINE
-   *    game_id 	            |string| 	ID of the game being played on the stream.
+   *    game_id 	          |string| 	ID of the game being played on the stream.
    *    id 	                  |string| 	Stream ID.
-   *    language 	            |string| 	Stream language.
+   *    language 	          |string| 	Stream language.
    *    pagination 	          |string| 	A cursor value, to be used in a subsequent request to specify the starting point of the next set of results.
    *    started_at 	          |string| 	UTC timestamp. 
-   *    tag_ids 	            |string| 	Shows tag IDs that apply to the stream.
+   *    tag_ids 	          |string| 	Shows tag IDs that apply to the stream.
    *    thumbnail_url         |string| 	Thumbnail URL of the stream. All image URLs have variable width and height. You can replace {width} and {height} with any values to get that size image
    *    title 	              |string| 	Stream title.
-   *    type 	                |string| 	Stream type: "live" or "" (in case of error).
-   *    user_id 	            |string| 	ID of the user who is streaming.
+   *    type 	              |string| 	Stream type: "live" or "" (in case of error).
+   *    user_id 	          |string| 	ID of the user who is streaming.
    *    user_name 	          |string| 	Display name corresponding to user_id.
    *    viewer_count          | int  |  Number of viewers watching the stream at the time of the query.
    * }

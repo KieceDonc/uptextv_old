@@ -6,13 +6,10 @@ const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
 const sideBottomBar = require('./sideBottomBar');
 
-const io = require('socket.io-client')
-const socket = io('https://uptextv.com:3000');
-
 const defaultLiveColor = '#007aa3'
 
 var groupsSection = new Array()
-var groups = new Array()
+//var groups = new Array()
 
 var userID // id of current user
 var streamerID // id of streamerID
@@ -23,9 +20,10 @@ class SideGroupsModule{
       watcher.on('load.sidenav',()=>{
         userID = twitch.getCurrentUser().id
         uptexAPI.setup(userID).then(()=>{
-          uptexAPI.getGroupsStreamers(userID).then((_groups)=>{
-            groups = _groups
+          uptexAPI.getGroupsStreamers(userID).then((groups)=>{
+            //groups = _groups
             groups.forEach((currentGroup)=>{
+              console.log(currentGroup)
               setupGroupSection(currentGroup,this)
             }) 
             handleUpdateEach5min(this)
@@ -73,7 +71,7 @@ class SideGroupsModule{
 
     deleteGroupSection(indexOfGroup){  
       groupsSection = groupsSection.splice(indexOfGroup, 1);
-      groups = groups.splice(indexOfGroup,1)
+      //groups = groups.splice(indexOfGroup,1)
     }
 }
 
@@ -92,13 +90,13 @@ function handleUpdateEach5min(sideGroupsModule){
 
 // handle to update streamers info
 function updateStreamersInfo(sideGroupsModule){
-    let oldGroups = groups.slice()
+  //let oldList = groups.slice()
 
     uptexAPI.getGroupsStreamers(userID).then((newGroups)=>{
-      groups = newGroups
+      //let groups = newGroups
       // your purpose here is to find the old group section index 
       // if not exist before ( a bit strange but this case could exist if, in the future, you allow user to add groups from the website version)
-      groups.forEach((currentNewGroup)=>{ // parsing newGroups
+      /*groups.forEach((currentNewGroup)=>{ // parsing newGroups
           let groupAlreadyExist = false
           let index = 0 
           let currentOldGroup = null
@@ -115,8 +113,38 @@ function updateStreamersInfo(sideGroupsModule){
           }else{ // exist so u update it
             groupsSection[index].onGroupUpdate(currentOldGroup['list'],currentNewGroup['list'])
           }
+        })*/
+        /*newGroups.forEach((currentNewGroup)=>{
+          let idToFind = currentNewGroup['name']
+          let founded = false
+          let index = -1 
+          do{
+            index++
+            let currentGroupSectionID = groupsSection[index].getGroupID()
+            founded = currentGroupSectionID === idToFind
+          }while(index<groupsSection.length&&!founded)
+          if(founded){
+            groupsSection[index].onGroupUpdate()
+          }else{
+            setupGroupSection(currentNewGroup,sideGroupsModule)
+          }
+        })*/
+        newGroups.forEach((currentNewGroup)=>{
+          let idToFind = currentNewGroup['name']
+          let founded = false
+          let index = -1 
+          do{
+            index++
+            let currentGroupSectionID = groupsSection[index].getGroupID()
+            founded = currentGroupSectionID === idToFind
+          }while(index<groupsSection.length&&!founded)
+          if(founded){
+            let oldList = groupsSection[index].getGroupList()
+            groupsSection[index].onGroupUpdate(oldList,newGroups[index]['list'])
+          }else{
+            setupGroupSection(currentNewGroup,sideGroupsModule)
+          }
         })
-        
     }).catch((err)=>{
         debug.error('error while trying to get pinned streamers through the api. err :',err )
     })
