@@ -12,24 +12,21 @@ class groupSection{
     groupObject=null
     groupID=''
     groupID_normal=''
-    groupIndex=0
 
     sideGroupsModule=null
 
-    constructor(_groupObject,_groupIndex,_sideGroupsModule){
+    constructor(_groupObject,_sideGroupsModule){
         this.groupObject = _groupObject
         this.groupID = this.groupObject.name
         this.groupID_normal = decryptGroupID(this.groupID)
-        this.groupIndex=_groupIndex
         this.sideGroupsModule=_sideGroupsModule
 
         if(shouldSetup(this.groupID)){
-            let isGroupHiden = this.groupObject['isGroupHiden']
-            setup(this.groupID,this.groupID_normal,this.groupIndex,this.sideGroupsModule,isGroupHiden)
+            setup(this.groupID,this.groupID_normal,this.groupObject['groupIndex'],this.sideGroupsModule,this.groupObject['isGroupHiden'])
             let sortByIndexValue = this.groupObject['sortByIndex']
             this.groupSortBy = groupSortBy.setup(this,sortByIndexValue)
             setupStreamers(this.groupObject,()=>{
-                if(isGroupHiden){
+                if(this.groupObject['isGroupHiden']){
                     hideInHTML(this.groupID,null)
                 }
             })
@@ -83,6 +80,17 @@ class groupSection{
 
     setGroupList(_list){
         this.groupObject.list = _list
+    }
+
+    getGroupIndex(){
+        return this.groupObject.groupIndex
+    }
+
+    setGroupIndex(index){
+        this.groupObject['groupIndex'] = index
+        uptexAPI.setGroupProperty(this.groupID,twitch.getCurrentUser().id,'groupIndex',index).catch((err)=>{
+            debug.error('error while calling api',err)
+        })
     }
 
     // this.groupObject has been update
@@ -226,7 +234,7 @@ class streamTileToolTipHandler{
                 }else{
                     setTimeOutShow = setTimeout(()=>{
                         this.showElement()
-                    },2000)
+                    },1500)
                 }
             }
         })
@@ -338,12 +346,14 @@ function shouldSetup(groupID){
  * @param {boolean} isGroupHiden
  */
 function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){ 
+
     let mainDivID = groupID+"_sideNavGroupSection"
     let parentDiv = document.getElementsByClassName('side-bar-contents')[0].firstChild.firstChild.firstChild // getting div parent
 
     if(parentDiv){
     // Start : Creating group section
     let groupSection = document.createElement("div") 
+    giveTransitionStyle(groupSection)
     groupSection.className="tw-relative tw-transition-group"
     groupSection.id=mainDivID
     parentDiv.prepend(groupSection) // placing groupSection on the top
@@ -351,6 +361,7 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
 
     // Start : Creating title like " chaines épinglées "
     let parentTitleDiv = document.createElement("div")
+    giveTransitionStyle(parentTitleDiv)
     parentTitleDiv.id=groupID+'_title'
     parentTitleDiv.className="side-nav-header tw-flex"
 
@@ -372,12 +383,6 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
         img.style.marginRight='0.5rem'
         img.style.width='var(--font-size-5)'
         img.style.height='var(--font-size-5)'
-    }
-
-    let giveTransitionStyle = function(element){
-        element.style.transitionProperty='transform, opacity'
-        element.style.transitionTimingFunction='ease'
-        element.style.transitionDuration='250ms'
     }
 
     let imgHide_Show = document.createElement('img')
@@ -421,15 +426,49 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     imgReorder.src='https://uptextv.com/pe/reorder.png'
     giveImgsDesireStyle(imgReorder)
 
-    imgReorder.addEventListener('click',function(){
-        onReorderButtonClick()
+    let divReorderMenu = document.createElement('div') // handle the settings menu 
+    giveTransitionStyle(divReorderMenu)
+    divReorderMenu.style.display='none'
+    divReorderMenu.style.transform='scale(0)'
+
+    let imgBackArrowReorderMenu = document.createElement('img')
+    imgBackArrowReorderMenu.src='https://uptextv.com/pe/back_arrow.png'
+    giveImgsDesireStyle(imgBackArrowReorderMenu)
+    imgBackArrowReorderMenu.addEventListener('click',function(){
+        onBackArrowReorderMenuButtonClick(divReorderMenu,divSettingsMenu)
     })
 
+    let imgArrowUp = document.createElement('img')
+    imgArrowUp.src='https://uptextv.com/pe/top_arrow.png'
+    giveImgsDesireStyle(imgArrowUp)
+    imgArrowUp.addEventListener('click',function(){
+        let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+        let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex)
+        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex((currentIndex-1))
+        if((currentIndex-1)>=0){
+            onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
+        }
+    })
+
+    let imgArrowDown = document.createElement('img')
+    imgArrowDown.src='https://uptextv.com/pe/bottom_arrow.png'
+    giveImgsDesireStyle(imgArrowDown)
+    imgArrowDown.addEventListener('click',function(){
+        let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+        let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex+1)
+        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex((currentIndex))
+        if((currentIndex+1)<=sideGroupsModule.getGroupsSection().length){
+            onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
+        }
+    })
+
+    imgReorder.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVREORDERMENU CUZ YOU PASS IT IN PARAMS
+        onReorderButtonClick(divReorderMenu,divSettingsMenu)
+    })
 
     imgSettings.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVSETTINGSMENU CUZ YOU PASS IT IN PARAMS
         onSettingsButtonClick(imgSettings,divSettingsMenu)
     })
-
 
     parentDiv.prepend(parentTitleDiv)
     parentTitleDiv.appendChild(titleDiv);
@@ -437,9 +476,13 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     titleDiv.appendChild(imgHide_Show)
     titleDiv.appendChild(imgSettings)
     titleDiv.appendChild(divSettingsMenu)
+    titleDiv.appendChild(divReorderMenu)
     divSettingsMenu.appendChild(imgBackArrowSettingsMenu)
     divSettingsMenu.appendChild(imgDelete)
     divSettingsMenu.appendChild(imgReorder)
+    divReorderMenu.appendChild(imgBackArrowReorderMenu)
+    divReorderMenu.appendChild(imgArrowUp)
+    divReorderMenu.appendChild(imgArrowDown)
     // End
     }else{
         debug.error('parentdiv is null, you should look at css properties about getElementsByClassName')
@@ -514,7 +557,6 @@ function onSettingsButtonClick(imgSettings,divSettingsMenu){
         divSettingsMenu.style.display='inline-flex'
         divSettingsMenu.style.transform='scale(1)'
     },250)
-
 }
 
 /**
@@ -574,10 +616,69 @@ function onHide_ShowButtonClic(imgHide_Show,groupID){
  * the reorder button has been click by the user
  * you must show the reorder menu
  */
-function onReorderButtonClick(){
-
+function onReorderButtonClick(divReorderMenu,divSettingsMenu){
+    divSettingsMenu.style.transform='scale(0)'
+    setTimeout(function(){
+        divSettingsMenu.style.display='none'
+        divReorderMenu.style.display='inline-flex'
+        divReorderMenu.style.transform='scale(1)'
+    },250)
 }
 
+/**
+ * the back arrow settings menu button has been click by the user
+ * you must hide the menu and show back the settings button
+ */
+function onBackArrowReorderMenuButtonClick(divReorderMenu,divSettingsMenu){
+    divReorderMenu.style.transform='scale(0)'
+    setTimeout(function(){
+        divReorderMenu.style.display='none'
+        divSettingsMenu.style.display=''
+        divSettingsMenu.style.transform='scale(1)'
+    },250)
+}
+
+/**
+ * handle HTML / API move up and down group section. 
+ * Your only problem is to know which one you have to move up / down and passing them in params
+ * @param {groupSection} groupSectionToMoveUp 
+ * @param {groupSection} groupSectionToMoveDown 
+ */
+function onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule){
+    let HTMLElementMoveUp = document.getElementById(groupSectionToMoveUp.getGroupID()+'_sideNavGroupSection');
+    let HTMLElementTitleMoveUp = document.getElementById(groupSectionToMoveUp.getGroupID()+'_title')
+    let groupSectionToMoveUp_newIndex = groupSectionToMoveUp.getGroupIndex()-1
+
+    let HTMLElementMoveDown = document.getElementById(groupSectionToMoveDown.getGroupID()+'_sideNavGroupSection')
+    let HTMLElementTitleMoveDown = document.getElementById(groupSectionToMoveDown.getGroupID()+'_title')
+    let groupSectionToMoveDown_newIndex = groupSectionToMoveDown.getGroupIndex()+1
+
+    sideGroupsModule.groupsSectionSwitchElements(groupSectionToMoveUp.getGroupIndex(),groupSectionToMoveDown.getGroupIndex())
+    groupSectionToMoveUp.setGroupIndex(groupSectionToMoveUp_newIndex)
+    groupSectionToMoveDown.setGroupIndex(groupSectionToMoveDown_newIndex)
+
+    HTMLElementMoveUp.style.transform='translateY(-'+(HTMLElementTitleMoveDown.offsetHeight+HTMLElementMoveDown.offsetHeight)+'px)'
+    HTMLElementTitleMoveUp.style.transform='translateY(-'+(HTMLElementTitleMoveDown.offsetHeight+HTMLElementMoveDown.offsetHeight)+'px)'
+    HTMLElementMoveDown.style.transform='translateY('+(HTMLElementTitleMoveUp.offsetHeight+HTMLElementMoveUp.offsetHeight)+'px)'
+    HTMLElementTitleMoveDown.style.transform='translateY('+(HTMLElementTitleMoveUp.offsetHeight+HTMLElementMoveUp.offsetHeight)+'px)'
+    setTimeout(()=>{
+        let toChange = [HTMLElementMoveUp,HTMLElementMoveDown,HTMLElementTitleMoveUp,HTMLElementTitleMoveDown]
+
+        // you set transition duration to 0 so you can cancel transform without wait another 250ms
+        toChange.forEach((currentElement)=>{
+            currentElement.style.transitionDuration='0ms'
+            currentElement.style.transform=''
+            setTimeout(()=>{
+                currentElement.style.transitionDuration='250ms'
+            },10)
+        })
+        HTMLElementMoveUp.after(HTMLElementTitleMoveDown)
+        HTMLElementMoveUp.after(HTMLElementMoveDown)
+        HTMLElementTitleMoveUp.after(HTMLElementMoveUp)
+        HTMLElementTitleMoveDown.after(HTMLElementMoveDown)
+    },250)
+    
+}
 
 /**
  * use to add streamer in html / css 
@@ -856,6 +957,11 @@ function makeTranslateYForOneStreamer(groupID,streamerInfo,oldPosition,newPositi
     mainDiv.style.transform = "translateY("+translateValue+"px)";
 }
 
+function giveTransitionStyle(element){
+    element.style.transitionProperty='transform, opacity'
+    element.style.transitionTimingFunction='ease'
+    element.style.transitionDuration='250ms'
+}
 /**
  * group id is in ascii code and each letter is separate by _
  * ex:
@@ -894,7 +1000,7 @@ function getViewerCountWithSpaces(viewerCount){
 
 
 module.exports = {
-    setup:function(_groupObject,_groupIndex,_sideGroupsModule){
-        return new groupSection(_groupObject,_groupIndex,_sideGroupsModule)
+    setup:function(_groupObject,_sideGroupsModule){
+        return new groupSection(_groupObject,_sideGroupsModule)
     }
 }
