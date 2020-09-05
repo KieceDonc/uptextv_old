@@ -1,0 +1,17 @@
+  {
+  "manifest_version": 2,
+  "name": "uptextv",
+  "version": "1.2",
+
+  "description": "Pin on the top your favorite channels on twitch",
+
+  "permissions": ["*://*.twitch.tv/*"],
+  "web_accessible_resources": ["uptextv.js"],
+  "content_scripts": [
+    {
+      "all_frames": true,
+      "matches": ["*://*.twitch.tv/*"],
+      "js": ["./run.js"]
+    }
+  ]
+}

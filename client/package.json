@@ -1,11 +1,12 @@
 {
-  "name": "twitch_pin_extension",
+  "name": "uptextv",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
     "build": "browserify ./src/index.js -o /var/www/pe/bundle.js",
-    "watch": "watchify ./src/index.js -o /var/www/pe/bundle.js"
+    "watch": "watchify ./src/index.js -o /var/www/pe/bundle.js",
+    "release": "browserify ./src/index.js -o ./release/uptextv.js && javascript-obfuscator ./release/uptextv.js --output ./release/uptextv.js"
   },
   "author": "",
   "license": "ISC",
@@ -37,6 +38,7 @@
     "gulp-sourcemaps": "^2.6.5",
     "gulp-tar": "^3.1.0",
     "gulp-uglify": "^3.0.2",
+    "javascript-obfuscator": "^2.0.0",
     "jquery": "^3.5.1",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",

@@ -8,12 +8,12 @@ const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar
 
 class groupSection{
 
-    groupSortBy=null
+    /*groupSortBy=null
     groupObject=null
     groupID=''
     groupID_normal=''
 
-    sideGroupsModule=null
+    sideGroupsModule=null*/
 
     constructor(_groupObject,_sideGroupsModule){
         this.groupObject = _groupObject
@@ -206,11 +206,11 @@ class groupSection{
 // this class is the tooltip display right to streamerInHTLM to show their streamt title
 // just call new streamerTitleToolTipHandler() to handle this option
 class streamTileToolTipHandler{
-    streamerInfo = null
+    /*streamerInfo = null
     aElement = null
     elementToolTip = null
     
-    thisInstance = this
+    thisInstance = this*/
 
     constructor(_streamerInfo,_aElement){
         this.streamerInfo = _streamerInfo

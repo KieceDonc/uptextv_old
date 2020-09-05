@@ -3,9 +3,9 @@ const twitch = require('../../utils/twitch')
 
 class groupSortBy{
 
-  sortGroupStreamersFunction = null 
+  /*sortGroupStreamersFunction = null 
   currentGroupSection = null
-  currentIndexSortBy = 0 // index of the function to call to sort by
+  currentIndexSortBy = 0 // index of the function to call to sort by*/
 
   constructor(_currentGroupSection,_currentIndexSortBy){
     this.currentGroupSection = _currentGroupSection

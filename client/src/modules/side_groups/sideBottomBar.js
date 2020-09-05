@@ -8,16 +8,11 @@ let sideGroupsModule
 
 class sideBottomBar{
 
-    addButton = new AddButton
-    deleteButton = new DeleteButton
-    reorderButton = new ReorderButton
-    premiumButton = new PremiumButton
-    settingsButton = new SettingsButton
-
-    buttons=[this.addButton,this.deleteButton,this.reorderButton,this.premiumButton,this.settingsButton]
+    //buttons=[new AddButton,new DeleteButton,new ReorderButton,new PremiumButton,new SettingsButton]
 
     constructor(_sideGroupsModule){
         sideGroupsModule=_sideGroupsModule
+        this.buttons=[new AddButton,new DeleteButton,new ReorderButton,new PremiumButton,new SettingsButton]
         this.setup()
     }
 
@@ -108,7 +103,9 @@ class sideBottomBar{
  * handle all process of the add button
  */
 class AddButton{
-    image_url='https://uptextv.com/pe/add.png'
+    constructor(){
+        this.image_url='https://uptextv.com/pe/add.png'
+    }
 
     // call when user click on '+' buton in the side bottom bar
     // it basically add a temp title / input so user can decide the name of the new group
@@ -278,7 +275,9 @@ class AddButton{
  * handle all process of the delete button
  */
 class DeleteButton{
-    image_url='https://uptextv.com/pe/less.png'
+    constructor(){
+        this.image_url='https://uptextv.com/pe/less.png'
+    }
 
     onClick(deleteButtonTD){
         let backgroundColor = deleteButtonTD.style.backgroundColor
@@ -294,7 +293,9 @@ class DeleteButton{
  * handle all process of the Reorder button
  */
 class ReorderButton{
-    image_url='https://uptextv.com/pe/reorder.png'
+    constructor(){
+        this.image_url='https://uptextv.com/pe/reorder.png'
+    }
 
     onClick(){
         
@@ -305,7 +306,9 @@ class ReorderButton{
  * handle all process of the Premium button
  */
 class PremiumButton{
-    image_url='https://uptextv.com/pe/premium.png'
+    constructor(){
+        this.image_url='https://uptextv.com/pe/premium.png'
+    }
 
     onClick(){
         
@@ -316,7 +319,9 @@ class PremiumButton{
  * handle all process of the settings button
  */
 class SettingsButton{
-    image_url='https://uptextv.com/pe/settings.png'
+    constructor(){
+        this.image_url='https://uptextv.com/pe/settings.png'
+    }
 
     onClick(){
         

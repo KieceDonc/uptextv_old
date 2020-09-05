@@ -21,7 +21,7 @@
 
     debug.log(`Uptex v${debug.version} loaded. ${process.env.NODE_ENV} @ ${process.env.GIT_REV}`);
 
-    window.BetterTTV = {
+    window.Uptextv = {
         version: debug.version,
         settings: require('./settings'),
         watcher: {

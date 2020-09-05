@@ -1,4 +1,3 @@
-const api = require('./utils/api');
 const debug = require('./utils/debug');
 const twitch = require('./utils/twitch');
 const SafeEventEmitter = require('./utils/safe-event-emitter');
@@ -194,18 +193,6 @@ class Watcher extends SafeEventEmitter {
         this.vodChatObserver();
         this.routeObserver();
         this.squadChatObserver();
-
-        require('./watchers/chat-message-handler.js', {mode: (base, files) => {
-            return files.map(module => {
-                return `
-                    try {
-                        require('${module}');
-                    } catch (e) {
-                        debug.error('Failed to load watcher ${module}', e.stack);
-                    }
-                `;
-            }).join(' ');
-        }});
 
         debug.log('Watcher started');
     }
