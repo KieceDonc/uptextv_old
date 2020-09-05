@@ -1,5 +1,6 @@
 const $ = require('jquery');
 const pin_icon_mouse_over_url = "https://uptextv.com/pe/pin-icon.svg"
+const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
 
 var sideGroupsModule
 
@@ -50,6 +51,22 @@ function setup(){
       button0.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
       button0.addEventListener('click', function(){
         buttonTreatment()
+      })
+
+      // you have a small bug when you switch from light to dark 
+      // button rgba aren't the same so you handle it here
+      dark_light_mode_watcher.onDarkMode(()=>{
+        if(!isMenuToPinSetup()){
+            button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
+        }
+      })
+
+      // you have a small bug when you switch from light to dark 
+      // button rgba aren't the same so you handle it here
+      dark_light_mode_watcher.onLightMode(()=>{
+          if(!isMenuToPinSetup()){
+            button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
+          }
       })
   
       let div4 = document.createElement("div")
@@ -236,6 +253,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     },250)
     
 }
+
 
 
 // this part handle when menu to pin need to be close

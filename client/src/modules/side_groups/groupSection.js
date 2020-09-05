@@ -2,6 +2,7 @@ const uptexAPI = require('./uptex-api')
 const groupSortBy = require('./groupSortBy')
 const debug = require('../../utils/debug')
 const twitch = require('../../utils/twitch')
+const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
 
 const css_picture_profile_online = "side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
 const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar--offline tw-align-items-center tw-flex-shrink-0"
@@ -78,6 +79,10 @@ class groupSection{
         return this.groupObject.list
     }
 
+    getGroupObject(){
+        return this.groupObject
+    }
+
     setGroupList(_list){
         this.groupObject.list = _list
     }
@@ -95,11 +100,12 @@ class groupSection{
 
     // this.groupObject has been update
     // you must parse it and make thing with it 
-    onGroupUpdate(oldGroup,newGroup){
+    onGroupUpdate(newGroup){
         let goesOnline = new Array()
         let goesOffline = new Array()
         let updateOnline = new Array()
-        newGroup.forEach((newStreamerInfo)=>{
+        let oldGroup = this.groupObject['list']
+        newGroup['list'].forEach((newStreamerInfo)=>{
             let oldStreamerInfo = -1
             for(let y=0;y<oldGroup.length;y++){ // trying to find oldStreamerInfo in oldGroup
                 if(oldGroup[y].broadcaster_id==newStreamerInfo.broadcaster_id){
@@ -121,7 +127,6 @@ class groupSection{
                 }
             }
         })
-        console.log(this.groupObject)
         goesOnline.forEach(streamerInfo => {
             streamerGoesOnline(this.groupID,streamerInfo)
         });
@@ -135,6 +140,7 @@ class groupSection{
             modifyStreamerViewerCount(this.groupID,streamerInfo)
         })
         this.updateVisual(oldGroup)
+        this.groupObject=newGroup
     }
 
 
@@ -374,8 +380,12 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     titleH5.className="tw-font-size-6 tw-semibold tw-upcase"
     titleH5.innerHTML=groupID_normal
 
+    let imgsToWatchDarkLightMode = new Array()
     let giveImgsDesireStyle = function(img){
-        img.style.filter='brightness(0) invert(1)'
+        imgsToWatchDarkLightMode.push(img)
+        if(dark_light_mode_watcher.isInDarkMode()){
+            img.style.filter='brightness(0) invert(1)'
+        }
         img.style.cursor='pointer'
         img.style.marginTop='auto'
         img.style.marginBottom='auto'
@@ -468,6 +478,21 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
 
     imgSettings.addEventListener('click',function(){ // MUST STAY AFTER THE DECLARATION OF DIVSETTINGSMENU CUZ YOU PASS IT IN PARAMS
         onSettingsButtonClick(imgSettings,divSettingsMenu)
+    })
+
+
+    // every time user switch to dark mode we change imgs to white ( from black )
+    dark_light_mode_watcher.onDarkMode(()=>{
+        imgsToWatchDarkLightMode.forEach((currentElement)=>{
+            currentElement.style.filter='brightness(0) invert(1)'
+        })
+    })
+
+    // every time user switch to dark mode we change imgs to black ( from white )
+    dark_light_mode_watcher.onLightMode(()=>{
+        imgsToWatchDarkLightMode.forEach((currentElement)=>{
+            currentElement.style.filter=''
+        })
     })
 
     parentDiv.prepend(parentTitleDiv)
@@ -711,7 +736,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
 
     let a0 = document.createElement("a")
     a0.className = "side-nav-card__link tw-align-items-center tw-flex tw-flex-nowrap tw-full-width tw-interactive tw-link tw-link--hover-underline-none tw-pd-x-1 tw-pd-y-05"
-    //a0.href="/"+streamerName.toLowerCase()
+    a0.href="/"+streamerName.toLowerCase()
     a0.style.cursor='pointer'
     a0.onclick=function(){
         return false

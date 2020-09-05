@@ -199,7 +199,7 @@ module.exports = {
     getStreamer(streamerID){
         return new Promise((resolve,reject)=>{
 
-            const promises = new Array()
+            let promises = new Array()
             
             promises.push(this.getUser(streamerID),this.getStream_1(streamerID),this.getStream_2(streamerID))
 

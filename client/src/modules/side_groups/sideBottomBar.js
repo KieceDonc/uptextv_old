@@ -1,5 +1,7 @@
 const debug = require('../../utils/debug')
 const uptexAPI = require('./uptex-api')
+const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+
 
 let valid_img_url = 'https://uptextv.com/pe/valid.png'
 let cancel_img_url = 'https://uptextv.com/pe/cancel.png'
@@ -67,6 +69,7 @@ class sideBottomBar{
 
                 let tds = new Array()
 
+                let imgsToWatchDarkLightMode = []
                 this.buttons.forEach((currentButton)=>{
                     let currentTD = document.createElement('td')
                     currentTD.style.width='20%'
@@ -74,7 +77,12 @@ class sideBottomBar{
                     
                     let currentImage = document.createElement('img')
                     currentImage.src=currentButton.image_url
-                    currentImage.style.filter="brightness(0) invert(1)"
+
+                    // detect is page is in dark mode or not
+                    if(dark_light_mode_watcher.isInDarkMode()){
+                        currentImage.style.filter="brightness(0) invert(1)"
+                    }
+
                     currentImage.style.cursor='pointer'
                     currentImage.addEventListener('click', ()=>{
                         currentButton.onClick(currentTD)
@@ -83,7 +91,22 @@ class sideBottomBar{
                     currentTD.append(currentImage)
 
                     tds.push(currentTD)
+                    imgsToWatchDarkLightMode.push(currentImage)
                 })        
+
+                // every time user switch to dark mode we change side bottom bar imgs to white ( from black )
+                dark_light_mode_watcher.onDarkMode(()=>{
+                    imgsToWatchDarkLightMode.forEach((currentElement)=>{
+                        currentElement.style.filter='brightness(0) invert(1)'
+                    })
+                })
+                
+                // every time user switch to dark mode we change side bottom bar imgs to black ( from white )
+                dark_light_mode_watcher.onLightMode(()=>{
+                    imgsToWatchDarkLightMode.forEach((currentElement)=>{
+                        currentElement.style.filter=''
+                    })
+                })
 
                 sideNav.firstChild.firstChild.append(div0)
                 div0.append(table0)
