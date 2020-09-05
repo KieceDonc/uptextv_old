@@ -713,7 +713,9 @@ function addStreamerInHTML(groupObject,streamerInfo){
     a0.className = "side-nav-card__link tw-align-items-center tw-flex tw-flex-nowrap tw-full-width tw-interactive tw-link tw-link--hover-underline-none tw-pd-x-1 tw-pd-y-05"
     //a0.href="/"+streamerName.toLowerCase()
     a0.style.cursor='pointer'
-
+    a0.onclick=function(){
+        return false
+    }
     a0.addEventListener('click',()=>{
         // https://stackoverflow.com/questions/40781219/calling-react-router-from-vanilla-js
         // simulate navigation to where you want to be (changes URL but doesn't navigate)

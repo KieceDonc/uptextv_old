@@ -1,3 +1,4 @@
+const $ = require('jquery');
 const pin_icon_mouse_over_url = "https://uptextv.com/pe/pin-icon.svg"
 
 var sideGroupsModule
@@ -171,6 +172,9 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
 
     let div3 = document.createElement('div')
     div3.className="tw-tooltip tw-tooltip--align-center tw-tooltip--up"
+    div3.style.maxHeight='250px'
+    div3.style.maxWidth='250px'
+    div3.style.pointerEvents='all'
 
     div0.append(div1)
     div1.append(div2)
@@ -217,6 +221,56 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         div_current_group.append(label_current_group)
         div3.append(div_current_group)
     })
+
+    // adding scroll bar only when it's necessary
+    if(div3.offsetHeight>250){
+        div3.style.overflowY='scroll'
+    }
+    if(div3.offsetWidth>250){
+        div3.style.overflowX='scroll'
+    }
+
+    // setTimeout is necessary so it don't trigger click event when you just click on add menu to pin button
+    setTimeout(()=>{ 
+        autoCloseMenuToPinHandler(div3)
+    },250)
+    
+}
+
+
+// this part handle when menu to pin need to be close
+function autoCloseMenuToPinHandler(div3){
+
+    let closeMenuToPin = ()=>{
+        if(isMenuToPinSetup()){
+            deleteMenuToPin()
+            changePinButtonBackgroundColorToNormal()
+        }
+        scrollableElement.removeEventListener('scroll',functionOnScrollEvent,false)
+        document.removeEventListener('click',onClickDocument)
+    }
+
+    // this part handle when user scroll and you need to close menu to pin
+    // you have to call removeEventListener cuz scroll event is call many many times
+    let scrollableElement = $('.simplebar-scroll-content')[1]
+    let functionOnScrollEvent = ()=>{
+        closeMenuToPin()
+    }
+    scrollableElement.addEventListener('scroll',functionOnScrollEvent,false)
+
+    // this part handle when user click somewhere
+    // we check if this is in pin menu, if yes you do nothing else you close the menu
+    let isClickInsideMenuToPin = (x,y)=>{
+        let rect = div3.getBoundingClientRect()
+        return x>=rect.left&&x<=rect.right&&y>=rect.top&&y<=rect.bottom
+    }
+
+    let onClickDocument = (e)=>{
+        if(!isClickInsideMenuToPin(e.clientX,e.clientY)){
+            closeMenuToPin()
+        }
+    }
+    document.addEventListener('click',onClickDocument)
 }
 
 function deleteMenuToPin(){
