@@ -1,6 +1,5 @@
 const io = require('socket.io-client')
 const socket = io('https://uptextv.com:3000');
-const uptexAPI = require('../../utils/uptex-api.js')
 
 module.exports = {
     // make an api call to get all pinned streamers by user

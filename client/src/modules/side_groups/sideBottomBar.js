@@ -14,7 +14,7 @@ class sideBottomBar{
 
     constructor(_sideGroupsModule){
         sideGroupsModule=_sideGroupsModule
-        this.buttons=[new AddButton,new DeleteButton,new ReorderButton,new PremiumButton,new SettingsButton]
+        this.button=new AddButton
         this.setup()
     }
 
@@ -37,17 +37,15 @@ class sideBottomBar{
         if(this.shouldSetup()){
             /*
             <div class="side-nav-search-input tw-border-t tw-pd-1">
-            <table style="width: 100%;">  
-                    <tbody>
-                        <tr style="">    
-                            <td class="tw-pd-1" style="width: 20%;"><img src="https://uptextv.com/pe/add.png" style="filter: brightness(0) invert(1);"></td>
-                            <td class="tw-pd-1" style="width: 20%;"><img src="https://uptextv.com/pe/less.png" style="filter: brightness(0) invert(1);"></td>
-                            <td class="tw-pd-1" style="width: 20%;"><img src="https://uptextv.com/pe/reorder.png" style="filter: brightness(0) invert(1);"></td>
-                            <td class="tw-pd-1" style="width: 20%;"><img src="https://uptextv.com/pe/premium.png" style="filter: brightness(0) invert(1);"></td>
-                            <td class="tw-pd-1" style="width: 20%;"><img src="https://uptextv.com/pe/settings.png" style="filter: brightness(0) invert(1);"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="tw-search-input" >
+                    <div class="tw-relative">
+                        <button class="tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05">
+                            <p style="text-align: center;">
+                                Add new group
+                            </p>
+                        </button>
+                    </div>
+                </div>
             </div>
                 
                 */
@@ -59,62 +57,29 @@ class sideBottomBar{
                 let div0 = document.createElement('div')
                 div0.id="sideBottomBar"
                 div0.className="side-nav-search-input tw-border-t tw-pd-1"
+                div0.style.maxHeight = document.getElementsByClassName('side-nav-search-input')[0].offsetHeight // search input offsetHeight
 
-                let table0 = document.createElement('table')
-                table0.style.width="100%"
+                let div1 = document.createElement('div')
+                div1.className='tw-search-input'
 
-                let tbody0 = document.createElement('tbody')
+                let div2 = document.createElement('div')
+                div2.className='tw-relative'
 
-                let tr0 = document.createElement('tr')
-
-                let tds = new Array()
-
-                let imgsToWatchDarkLightMode = []
-                this.buttons.forEach((currentButton)=>{
-                    let currentTD = document.createElement('td')
-                    currentTD.style.width='20%'
-                    currentTD.className='tw-pd-1'
-                    
-                    let currentImage = document.createElement('img')
-                    currentImage.src=currentButton.image_url
-
-                    // detect is page is in dark mode or not
-                    if(dark_light_mode_watcher.isInDarkMode()){
-                        currentImage.style.filter="brightness(0) invert(1)"
-                    }
-
-                    currentImage.style.cursor='pointer'
-                    currentImage.addEventListener('click', ()=>{
-                        currentButton.onClick(currentTD)
-                    })
-
-                    currentTD.append(currentImage)
-
-                    tds.push(currentTD)
-                    imgsToWatchDarkLightMode.push(currentImage)
-                })        
-
-                // every time user switch to dark mode we change side bottom bar imgs to white ( from black )
-                dark_light_mode_watcher.onDarkMode(()=>{
-                    imgsToWatchDarkLightMode.forEach((currentElement)=>{
-                        currentElement.style.filter='brightness(0) invert(1)'
-                    })
-                })
-                
-                // every time user switch to dark mode we change side bottom bar imgs to black ( from white )
-                dark_light_mode_watcher.onLightMode(()=>{
-                    imgsToWatchDarkLightMode.forEach((currentElement)=>{
-                        currentElement.style.filter=''
-                    })
+                let button0 = document.createElement('button')
+                button0.className='tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05'
+                button0.addEventListener('click',()=>{
+                    this.button.onClick()
                 })
 
-                sideNav.firstChild.firstChild.append(div0)
-                div0.append(table0)
-                table0.append(tbody0)
-                tbody0.append(tr0)
-                tds.forEach((currentTD)=>{
-                    tr0.append(currentTD)
-                }) 
+                let p0 = document.createElement('p')
+                p0.style.textAlign='center'
+                p0.innerHTML='Add a new group'
+
+                sideNav.firstChild.firstChild.appendChild(div0)
+                div0.appendChild(div1)
+                div1.appendChild(div2)
+                div2.appendChild(button0)
+                button0.appendChild(p0)
             }else{
                 debug.error('error while trying to find sideNav id in sideBottomBar. SideNav is null')
             }
@@ -126,9 +91,6 @@ class sideBottomBar{
  * handle all process of the add button
  */
 class AddButton{
-    constructor(){
-        this.image_url='https://uptextv.com/pe/add.png'
-    }
 
     // call when user click on '+' buton in the side bottom bar
     // it basically add a temp title / input so user can decide the name of the new group
@@ -291,63 +253,6 @@ class AddButton{
             p0.style.marginTop='0.5rem'
             inputMainDiv.children[1].append(p0)
         }
-    }
-}
-
-/**
- * handle all process of the delete button
- */
-class DeleteButton{
-    constructor(){
-        this.image_url='https://uptextv.com/pe/less.png'
-    }
-
-    onClick(deleteButtonTD){
-        let backgroundColor = deleteButtonTD.style.backgroundColor
-        if(backgroundColor.length){ // checking if the button as a background button ( if yes, the user is in "delete menu")
-            deleteButtonTD.style.backgroundColor=""
-        }else{ // user isn't in "delete menu"
-            deleteButtonTD.style.backgroundColor="darkgray"
-        }
-    }
-}
-
-/**
- * handle all process of the Reorder button
- */
-class ReorderButton{
-    constructor(){
-        this.image_url='https://uptextv.com/pe/reorder.png'
-    }
-
-    onClick(){
-        
-    }
-}
-
-/**
- * handle all process of the Premium button
- */
-class PremiumButton{
-    constructor(){
-        this.image_url='https://uptextv.com/pe/premium.png'
-    }
-
-    onClick(){
-        
-    }
-}
-
-/**
- * handle all process of the settings button
- */
-class SettingsButton{
-    constructor(){
-        this.image_url='https://uptextv.com/pe/settings.png'
-    }
-
-    onClick(){
-        
     }
 }
 

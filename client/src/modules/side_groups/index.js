@@ -179,8 +179,7 @@ function updateStreamersInfo(sideGroupsModule){
             founded = currentGroupSectionID === idToFind
           }while(index<groupsSection.length&&!founded)
           if(founded){
-            let oldList = groupsSection[index].getGroupObject()
-            groupsSection[index].onGroupUpdate(oldList,newGroups[index])
+            groupsSection[index].onGroupUpdate(currentNewGroup)
           }else{
             setupGroupSection(currentNewGroup,sideGroupsModule)
           }

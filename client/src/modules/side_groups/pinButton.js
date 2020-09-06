@@ -94,6 +94,7 @@ function setup(){
       let img0 = document.createElement("img")
       img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
       img0.src= pin_icon_mouse_over_url//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+      img0.style.maxWidth='none'
   
       let span0 = document.createElement("span")
       span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"

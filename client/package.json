@@ -6,7 +6,7 @@
   "scripts": {
     "build": "browserify ./src/index.js -o /var/www/pe/bundle.js",
     "watch": "watchify ./src/index.js -o /var/www/pe/bundle.js",
-    "release": "browserify ./src/index.js -o ./release/uptextv.js && javascript-obfuscator ./release/uptextv.js --output ./release/uptextv.js"
+    "release": "browserify ./src/index.js -o ./release/uptextv.js && javascript-obfuscator ./release/uptextv.js --output ./release/uptextv.js --identifier-names-generator mangled --simplify false --compact true --string-array false"
   },
   "author": "",
   "license": "ISC",
