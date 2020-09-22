@@ -6,7 +6,7 @@
   "scripts": {
     "build": "browserify ./src/index.js -o /var/www/pe/bundle.js",
     "watch": "watchify ./src/index.js -o /var/www/pe/bundle.js",
-    "release": "browserify ./src/index.js -o ./release/uptextv-bundle.js && javascript-obfuscator ./release/uptextv-bundle.js --output ./release/uptextv.js --identifier-names-generator mangled --simplify false --compact true --string-array false && mkdir ../to-zip/ && mkdir ../to-zip/mozilla_extension/ && cp ../client -r ../to-zip && mv ../to-zip/client ../to-zip/source_code && cp release/README.md ../to-zip/README.md && cp release/manifest.json ../to-zip/mozilla_extension/manifest.json && cp release/run.js ../to-zip/mozilla_extension/run.js && cp release/uptextv.js ../to-zip/mozilla_extension/uptextv.js && zip -r ../uptextv.zip /usr/uptextv/to-zip/* && rm ../to-zip -r"
+    "release": "browserify ./src/index.js -o ./release/uptextv-bundle.js && javascript-obfuscator ./release/uptextv-bundle.js --output ./release/uptextv.js --identifier-names-generator mangled --simplify false --compact true --string-array false && mkdir ../to-zip/ && mkdir ../to-zip/mozilla_extension/ && cp ../client -r ../to-zip && mv ../to-zip/client ../to-zip/source_code && cp release/README.md ../to-zip/README.md && cp release/manifest.json ../to-zip/mozilla_extension/manifest.json && cp release/run.js ../to-zip/mozilla_extension/run.js && cp release/uptextv.js ../to-zip/mozilla_extension/uptextv.js && cd ../to-zip/ && zip -r uptextv.zip * && mv uptextv.zip ../uptextv.zip && cd ../client/ && rm -r ../to-zip && echo done"
   },
   "author": "",
   "license": "ISC",

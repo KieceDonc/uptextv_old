@@ -1,7 +1,7 @@
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017"; 
 const user_collection = "users"
-const dbName = 'pe_db';
+const dbName = 'api_db';
 const defaultLiveColor = '#007aa3'
 
 /**

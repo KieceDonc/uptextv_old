@@ -4,8 +4,14 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "website":"node src/index.js"
+    "website": "node src/website.js"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "https": "^1.0.0",
+    "mongodb": "^3.6.2"
+  }
 }

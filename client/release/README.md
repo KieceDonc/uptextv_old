@@ -1,7 +1,7 @@
 mozilla_extension -> folder of the web extension use by the user
 source_code -> my code
 source_code/modules/ -> library
-source_code/release/ -> use to welcome compiled file ( just continue reading you will understand )
+source_code/release/ -> use to welcome compiled file + some usefull file for release ( just continue reading you will understand )
 source_code/src/ -> my code 
 package.json & package-lock.json -> library handler / command handler and others things
 

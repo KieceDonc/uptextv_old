@@ -3,7 +3,7 @@
   "name": "uptextv",
   "version": "1.2",
 
-  "description": "Pin on the top your favorite channels on twitch",
+  "description": "Pin and categorize your favorite channels on twitch",
 
   "permissions": ["*://*.twitch.tv/*"],
   "web_accessible_resources": ["uptextv.js"],
