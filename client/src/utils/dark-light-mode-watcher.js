@@ -10,17 +10,24 @@ const dark_light_mode_observer = new MutationObserver((mutations) => {
     mutations.forEach(mu => {
       if (mu.type !== "attributes" && mu.attributeName !== "class") return;
       let classList = mu.target.classList
-      classList.forEach((currentClassName)=>{
-              if(currentClassName===classNameDark){
-            callback_list_dark.forEach((callback_dark)=>{
-                callback_dark()
-            })
-          }else{
-              callback_list_light.forEach((callback_light)=>{
-                callback_light()
-              })
+      let founded = false
+      let cmpt = 0 
+      do{
+          let currentClass= classList[cmpt]
+          if(currentClass==classNameDark){
+              founded=true
           }
-      })
+          cmpt+=1
+      }while(!founded&&cmpt<classList.length)
+      if(founded){
+        callback_list_dark.forEach((callback_dark)=>{
+            callback_dark()
+        })
+      }else{
+          callback_list_light.forEach((callback_light)=>{
+            callback_light()
+          })
+      }
     });
 });
 

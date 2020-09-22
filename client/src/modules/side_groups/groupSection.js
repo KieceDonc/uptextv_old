@@ -1,8 +1,9 @@
-const uptexAPI = require('./uptex-api')
 const groupSortBy = require('./groupSortBy')
 const debug = require('../../utils/debug')
 const twitch = require('../../utils/twitch')
 const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+const uptextvAPI = require('../../utils/uptextv-api')
+const uptextvIMG = require('./../../utils/uptextv-image').get()
 
 const css_picture_profile_online = "side-nav-card__avatar tw-align-items-center tw-flex-shrink-0"
 const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar--offline tw-align-items-center tw-flex-shrink-0"
@@ -41,7 +42,7 @@ class groupSection{
      */
     addStreamer(_streamerID){
         let oldGroup = this.groupObject['list']// use to calculate old and new position of streamers in current group
-        uptexAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
+        uptextvAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
             this.groupObject['list'].push(streamerInfo)
             addStreamerInHTML(this.groupObject,streamerInfo)
             addStreamerInAPI(this.groupID,_streamerID)
@@ -93,7 +94,7 @@ class groupSection{
 
     setGroupIndex(index){
         this.groupObject['groupIndex'] = index
-        uptexAPI.setGroupProperty(this.groupID,twitch.getCurrentUser().id,'groupIndex',index).catch((err)=>{
+        uptextvAPI.setGroupProperty(this.groupID,twitch.getCurrentUser().id,'groupIndex',index).catch((err)=>{
             debug.error('error while calling api',err)
         })
     }
@@ -139,8 +140,10 @@ class groupSection{
             modifyStreamerGame(this.groupID,streamerInfo)
             modifyStreamerViewerCount(this.groupID,streamerInfo)
         })
-        this.updateVisual(oldGroup)
+
         this.groupObject=newGroup
+        this.updateVisual(oldGroup)
+        
     }
 
 
@@ -399,9 +402,9 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     giveImgsDesireStyle(imgHide_Show)
     giveTransitionStyle(imgHide_Show)
     if(isGroupHiden){ // group is hide 
-        imgHide_Show.src = 'https://uptextv.com/pe/show.png'
+        imgHide_Show.src = uptextvIMG.show
     }else{
-        imgHide_Show.src= 'https://uptextv.com/pe/hide.png'
+        imgHide_Show.src= uptextvIMG.hide
     }
     imgHide_Show.addEventListener('click',()=>{
         onHide_ShowButtonClic(imgHide_Show,groupID)
@@ -409,7 +412,7 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     
 
     let imgSettings = document.createElement('img') // use to display the settings button of the current group section
-    imgSettings.src='https://uptextv.com/pe/settings.png'
+    imgSettings.src=uptextvIMG.settings
     giveImgsDesireStyle(imgSettings)
     giveTransitionStyle(imgSettings)
 
@@ -419,21 +422,21 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     divSettingsMenu.style.transform='scale(0)'
 
     let imgBackArrowSettingsMenu = document.createElement('img')
-    imgBackArrowSettingsMenu.src='https://uptextv.com/pe/back_arrow.png'
+    imgBackArrowSettingsMenu.src=uptextvIMG.back_arrow
     giveImgsDesireStyle(imgBackArrowSettingsMenu)
     imgBackArrowSettingsMenu.addEventListener('click',function(){
         onBackArrowSettingsMenuButtonClick(divSettingsMenu,imgSettings)
     })
 
     let imgDelete = document.createElement('img')
-    imgDelete.src='https://uptextv.com/pe/less.png'
+    imgDelete.src=uptextvIMG.less
     giveImgsDesireStyle(imgDelete)
     imgDelete.addEventListener('click',function(){
         onDeleteButtonClick(groupID,groupIndex,sideGroupsModule)
     })
 
     let imgReorder = document.createElement('img')
-    imgReorder.src='https://uptextv.com/pe/reorder.png'
+    imgReorder.src=uptextvIMG.reorder
     giveImgsDesireStyle(imgReorder)
 
     let divReorderMenu = document.createElement('div') // handle the settings menu 
@@ -442,14 +445,14 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     divReorderMenu.style.transform='scale(0)'
 
     let imgBackArrowReorderMenu = document.createElement('img')
-    imgBackArrowReorderMenu.src='https://uptextv.com/pe/back_arrow.png'
+    imgBackArrowReorderMenu.src=uptextvIMG.back_arrow
     giveImgsDesireStyle(imgBackArrowReorderMenu)
     imgBackArrowReorderMenu.addEventListener('click',function(){
         onBackArrowReorderMenuButtonClick(divReorderMenu,divSettingsMenu)
     })
 
     let imgArrowUp = document.createElement('img')
-    imgArrowUp.src='https://uptextv.com/pe/top_arrow.png'
+    imgArrowUp.src=uptextvIMG.top_arrow
     giveImgsDesireStyle(imgArrowUp)
     imgArrowUp.addEventListener('click',function(){
         let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
@@ -461,7 +464,7 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     })
 
     let imgArrowDown = document.createElement('img')
-    imgArrowDown.src='https://uptextv.com/pe/bottom_arrow.png'
+    imgArrowDown.src=uptextvIMG.bottom_arrow
     giveImgsDesireStyle(imgArrowDown)
     imgArrowDown.addEventListener('click',function(){
         let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
@@ -613,27 +616,27 @@ function onDeleteButtonClick(groupID,groupIndex,sideGroupsModule){
             mainDiv.remove()
         }
         sideGroupsModule.deleteGroupSection(groupIndex)
-        uptexAPI.deleteGroup(groupID,twitch.getCurrentUser().id)
+        uptextvAPI.deleteGroup(groupID,twitch.getCurrentUser().id)
     })
 }
 
 function onHide_ShowButtonClic(imgHide_Show,groupID){
-    if(imgHide_Show.src=='https://uptextv.com/pe/hide.png'){ // you must hide the group Section
+    if(imgHide_Show.src==uptextvIMG.hide){ // you must hide the group Section
         hideInHTML(groupID,null)
         imgHide_Show.style.transform='scale(0)'
         setTimeout(()=>{
-            imgHide_Show.src='https://uptextv.com/pe/show.png'      
+            imgHide_Show.src=uptextvIMG.show      
             imgHide_Show.style.transform='scale(1)'
         },250)
-        uptexAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',true)
+        uptextvAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',true)
     }else{// you must show the group Section
         showInHTML(groupID,null)
         imgHide_Show.style.transform='scale(0)'
         setTimeout(()=>{
-            imgHide_Show.src='https://uptextv.com/pe/hide.png'
+            imgHide_Show.src=uptextvIMG.show
             imgHide_Show.style.transform='scale(1)'
         },250)
-        uptexAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',false)
+        uptextvAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',false)
     }
 }
 
@@ -754,7 +757,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     new streamTileToolTipHandler(streamerInfo,a0)
 
     let div3 = document.createElement("div")
-    div3.id=groupObject['name']+_streamerID+"picture_profile"
+    div3.id=groupObject['name']+_streamerID+"profile_picture"
     if(streamerIsStreaming){
         div3.className=css_picture_profile_online
     }else{
@@ -765,6 +768,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     figure0.className="tw-avatar tw-avatar--size-30"
 
     let img0 = document.createElement("img")
+    img0.id=groupObject['name']+_streamerID+'picture_profile'
     img0.className="tw-block tw-border-radius-rounded tw-image tw-image-avatar"
     img0.alt=streamerName
     img0.src=streamerIcon
@@ -856,7 +860,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
  * @param {String} _streamerID streamerID in normal
  */
 function addStreamerInAPI(groupID,_streamerID){
-    uptexAPI.addStreamer(groupID,twitch.getCurrentUser().id,_streamerID).catch((err)=>{
+    uptextvAPI.addStreamer(groupID,twitch.getCurrentUser().id,_streamerID).catch((err)=>{
         debug.error("failed in adding pinned streamer (api call failed). err :",err)
     }) 
 }
@@ -888,7 +892,7 @@ function deleteStreamerInHTML(groupID,_streamerID,withAnimation){
  * @param {String} _streamerID 
  */
 function deleteStreamerInAPI(groupID,_streamerID){
-    uptexAPI.deleteStreamer(groupID,twitch.getCurrentUser().id,_streamerID).catch((err)=>{
+    uptextvAPI.deleteStreamer(groupID,twitch.getCurrentUser().id,_streamerID).catch((err)=>{
         debug.error("failed in adding pinned streamer (api call failed). err :",err)
     }) 
 }
@@ -928,20 +932,28 @@ function modifyStreamerGame(groupID,streamerInfo){
 function streamerGoesOffline(groupID,streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
 
-    modifyStreamerGame(groupID,streamerInfo)
-    modifyStreamerViewerCount(groupID,streamerInfo)
     // changing css properties of picture profile ( make it grey )
     let div_profile_picture = document.getElementById(groupID+_streamerID+"profile_picture")
     div_profile_picture.className = css_picture_profile_offline
 
     // if you want to go offline you must delete this div
     // i think this div are used for the red online circle 
-    let div_unknow_0 = document.getElementById(groupID+_streamerID+"unknow_0")
-    let div_unknow_1 = document.getElementById(groupID+_streamerID+"unknow_1")
-    let div_unknow_2 = document.getElementById(groupID+_streamerID+"unknow_2")
-    div_unknow_0.parentElement.removeChild(div_unknow_0)
-    div_unknow_1.parentElement.removeChild(div_unknow_1)
-    div_unknow_2.parentElement.removeChild(div_unknow_2)
+    let div_unknow_0 = document.getElementById(groupID+_streamerID+"unknow0")
+    let div_unknow_1 = document.getElementById(groupID+_streamerID+"unknow1")
+    let div_unknow_2 = document.getElementById(groupID+_streamerID+"unknow2")
+    div_unknow_0.remove()
+    div_unknow_1.remove()
+    div_unknow_2.remove()
+
+    let spanDisconnected = document.createElement("span")
+    spanDisconnected.className="tw-c-text-alt tw-font-size-6"
+    spanDisconnected.id=groupID+_streamerID+"viewercount"
+    spanDisconnected.innerHTML="Disconnected"
+
+    let div_main_unknow = document.getElementById(groupID+_streamerID+'usedForUnknow')
+    div_main_unknow.appendChild(spanDisconnected)
+
+    modifyStreamerGame(groupID,streamerInfo)
 }
 
 /**
@@ -951,20 +963,38 @@ function streamerGoesOffline(groupID,streamerInfo){
  */
 function streamerGoesOnline(groupID,streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
-    modifyStreamerGame(groupID,streamerInfo)
-    modifyStreamerViewerCount(groupID,streamerInfo)
+    let streamerViewerCount = streamerInfo.viewer_count
 
     let div9 = document.createElement("div")
-    div9.id= groupID+_streamerID+"unknow0"
+    div9.id=groupObject['name']+_streamerID+"unknow0"
     let div10 = document.createElement("div")
-    div10.id=groupID+_streamerID+"unknow1"
+    div10.id=groupObject['name']+_streamerID+"unknow1"
     let div11 = document.createElement("div")
-    div11.id=groupID+_streamerID+"unknow2"
+    div11.id=groupObject['name']+_streamerID+"unknow2"
+
+    div9.className = "tw-align-items-center tw-flex"
+
+    div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
+    div10.style.setProperty("background-color", groupObject.liveColor, "important");
+
+    div11.className="tw-mg-l-05"
+    
 
     let divUsedForUnknow = document.getElementById(groupID+_streamerID+"usedForUnknow")
+    divUsedForUnknow.children[0].remove() // remove span use to display 'disconnected'
+
+
+    let span0 = document.createElement("span")
+    span0.className="tw-c-text-alt tw-font-size-6"
+    span0.id=groupObject['name']+_streamerID+"viewercount"
+    span0.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
+    
     divUsedForUnknow.appendChild(div9)
     div9.append(div10)
     div9.append(div11)
+    div11.appendChild(span0)
+
+    modifyStreamerGame(groupID,streamerInfo)
 }
 
 /**

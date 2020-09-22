@@ -1,6 +1,6 @@
 const watcher = require('../../watcher');
 const twitch = require('../../utils/twitch')
-const uptexAPI = require('./uptex-api')
+const uptextvAPI = require('../../utils/uptextv-api')
 const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
@@ -25,8 +25,8 @@ class SideGroupsModule{
         uptexAPI.setGroupProperty('67_104_101_115_115',twitch.getCurrentUser().id,'groupIndex',4)*/
   
         userID = twitch.getCurrentUser().id
-        uptexAPI.setup(userID).then(()=>{
-          uptexAPI.getGroupsStreamers(userID).then((groups)=>{
+        uptextvAPI.setup(userID).then(()=>{
+          uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
             //groups = _groups
             groups.sort((groupA,groupB)=>{
               return groupB.groupIndex - groupA.groupIndex
@@ -44,7 +44,7 @@ class SideGroupsModule{
       watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
         pinButton.setup(this)
-      })     
+      }) 
     }
 
     getUserID(){
@@ -62,7 +62,7 @@ class SideGroupsModule{
     // add a new group section on top from id
     // id must be in ASCII CODE
     addNewGroupSection(groupID){
-      uptexAPI.addGroup(groupID,userID).then(()=>{
+      uptextvAPI.addGroup(groupID,userID).then(()=>{
         let newGroupObject = {
           name:groupID,
           list:[],
@@ -132,7 +132,7 @@ function handleUpdateEach5min(sideGroupsModule){
 function updateStreamersInfo(sideGroupsModule){
   //let oldList = groups.slice()
 
-    uptexAPI.getGroupsStreamers(userID).then((newGroups)=>{
+  uptextvAPI.getGroupsStreamers(userID).then((newGroups)=>{
       //let groups = newGroups
       // your purpose here is to find the old group section index 
       // if not exist before ( a bit strange but this case could exist if, in the future, you allow user to add groups from the website version)

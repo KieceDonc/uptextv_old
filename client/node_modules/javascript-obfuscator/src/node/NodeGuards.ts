@@ -1,6 +1,7 @@
 import * as ESTree from 'estree';
 
 import { TNodeWithLexicalScope } from '../types/node/TNodeWithLexicalScope';
+import { TNodeWithLexicalScopeStatements } from '../types/node/TNodeWithLexicalScopeStatements';
 import { TNodeWithStatements } from '../types/node/TNodeWithStatements';
 
 import { NodeType } from '../enums/node/NodeType';
@@ -278,7 +279,7 @@ export class NodeGuards {
     public static isNodeWithLexicalScopeStatements (
         node: ESTree.Node,
         parentNode: ESTree.Node
-    ): node is TNodeWithStatements {
+    ): node is TNodeWithLexicalScopeStatements {
         return NodeGuards.isProgramNode(node)
             || (NodeGuards.isBlockStatementNode(node) && NodeGuards.nodesWithLexicalStatements.includes(parentNode.type));
     }

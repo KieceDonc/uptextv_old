@@ -12,6 +12,12 @@ export interface IArrayUtils {
     findMostOccurringElement <T extends string | number> (array: T[]): T | null;
 
     /**
+     * @param {T[]} array
+     * @returns {T | undefined}
+     */
+    getLastElement <T> (array: T[]): T | undefined;
+
+    /**
      * @param array
      * @param times
      * @returns {T[]}

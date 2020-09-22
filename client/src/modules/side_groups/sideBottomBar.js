@@ -1,10 +1,6 @@
 const debug = require('../../utils/debug')
-const uptexAPI = require('./uptex-api')
-const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
-
-
-let valid_img_url = 'https://uptextv.com/pe/valid.png'
-let cancel_img_url = 'https://uptextv.com/pe/cancel.png'
+const uptextvAPI = require('../../utils/uptextv-api')
+const uptextvIMG = require('../../utils/uptextv-image').get()
 
 let sideGroupsModule
 
@@ -184,7 +180,7 @@ class AddButton{
                 let input_imgs_height = parseFloat(input_input.offsetHeight)*0.8+'px' // 80 % of input_input width
 
                 let input_valid_img = document.createElement('img')
-                input_valid_img.src=valid_img_url
+                input_valid_img.src=uptextvIMG.valid
                 input_valid_img.style.filter='brightness(0) invert(1)'
                 input_valid_img.style.width = input_imgs_height
                 input_valid_img.style.verticalAlign='middle'
@@ -196,7 +192,7 @@ class AddButton{
                 })
 
                 let input_cancel_img = document.createElement('img')
-                input_cancel_img.src=cancel_img_url
+                input_cancel_img.src=uptextvIMG.cancel
                 input_cancel_img.style.filter='brightness(0) invert(1)'
                 input_cancel_img.style.width = input_imgs_height
                 input_cancel_img.style.verticalAlign='middle'
@@ -218,7 +214,7 @@ class AddButton{
     onInputValidClick(input,inputMainDiv){
         if(input.value.length>0){
             let groupCryptedID = getGroupCryptedID(input.value)
-            uptexAPI.isGroupAlreadyExist(groupCryptedID,sideGroupsModule.getUserID()).then((isGroupExist)=>{
+            uptextvAPI.isGroupAlreadyExist(groupCryptedID,sideGroupsModule.getUserID()).then((isGroupExist)=>{
                 if(isGroupExist){
                     this.onInvalidInput('This group name is already taken, you must choose an other one',inputMainDiv)
                 }else{

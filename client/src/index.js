@@ -19,7 +19,7 @@
         }).join(' ');
     }});
 
-    debug.log(`Uptex v${debug.version} loaded. ${process.env.NODE_ENV} @ ${process.env.GIT_REV}`);
+    debug.log(`Uptex loaded`);
 
     window.Uptextv = {
         version: debug.version,

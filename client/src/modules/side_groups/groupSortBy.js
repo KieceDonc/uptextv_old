@@ -1,4 +1,4 @@
-const uptexAPI = require('./uptex-api')
+const uptextvAPI = require('../../utils/uptextv-api')
 const twitch = require('../../utils/twitch')
 
 class groupSortBy{
@@ -66,7 +66,7 @@ class groupSortBy{
   // call back of onChange() of groupSelect
   selectOnChange(selectElement){
       this.currentIndexSortBy = selectElement.value
-      uptexAPI.setGroupProperty(this.currentGroupSection.getGroupID(),twitch.getCurrentUser().id,'sortByIndex',this.currentIndexSortBy)
+      uptextvAPI.setGroupProperty(this.currentGroupSection.getGroupID(),twitch.getCurrentUser().id,'sortByIndex',this.currentIndexSortBy)
       this.currentGroupSection.updateVisual(null)
   }
 
