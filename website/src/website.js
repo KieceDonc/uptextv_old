@@ -1,15 +1,13 @@
-/*const express = require('express'); 
+const express = require('express'); 
 const fs = require('fs')
 const https = require('https')
-const database = require('./database')
 const twitch = require('./twitch')
-
 const domain="uptextv.com"
 const port = 1000; 
 
 const privateKey = fs.readFileSync('/etc/letsencrypt/live/'+domain+'/privkey.pem', 'utf8'); // https://itnext.io/node-express-letsencrypt-generate-a-free-ssl-certificate-and-run-an-https-server-in-5-minutes-a730fbe528ca
 const certificate = fs.readFileSync('/etc/letsencrypt/live/'+domain+'/cert.pem', 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/li  ve/'+domain+'/chain.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/'+domain+'/chain.pem', 'utf8');
 
 const credentials = {
 	key: privateKey,
@@ -17,33 +15,37 @@ const credentials = {
 	ca: ca
 };
 
-// tutorial : https://www.frugalprototype.com/developpez-propre-api-node-js-express/
-
-var app = express(); 
-var router = express.Router(); 
-
-
-https.createServer(credentials, app)
-    .listen(port, function () {
-})
-  
-
+var app = express();  
 app.use((req, res, next) => {
-    res.append('Access-Control-Allow-Origin' , 'https://www.twitch.tv');
+    res.append('Access-Control-Allow-Origin' , 'uptextv.com');
     res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     next();
 });
 
-app.use(router);  
- 
-app.get('/redirectAuth/',function(req,res){ // check if group exist in db 
-    let access_token = req.query.access_token
-    console.log(req.originalUrl)
-    twitch.getUserInfo(access_token).then((userInfo)=>{
-        //console.log(userInfo)
-    }).catch((err)=>{
-        console.log(err)
-    })
-});*/
+var server = https.createServer(credentials, app)
+    .listen(port, function () {
+})  
 
-// plz see https://stackoverflow.com/questions/17744003/get-url-after-in-express-js-middleware-request 
+var io = require('socket.io').listen(server);
+
+io.on('connection', (socket) => {
+    socket.on('onLogin',(twitch_code)=>{
+        twitch.getAcccessTokenAndID(twitch_code).then((JSON0)=>{
+            console.log(JSON0)
+            let bearer_token = JSON0.access_token
+            twitch.getUserBasicInfo(bearer_token).then((JSON1)=>{
+                console.log(JSON1)
+                let userID = JSON1.sub
+                twitch.getUserAllInfo(bearer_token,userID).then((JSON2)=>{
+                    let userData = JSON2.data[0] 
+                    console.log(userData)
+                    //https://openclassrooms.com/fr/courses/5614116-go-full-stack-with-node-js-express-and-mongodb/5656296-create-authentication-tokens
+                    socket.emit('callback_onLogin','')
+                })
+            })
+        }).catch((err)=>{
+            // normally not happening
+            socket.emit('callback_onLogin','err',err)
+        })
+    })
+});
