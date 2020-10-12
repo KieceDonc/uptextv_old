@@ -18,16 +18,16 @@ var streamerID // id of streamerID
 class SideGroupsModule{
     constructor(){  
       watcher.on('load.sidenav',()=>{
-        /*uptexAPI.setGroupProperty('80_111_108_105_116_105_113_117_101',twitch.getCurrentUser().id,'groupIndex',2)
-        uptexAPI.setGroupProperty('65_79_69_32_73_73',twitch.getCurrentUser().id,'groupIndex',1)
-        uptexAPI.setGroupProperty('67_73_86_32_86_73',twitch.getCurrentUser().id,'groupIndex',0)
-        uptexAPI.setGroupProperty('82_111_99_107_101_116_32_108_101_97_103_117_101',twitch.getCurrentUser().id,'groupIndex',3)
-        uptexAPI.setGroupProperty('67_104_101_115_115',twitch.getCurrentUser().id,'groupIndex',4)*/
   
         userID = twitch.getCurrentUser().id
         uptextvAPI.setup(userID).then(()=>{
+          
+          uptextvAPI.setGroupProperty('82_111_99_107_101_116_32_108_101_97_103_117_101',twitch.getCurrentUser().id,'groupIndex',0)
+          uptextvAPI.setGroupProperty('65_79_69_32_73_73',twitch.getCurrentUser().id,'groupIndex',1)
+          uptextvAPI.setGroupProperty('67_73_86_32_86_73',twitch.getCurrentUser().id,'groupIndex',2)
+          uptextvAPI.setGroupProperty('80_111_108_105_116_105_113_117_101',twitch.getCurrentUser().id,'groupIndex',3)
+          uptextvAPI.setGroupProperty('67_72_69_83_83',twitch.getCurrentUser().id,'groupIndex',4)
           uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
-            //groups = _groups
             groups.sort((groupA,groupB)=>{
               return groupB.groupIndex - groupA.groupIndex
             })
@@ -71,6 +71,10 @@ class SideGroupsModule{
           isGroupHiden:false,
           groupIndex:0
         }
+        // because you added a new group section you need to shift every group section index by one
+        groupsSection.forEach((currentGroupSection)=>{
+          currentGroupSection.setGroupIndex(currentGroupSection.getGroupIndex()+1)
+        }) 
         setupGroupSection(newGroupObject,this)
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
@@ -78,8 +82,19 @@ class SideGroupsModule{
     }
 
     deleteGroupSection(indexOfGroup){  
-      groupsSection = groupsSection.splice(indexOfGroup, 1);
-      //groups = groups.splice(indexOfGroup,1)
+      // splice delete from groupsSection and stock in deletedGroupSection the deleted group section 
+      let deletedGroupSection = groupsSection.splice(indexOfGroup, 1)[0];
+      console.log(deletedGroupSection) 
+      let deletedGroupSectionIndex = deletedGroupSection.getGroupIndex()
+
+      // for every group section you need to check if the 'current group section' is higher than the deleted group section index
+      // you have to do to decremente the value also you will have bugs
+      groupsSection.forEach((currentGroupSection)=>{
+        let currentGroupSectionIndex = currentGroupSection.getGroupIndex()
+        if(currentGroupSectionIndex>deletedGroupSectionIndex){
+          currentGroupSection.setGroupIndex(currentGroupSectionIndex-1)
+        }
+      })
     }
 
     getGroupSectionIndexByName(name){
@@ -118,6 +133,7 @@ class SideGroupsModule{
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){
   var currentGroupSection = groupSection.setup(currentGroup,sideGroupsModule) // groupsSection.length represent the position of the currentGroup
+  console.log(currentGroupSection)
   groupsSection.unshift(currentGroupSection)
 }
 

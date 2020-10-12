@@ -1,7 +1,7 @@
 const request = require('request');
 
 const app_twitch_client_id = '0c36td77t9i3e1npj8gy6req93567o'
-const app_twitch_secret = '3cmxyp0fd5fvcg6k18qme2v67kaeei'
+const app_twitch_secret = '4hc6ued4uh87vs7ns9iq5cnvcd9yw2'
 const token_url = 'https://id.twitch.tv/oauth2/token?client_id='+app_twitch_client_id+'&client_secret='+app_twitch_secret+'&grant_type=client_credentials'
 const API_ENDPOINT = 'https://api.twitch.tv/helix/'
 
@@ -24,6 +24,7 @@ function getTwitchAccessToken(){
                     if(error){
                         reject(error)
                     }else{
+                        console.log(body)
                         current_token=body.access_token
                         current_token_expire_date=body.expires_in+new Date().getTime()-1000 //  number in milliseconds the token expire ( ? not sure you should check twitch api documentation ) + number of milliseconds since midnight, January 1, 1970. January 1, 1970. - 1000 ( retire 1s for security ( time proccess ?) ) 
                         resolve(body.access_token)
@@ -69,6 +70,7 @@ module.exports = {
                         if(error){
                             reject(error)
                         }else{
+                            console.log(body)
                             resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
                         }
                 });
@@ -107,6 +109,7 @@ module.exports = {
                         if(error){
                             reject(error)
                         }else{
+                            console.log(body)
                             resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
                         }
                 });

@@ -1,5 +1,5 @@
 const $ = require('jquery');
-const pin_icon_mouse_over_url = "https://uptextv.com/pe/pin-icon.svg"
+const uptextvIMG = require('../../utils/uptextv-image').get()
 const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
 
 var sideGroupsModule
@@ -93,7 +93,7 @@ function setup(){
   
       let img0 = document.createElement("img")
       img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
-      img0.src= pin_icon_mouse_over_url//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+      img0.src= uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
       img0.style.maxWidth='none'
   
       let span0 = document.createElement("span")

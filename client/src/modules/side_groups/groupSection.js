@@ -48,7 +48,7 @@ class groupSection{
             addStreamerInAPI(this.groupID,_streamerID)
             this.onGroupUpdate(oldGroup,this.groupObject['list'])
         }).catch((err)=>{
-            debug.error('error while calling api',err)
+            debug.error('error while trying to get information streamer in api. This error has been catch in addStreamer() in groupSection',err)
         })
     }
 
@@ -93,9 +93,12 @@ class groupSection{
     }
 
     setGroupIndex(index){
+        let groupObjectToString = JSON.stringify(this.groupObject)
         this.groupObject['groupIndex'] = index
-        uptextvAPI.setGroupProperty(this.groupID,twitch.getCurrentUser().id,'groupIndex',index).catch((err)=>{
-            debug.error('error while calling api',err)
+        uptextvAPI.setGroupProperty(this.groupID,twitch.getCurrentUser().id,'groupIndex',index).then(()=>{
+            debug.log('successly change index of group section in api\n'+groupObjectToString)
+        }).catch((err)=>{
+            debug.error('error while trying to change index of group section in api\n'+groupObjectToString,err)
         })
     }
 
