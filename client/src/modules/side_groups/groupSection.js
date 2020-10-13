@@ -19,17 +19,16 @@ class groupSection{
 
     constructor(_groupObject,_sideGroupsModule){
         this.groupObject = _groupObject
-        this.groupID = this.groupObject.name
-        this.groupID_normal = decryptGroupID(this.groupID)
+        this.groupObject['name_normal'] = decryptGroupID(this.getGroupID())
         this.sideGroupsModule=_sideGroupsModule
 
-        if(shouldSetup(this.groupID)){
-            setup(this.groupID,this.groupID_normal,this.groupObject['groupIndex'],this.sideGroupsModule,this.groupObject['isGroupHiden'])
+        if(shouldSetup(this.getGroupID())){
+            setup(this.getGroupID(),this.getGroupID_normal(),this.sideGroupsModule,this.groupObject['isGroupHiden'])
             let sortByIndexValue = this.groupObject['sortByIndex']
             this.groupSortBy = groupSortBy.setup(this,sortByIndexValue)
             setupStreamers(this.groupObject,()=>{
                 if(this.groupObject['isGroupHiden']){
-                    hideInHTML(this.groupID,null)
+                    hideInHTML(this.getGroupID(),null)
                 }
             })
 
@@ -45,7 +44,7 @@ class groupSection{
         uptextvAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
             this.groupObject['list'].push(streamerInfo)
             addStreamerInHTML(this.groupObject,streamerInfo)
-            addStreamerInAPI(this.groupID,_streamerID)
+            addStreamerInAPI(this.getGroupID(),_streamerID)
             this.onGroupUpdate(oldGroup,this.groupObject['list'])
         }).catch((err)=>{
             debug.error('error while trying to get information streamer in api. This error has been catch in addStreamer() in groupSection',err)
@@ -58,22 +57,22 @@ class groupSection{
      */
     deleteStreamer(_streamerID){
         this.groupObject['list']= this.groupObject['list'].filter(e => e.broadcaster_id != _streamerID)
-        deleteStreamerInHTML(this.groupID,_streamerID,true)
-        deleteStreamerInAPI(this.groupID,_streamerID)
+        deleteStreamerInHTML(this.getGroupID(),_streamerID,true)
+        deleteStreamerInAPI(this.getGroupID(),_streamerID)
     }
 
     /**
      * use to get the group id in ASCII
      */
     getGroupID(){
-        return this.groupID
+        return this.groupObject.name
     }
     
     /**
      * use to get the group id in normal and not in ASCII
      */
     getGroupID_normal(){
-        return this.groupID_normal
+        return this.groupObject.name_normal
     }
 
     getGroupList(){
@@ -93,12 +92,11 @@ class groupSection{
     }
 
     setGroupIndex(index){
-        let groupObjectToString = JSON.stringify(this.groupObject)
         this.groupObject['groupIndex'] = index
-        uptextvAPI.setGroupProperty(this.groupID,twitch.getCurrentUser().id,'groupIndex',index).then(()=>{
-            debug.log('successly change index of group section in api\n'+groupObjectToString)
+        uptextvAPI.setGroupProperty(this.getGroupID(),twitch.getCurrentUser().id,'groupIndex',index).then(()=>{
+            debug.log('successly change index of group section in api',this.groupObject)
         }).catch((err)=>{
-            debug.error('error while trying to change index of group section in api\n'+groupObjectToString,err)
+            debug.error('error while trying to change index of group section in api\n'+JSON.stringify(this.groupObject),err)
         })
     }
 
@@ -146,7 +144,6 @@ class groupSection{
 
         this.groupObject=newGroup
         this.updateVisual(oldGroup)
-        
     }
 
 
@@ -353,11 +350,10 @@ function shouldSetup(groupID){
  * group section id ( main div ) =(GROUP NAME IN ASCII)_sideNavGroupSection
  * @param {String} groupID groupID in ASCII code 
  * @param {String} groupID_normal groupID in normal 
- * @param {Int} groupIndex 
  * @param {SideGroupsModule} sideGroupsModule 
  * @param {boolean} isGroupHiden
  */
-function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){ 
+function setup(groupID,groupID_normal,sideGroupsModule,isGroupHiden){ 
 
     let mainDivID = groupID+"_sideNavGroupSection"
     let parentDiv = document.getElementsByClassName('side-bar-contents')[0].firstChild.firstChild.firstChild // getting div parent
@@ -435,7 +431,9 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     imgDelete.src=uptextvIMG.less
     giveImgsDesireStyle(imgDelete)
     imgDelete.addEventListener('click',function(){
-        onDeleteButtonClick(groupID,groupIndex,sideGroupsModule)
+        let currentGroupIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+
+        onDeleteButtonClick(groupID,currentGroupIndex,sideGroupsModule)
     })
 
     let imgReorder = document.createElement('img')
@@ -458,10 +456,11 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     imgArrowUp.src=uptextvIMG.top_arrow
     giveImgsDesireStyle(imgArrowUp)
     imgArrowUp.addEventListener('click',function(){
-        let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+        let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
         let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex)
-        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex((currentIndex-1))
-        if((currentIndex-1)>=0){
+        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex-1)
+        // you check if the index you want really leads to a real group section 
+        if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex-1)>=0){
             onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
         }
     })
@@ -470,10 +469,11 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     imgArrowDown.src=uptextvIMG.bottom_arrow
     giveImgsDesireStyle(imgArrowDown)
     imgArrowDown.addEventListener('click',function(){
-        let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+        let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
         let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex+1)
-        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex((currentIndex))
-        if((currentIndex+1)<=sideGroupsModule.getGroupsSection().length){
+        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex)
+        // you check if the index you want really leads to a real group section 
+        if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex+1)<=sideGroupsModule.getGroupsSection().length){
             onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
         }
     })

@@ -31,51 +31,18 @@ class sideBottomBar{
      */
     setup(){
         if(this.shouldSetup()){
-            /*
-            <div class="side-nav-search-input tw-border-t tw-pd-1">
-                <div class="tw-search-input" >
-                    <div class="tw-relative">
-                        <button class="tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05">
-                            <p style="text-align: center;">
-                                Add new group
-                            </p>
-                        </button>
-                    </div>
-                </div>
-            </div>
-                
-                */
-
             let sideNav = document.getElementById('sideNav')
 
             if(sideNav){
                 
-                let div0 = document.createElement('div')
-                div0.id="sideBottomBar"
-                div0.className="side-nav-search-input tw-border-t tw-pd-1"
-                div0.style.maxHeight = document.getElementsByClassName('side-nav-search-input')[0].offsetHeight // search input offsetHeight
+                let sideBottomBar = document.createElement('div')
+                sideBottomBar.id="sideBottomBar"
+                sideBottomBar.className="side-nav-search-input tw-border-t tw-pd-1"
+                sideBottomBar.style.maxHeight = document.getElementsByClassName('side-nav-search-input')[0].offsetHeight // search input offsetHeight
 
-                let div1 = document.createElement('div')
-                div1.className='tw-search-input'
 
-                let div2 = document.createElement('div')
-                div2.className='tw-relative'
-
-                let button0 = document.createElement('button')
-                button0.className='tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05'
-                button0.addEventListener('click',()=>{
-                    this.button.onClick()
-                })
-
-                let p0 = document.createElement('p')
-                p0.style.textAlign='center'
-                p0.innerHTML='Add a new group'
-
-                sideNav.firstChild.firstChild.appendChild(div0)
-                div0.appendChild(div1)
-                div1.appendChild(div2)
-                div2.appendChild(button0)
-                button0.appendChild(p0)
+                sideNav.firstChild.firstChild.appendChild(sideBottomBar)
+                this.button.setup(sideBottomBar)
             }else{
                 debug.error('error while trying to find sideNav id in sideBottomBar. SideNav is null')
             }
@@ -87,6 +54,32 @@ class sideBottomBar{
  * handle all process of the add button
  */
 class AddButton{
+
+    // call on setup of sideBottomBar 
+    // use to create in html / css the button to add group
+    setup(sideBottomBarDiv){
+        let div1 = document.createElement('div')
+        div1.className='tw-search-input'
+
+        let div2 = document.createElement('div')
+        div2.className='tw-relative'
+
+        let button0 = document.createElement('button')
+        button0.className='tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05'
+        button0.addEventListener('click',()=>{
+            this.moveSideNavToTop() 
+            this.onClick()
+        })
+
+        let p0 = document.createElement('p')
+        p0.style.textAlign='center'
+        p0.innerHTML='Add a new group'
+
+        sideBottomBarDiv.appendChild(div1)
+        div1.appendChild(div2)
+        div2.appendChild(button0)
+        button0.appendChild(p0)
+    }
 
     // call when user click on '+' buton in the side bottom bar
     // it basically add a temp title / input so user can decide the name of the new group
@@ -207,6 +200,15 @@ class AddButton{
         }else{
             debug.log('user is trying to add a new group but a temporary group already exist ( sideBottomBar )')
         }
+    }
+
+    /* Then user click on 'add group' the input will be on the top of the side nav
+     * You have a problem, sideNav is a custom scrollable div and user could have scroll so he won't see the input
+     * You solve the problem by moving scroll to 0,0
+     */
+    moveSideNavToTop(){
+        let scrollableDivElement = document.getElementsByClassName('simplebar-scroll-content')[0]
+        scrollableDivElement.scroll({top:0,left:0,behavior:"smooth"}) 
     }
 
     // call when a temporary side group is create and user valid his action

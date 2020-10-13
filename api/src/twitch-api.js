@@ -5,31 +5,46 @@ const app_twitch_secret = '4hc6ued4uh87vs7ns9iq5cnvcd9yw2'
 const token_url = 'https://id.twitch.tv/oauth2/token?client_id='+app_twitch_client_id+'&client_secret='+app_twitch_secret+'&grant_type=client_credentials'
 const API_ENDPOINT = 'https://api.twitch.tv/helix/'
 
-var current_token
-var current_token_expire_date=0 // in milliseconds since midnight, January 1, 1970. It must be initialize
+var current_token=-1
+var current_token_expire_date=-1 // in milliseconds since midnight, January 1, 1970. It must be initialize
 
 /**
  * get twitch access token to make twitch api call
  * it handle if token is expire or not
  */
 function getTwitchAccessToken(){
+    let recursive_call = 0
     return new Promise((resolve,reject)=>{
-        if(new Date().getTime()>current_token_expire_date){ // check if token expire             
-            request.post({ 
-                headers: {'content-type' : 'application/json' }, 
-                url: token_url 
-            }, 
-                function(error, response, body){
-                    body = JSON.parse(body)
-                    if(error){
-                        reject(error)
-                    }else{
-                        console.log(body)
-                        current_token=body.access_token
-                        current_token_expire_date=body.expires_in+new Date().getTime()-1000 //  number in milliseconds the token expire ( ? not sure you should check twitch api documentation ) + number of milliseconds since midnight, January 1, 1970. January 1, 1970. - 1000 ( retire 1s for security ( time proccess ?) ) 
-                        resolve(body.access_token)
+        if(new Date().getTime()>current_token_expire_date){ // check if token expire     
+            // you have one problem
+            // getTwitchAccessToken can be call multiple time on setup so you do some weird recursive call to wait the twitch response
+            if(current_token==0){
+                setTimeout(()=>{
+                    recursive_call++
+                    if(recursive_call>20){
+                        reject('too much recursive call ( timeout )')
                     }
-            }); 
+                    getTwitchAccessToken().then((twitch_access_token)=>{
+                        resolve(twitch_access_token)
+                    })
+                },250)
+            }else{
+                current_token=0
+                request.post({ 
+                    headers: {'content-type' : 'application/json' }, 
+                    url: token_url 
+                }, 
+                    function(error, response, body){
+                        body = JSON.parse(body)
+                        if(error){
+                            reject(error)
+                        }else{
+                            current_token=body.access_token
+                            current_token_expire_date=body.expires_in+new Date().getTime()-1000 //  number in milliseconds the token expire ( ? not sure you should check twitch api documentation ) + number of milliseconds since midnight, January 1, 1970. January 1, 1970. - 1000 ( retire 1s for security ( time proccess ?) ) 
+                            resolve(body.access_token)
+                        }
+                }); 
+            }       
         }else{
             resolve(current_token)
         }
@@ -70,7 +85,6 @@ module.exports = {
                         if(error){
                             reject(error)
                         }else{
-                            console.log(body)
                             resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
                         }
                 });
@@ -109,7 +123,6 @@ module.exports = {
                         if(error){
                             reject(error)
                         }else{
-                            console.log(body)
                             resolve(body.data[0]) // data[0] is needed cuz normaly you can ask for several user information but we just want data for our user
                         }
                 });
@@ -253,53 +266,10 @@ module.exports = {
                         correctStreamerInfoObjc = merge_options(streamerInfo[0],streamerInfo[1],streamerInfo[2])
                         correctStreamerInfoObjc.isStreaming=true
                     }
-
                     resolve(correctStreamerInfoObjc)
             }).catch((err)=>{
                 reject(err)
             })
-            /*let streamerInfo
-            let streamInfo1
-            let streamInfo2
-
-            this.getUser(streamerID).then((user)=>{
-                streamerInfo = user
-                onInformationReceived()
-            }).catch((err)=>{
-                reject(err)
-            })
-
-            this.getStream_1(streamerID).then((stream)=>{
-                streamInfo1 = stream
-                onInformationReceived()
-            }).catch((err)=>{
-                reject(err)
-            })
-
-            this.getStream_2(streamerID).then((stream)=>{
-                if(stream==null){
-                    streamInfo2={isStreaming:false}
-                }else{
-                    streamInfo2 = stream
-                    streamInfo2.isStreaming=true
-                }
-                onInformationReceived()
-            }).catch((err)=>{
-                reject(err)
-            })*/
-
-            /**
-             * check if we received streamer & stream info. If yes, create an oject of this and return this object
-             */
-            /*let onInformationReceived = function(){
-                if(streamerInfo&&streamInfo1&&streamInfo2){
-                    resolve({
-                        'streamer':streamerInfo,
-                        'stream1':streamInfo1,
-                        'stream2':streamInfo2
-                    })
-                }
-            }*/
         })
     },
 

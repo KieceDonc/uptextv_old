@@ -33,13 +33,13 @@ class SideGroupsModule{
             })
             groups.forEach((currentGroup)=>{
               setupGroupSection(currentGroup,this)
+              sideBottomBar.setup(this)
             }) 
             handleUpdateEach5min(this)
           })
         }).catch((err)=>{
           debug.error('error:',err )
         })
-        sideBottomBar.setup(this)
       })
       watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
@@ -76,6 +76,7 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSection.getGroupIndex()+1)
         }) 
         setupGroupSection(newGroupObject,this)
+        showGroupsIndex()
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
       })
@@ -84,8 +85,8 @@ class SideGroupsModule{
     deleteGroupSection(indexOfGroup){  
       // splice delete from groupsSection and stock in deletedGroupSection the deleted group section 
       let deletedGroupSection = groupsSection.splice(indexOfGroup, 1)[0];
-      console.log(deletedGroupSection) 
       let deletedGroupSectionIndex = deletedGroupSection.getGroupIndex()
+      console.log(deletedGroupSection)
 
       // for every group section you need to check if the 'current group section' is higher than the deleted group section index
       // you have to do to decremente the value also you will have bugs
@@ -95,22 +96,36 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSectionIndex-1)
         }
       })
+      setTimeout(()=>{
+        showGroupsIndex()
+      },100)
     }
 
-    getGroupSectionIndexByName(name){
+    getGroupSectionIndexByID(groupID){
       let founded = false
       let cmpt = 0
       do{
-        if(groupsSection[cmpt].getGroupID()==name){
+        if(groupsSection[cmpt].getGroupID()==groupID){
           return groupsSection[cmpt].getGroupIndex()
         }
         cmpt++
       }while(cmpt<groupsSection.length&&!founded)
-      return null // normaly impossible
+      return -2 // normaly impossible
     }
 
     getGroupSectionByIndex(index){
-      return groupsSection[index]
+      if(index>=groupsSection.length||index<0){
+        return -1
+      }
+      let founded = false
+      let cmpt = 0
+      do{
+        if(groupsSection[cmpt].getGroupIndex()==index){
+          return groupsSection[cmpt]
+        }
+        cmpt++
+      }while(cmpt<groupsSection.length&&!founded)
+      return -1 // normaly impossible
     }
 
     groupsSectionSwitchElements(first_element_index,second_element_index){
@@ -128,6 +143,12 @@ class SideGroupsModule{
       }
       groupsSection = newGroupsSection
     }
+}
+
+function showGroupsIndex(){
+  groupsSection.forEach((currentGroupSection)=>{
+    console.log(currentGroupSection.getGroupID_normal()+' index ='+currentGroupSection.getGroupIndex())
+  })
 }
 
 // setup for one group setup a side nav group section
