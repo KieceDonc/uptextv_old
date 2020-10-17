@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs')
 const https = require('https')
 const twitch = require('./twitch')
+const database = require('./database');
 const domain="uptextv.com"
 const port = 1000; 
 
@@ -38,7 +39,31 @@ io.on('connection', (socket) => {
                 let userID = JSON1.sub
                 twitch.getUserAllInfo(bearer_token,userID).then((JSON2)=>{
                     let userData = JSON2.data[0] 
-                    console.log(userData)
+                    let userEmail = userData['email']
+                    let userID = userData['id']
+                    let userName = userData['login']
+                    let userType = userData['type']
+                    let userBroadcasterType = userData['broadcaster_type']
+                    let userViewCount = userData['view_count']
+                    let userProfilePicture = userData['profile_image_picture']
+
+                    updateUser = ()=>{
+                        database.updateUser(userID,userName,userEmail,userType,userBroadcasterType,userViewCount,userProfilePicture).catch((err)=>{
+                            console.log(err)
+                        })
+                    }
+
+                    database.isUserExist(userID).then((isUserExist)=>{
+                        if(isUserExist){
+                            console.log('called')
+                            database.createUser(userID).then(()=>{
+                                updateUser()
+                            })
+                        }else{
+                            updateUser()
+                        }
+
+                    })
                     //https://openclassrooms.com/fr/courses/5614116-go-full-stack-with-node-js-express-and-mongodb/5656296-create-authentication-tokens
                     socket.emit('callback_onLogin','')
                 })

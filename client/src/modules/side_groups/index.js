@@ -22,11 +22,11 @@ class SideGroupsModule{
         userID = twitch.getCurrentUser().id
         uptextvAPI.setup(userID).then(()=>{
           
-          uptextvAPI.setGroupProperty('82_111_99_107_101_116_32_108_101_97_103_117_101',twitch.getCurrentUser().id,'groupIndex',0)
+          /*uptextvAPI.setGroupProperty('82_111_99_107_101_116_32_108_101_97_103_117_101',twitch.getCurrentUser().id,'groupIndex',0)
           uptextvAPI.setGroupProperty('65_79_69_32_73_73',twitch.getCurrentUser().id,'groupIndex',1)
           uptextvAPI.setGroupProperty('67_73_86_32_86_73',twitch.getCurrentUser().id,'groupIndex',2)
           uptextvAPI.setGroupProperty('80_111_108_105_116_105_113_117_101',twitch.getCurrentUser().id,'groupIndex',3)
-          uptextvAPI.setGroupProperty('67_72_69_83_83',twitch.getCurrentUser().id,'groupIndex',4)
+          uptextvAPI.setGroupProperty('67_72_69_83_83',twitch.getCurrentUser().id,'groupIndex',4)*/
           uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
             groups.sort((groupA,groupB)=>{
               return groupB.groupIndex - groupA.groupIndex
@@ -76,7 +76,6 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSection.getGroupIndex()+1)
         }) 
         setupGroupSection(newGroupObject,this)
-        showGroupsIndex()
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
       })
@@ -96,9 +95,6 @@ class SideGroupsModule{
           currentGroupSection.setGroupIndex(currentGroupSectionIndex-1)
         }
       })
-      setTimeout(()=>{
-        showGroupsIndex()
-      },100)
     }
 
     getGroupSectionIndexByID(groupID){
@@ -145,11 +141,11 @@ class SideGroupsModule{
     }
 }
 
-function showGroupsIndex(){
+/*function showGroupsIndex(){
   groupsSection.forEach((currentGroupSection)=>{
     console.log(currentGroupSection.getGroupID_normal()+' index ='+currentGroupSection.getGroupIndex())
   })
-}
+}*/
 
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){

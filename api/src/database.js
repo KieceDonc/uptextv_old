@@ -1,29 +1,20 @@
-const MongoClient = require('mongodb').MongoClient;
-const url = "mongodb://localhost:27017"; 
-const user_collection = "users"
-const dbName = 'api_db';
+const { MongoClient } = require("mongodb");
+const mongodb_username = 'main-access'
+const mongodb_password = 'zwDde5oFzJGz7Lir'
+const mongodb_db_name = 'api_db';
+const mongodb_users_collection = "users"
+const mongodb_uri = "mongodb+srv://"+mongodb_username+":"+mongodb_password+"@main.i8bys.mongodb.net/api?retryWrites=true&w=majority";
+const mongodb_client = new MongoClient(mongodb_uri, { useNewUrlParser: true });
+
 const defaultLiveColor = '#007aa3'
 
-/**
- * tutorial https://www.w3schools.com/nodejs/nodejs_mongodb_createcollection.asp
- * https://www.guru99.com/node-js-mongodb.html
- */
-
- /**
-  *             {
-                    name:decryptGroupID(groupID),
-                    list:[],
-                    liveColor:defaultLiveColor
-                } group object look like this
-  */
 var db = null
 
 function getDB(){
     return new Promise((resolve,reject)=>{
         if(!db){
-            MongoClient.connect(url, function(err, client) {
-                if (err) reject(err);
-                db = client.db(dbName)
+            mongodb_client.connect(err => {
+                db = mongodb_client.db(mongodb_db_name);
                 resolve(db)
             });
         }else{
@@ -35,7 +26,7 @@ function getDB(){
 function getUser(userID){
     return new Promise((resolve,reject)=>{
         getDB().then((db)=>{        
-            var cursor=db.collection(user_collection).find({ID: userID})
+            var cursor=db.collection(mongodb_users_collection).find({ID: userID})
             cursor.each(function(err, doc) {
                 if(err){
                     reject(err)
@@ -55,7 +46,7 @@ function getUser(userID){
 function getGroup(groupID,userID){
     return new Promise((resolve,reject)=>{
         getDB().then((db)=>{
-            var cursor=db.collection(user_collection).find({ID: userID})
+            var cursor=db.collection(mongodb_users_collection).find({ID: userID})
 
             cursor.each(function(err, doc) {
                 if(err){
@@ -80,7 +71,7 @@ function modifyGroup(groupID,userID,groupObject){
         getDB().then((db)=>{
             let toReplace = {}
             toReplace[groupID]=groupObject
-            db.collection(user_collection).updateOne(
+            db.collection(mongodb_users_collection).updateOne(
                 {ID: userID}, 
                 {
                     $set: toReplace
@@ -107,7 +98,7 @@ module.exports= {
     isGroupExist(groupID,userID){
         return new Promise((resolve,reject)=>{
             getDB().then((db)=>{
-                var cursor=db.collection(user_collection).find({ID: userID})
+                var cursor=db.collection(mongodb_users_collection).find({ID: userID})
     
                 cursor.each(function(err, doc) {
                     if(err){
@@ -149,7 +140,7 @@ module.exports= {
             getDB().then((db)=>{
                 let objectToDelete={}
                 objectToDelete[groupID]=1
-                db.collection(user_collection).updateOne(                
+                db.collection(mongodb_users_collection).updateOne(                
                     {ID: userID}, 
                     {
                         $unset: objectToDelete
@@ -212,7 +203,7 @@ module.exports= {
                     isGroupHiden:false,
                     groupIndex:0
                 }
-                db.collection(user_collection).insertOne(newUser);
+                db.collection(mongodb_users_collection).insertOne(newUser);
                 resolve()
             }).catch((err)=>{
                 reject(err)
