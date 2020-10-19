@@ -1,10 +1,10 @@
 
 const { MongoClient } = require("mongodb");
-const mongodb_username = 'main-access'
-const mongodb_password = 'zwDde5oFzJGz7Lir'
+const mongodb_username = 'website-access'
+const mongodb_password = 'Ea07u4tzOSgJV8Qh'
 const mongodb_db_name = 'website_db'
 const mongodb_users_collection = "users"
-const mongodb_uri = "mongodb+srv://"+mongodb_username+":"+mongodb_password+"@main.i8bys.mongodb.net/api?retryWrites=true&w=majority";
+const mongodb_uri = "mongodb+srv://"+mongodb_username+":"+mongodb_password+"@main.i8bys.mongodb.net/"+mongodb_db_name+"?retryWrites=true&w=majority";
 const mongodb_client = new MongoClient(mongodb_uri, { useNewUrlParser: true });
 
 var db = null
@@ -13,6 +13,9 @@ function getDB(){
     return new Promise((resolve,reject)=>{
         if(!db){
             mongodb_client.connect(err => {
+                if(err){
+                    reject(err)
+                }
                 db = mongodb_client.db(mongodb_db_name);
                 resolve(db)
             });
@@ -27,9 +30,6 @@ function getUser(userID){
         getDB().then((db)=>{        
             var cursor=db.collection(mongodb_users_collection).find({ID: userID})
             cursor.each(function(err, doc) {
-                if(err){
-                    reject(err)
-                }
                 if(doc!=null&&doc.ID!=null&&doc.ID!=0){
                     resolve(doc)
                 }else{
@@ -58,17 +58,13 @@ module.exports= {
         })
     },
 
-    createUser(ID,twitch_create_at){
+    createUser(userID){
         return new Promise((resolve,reject)=>{
             getDB().then((db)=>{
                 let newUser = {}
                 newUser['ID']=userID
-                newUser['website_create_at']=website_create_at
-                db.collection(user_collection).insertOne(
-                  {
-                    'ID':ID,
-                    'website_create_at':new Date()
-                  });
+                newUser['website_create_at']=new Date()
+                db.collection(mongodb_users_collection).insertOne(newUser);
                 resolve()
             }).catch((err)=>{
                 reject(err)
@@ -99,5 +95,29 @@ module.exports= {
             reject(err)
         })
       })
+    },
+
+    updateUserToken(userID,token){
+        return new Promise((resolve,reject)=>{
+            getDB().then((db)=>{
+                db.collection(mongodb_users_collection).updateOne(
+                    {ID: userID}, 
+                    {
+                        $set: {
+                          'token':token
+                        }
+                    }
+                )
+                resolve()
+            }).catch((err)=>{
+                reject(err)
+            })
+          })
+    },
+
+    getUserToken(userID){
+        getUser(userID).then((user)=>{
+            return user['token']
+        })
     }
 }

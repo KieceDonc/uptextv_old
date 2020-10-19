@@ -321,7 +321,7 @@ class streamTileToolTipHandler{
         
         let p0 = document.createElement('p')
         p0.className='tw-c-text-base tw-ellipsis tw-line-clamp-2'
-        p0.innerHTML=this.streamerInfo.title
+        p0.innerText=this.streamerInfo.title
         
         div0.appendChild(div1)
         div1.appendChild(div2)
@@ -380,7 +380,7 @@ function setup(groupID,groupID_normal,sideGroupsModule,isGroupHiden){
 
     let titleH5 = document.createElement("h5") // use to display the group Section name
     titleH5.className="tw-font-size-6 tw-semibold tw-upcase"
-    titleH5.innerHTML=groupID_normal
+    titleH5.innerText=groupID_normal
 
     let imgsToWatchDarkLightMode = new Array()
     let giveImgsDesireStyle = function(img){
@@ -788,7 +788,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     let p0 = document.createElement("p")
     p0.className="tw-c-text-alt tw-ellipsis tw-ellipsis tw-flex-grow-1 tw-font-size-5 tw-line-height-heading tw-semibold"
     p0.title=streamerName
-    p0.innerHTML=streamerName
+    p0.innerText=streamerName
 
     let div7 = document.createElement("div")
     div7.className="side-nav-card__metadata tw-pd-r-05"
@@ -798,7 +798,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     p1.id=groupObject['name']+_streamerID+"currentgame"
     if(streamerIsStreaming){
         p1.title=streamerGame
-        p1.innerHTML=streamerGame
+        p1.innerText=streamerGame
     }
 
 
@@ -827,9 +827,9 @@ function addStreamerInHTML(groupObject,streamerInfo){
     span0.className="tw-c-text-alt tw-font-size-6"
     span0.id=groupObject['name']+_streamerID+"viewercount"
     if(streamerIsStreaming){
-        span0.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
+        span0.innerText=getViewerCountWithSpaces(streamerViewerCount)
     }else{
-        span0.innerHTML="Disconnected"
+        span0.innerText="Disconnected"
     }
 
     let mainDiv = document.getElementById(groupObject['name']+"_sideNavGroupSection")
@@ -909,7 +909,7 @@ function modifyStreamerViewerCount(groupID,streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
     let streamerViewerCount = streamerInfo.viewer_count
     let span = document.getElementById((groupID+_streamerID+"viewercount"))
-    span.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
+    span.innerText=getViewerCountWithSpaces(streamerViewerCount)
 }
 
 /**
@@ -924,7 +924,7 @@ function modifyStreamerGame(groupID,streamerInfo){
     let p = document.getElementById(groupID+_streamerID+"currentgame")
     console.log(groupID+_streamerID+"currentgame")
     p.title=streamerCurrentGame
-    p.innerHTML=streamerCurrentGame
+    p.innerText=streamerCurrentGame
 }
 
 /**
@@ -951,7 +951,7 @@ function streamerGoesOffline(groupID,streamerInfo){
     let spanDisconnected = document.createElement("span")
     spanDisconnected.className="tw-c-text-alt tw-font-size-6"
     spanDisconnected.id=groupID+_streamerID+"viewercount"
-    spanDisconnected.innerHTML="Disconnected"
+    spanDisconnected.innerText="Disconnected"
 
     let div_main_unknow = document.getElementById(groupID+_streamerID+'usedForUnknow')
     div_main_unknow.appendChild(spanDisconnected)
@@ -990,7 +990,7 @@ function streamerGoesOnline(groupID,streamerInfo){
     let span0 = document.createElement("span")
     span0.className="tw-c-text-alt tw-font-size-6"
     span0.id=groupObject['name']+_streamerID+"viewercount"
-    span0.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
+    span0.innerText=getViewerCountWithSpaces(streamerViewerCount)
     
     divUsedForUnknow.appendChild(div9)
     div9.append(div10)

@@ -21130,17 +21130,16 @@ class groupSection{
 
     constructor(_groupObject,_sideGroupsModule){
         this.groupObject = _groupObject
-        this.groupID = this.groupObject.name
-        this.groupID_normal = decryptGroupID(this.groupID)
+        this.groupObject['name_normal'] = decryptGroupID(this.getGroupID())
         this.sideGroupsModule=_sideGroupsModule
 
-        if(shouldSetup(this.groupID)){
-            setup(this.groupID,this.groupID_normal,this.groupObject['groupIndex'],this.sideGroupsModule,this.groupObject['isGroupHiden'])
+        if(shouldSetup(this.getGroupID())){
+            setup(this.getGroupID(),this.getGroupID_normal(),this.sideGroupsModule,this.groupObject['isGroupHiden'])
             let sortByIndexValue = this.groupObject['sortByIndex']
             this.groupSortBy = groupSortBy.setup(this,sortByIndexValue)
             setupStreamers(this.groupObject,()=>{
                 if(this.groupObject['isGroupHiden']){
-                    hideInHTML(this.groupID,null)
+                    hideInHTML(this.getGroupID(),null)
                 }
             })
 
@@ -21156,10 +21155,10 @@ class groupSection{
         uptextvAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
             this.groupObject['list'].push(streamerInfo)
             addStreamerInHTML(this.groupObject,streamerInfo)
-            addStreamerInAPI(this.groupID,_streamerID)
+            addStreamerInAPI(this.getGroupID(),_streamerID)
             this.onGroupUpdate(oldGroup,this.groupObject['list'])
         }).catch((err)=>{
-            debug.error('error while calling api',err)
+            debug.error('error while trying to get information streamer in api. This error has been catch in addStreamer() in groupSection',err)
         })
     }
 
@@ -21169,22 +21168,22 @@ class groupSection{
      */
     deleteStreamer(_streamerID){
         this.groupObject['list']= this.groupObject['list'].filter(e => e.broadcaster_id != _streamerID)
-        deleteStreamerInHTML(this.groupID,_streamerID,true)
-        deleteStreamerInAPI(this.groupID,_streamerID)
+        deleteStreamerInHTML(this.getGroupID(),_streamerID,true)
+        deleteStreamerInAPI(this.getGroupID(),_streamerID)
     }
 
     /**
      * use to get the group id in ASCII
      */
     getGroupID(){
-        return this.groupID
+        return this.groupObject.name
     }
     
     /**
      * use to get the group id in normal and not in ASCII
      */
     getGroupID_normal(){
-        return this.groupID_normal
+        return this.groupObject.name_normal
     }
 
     getGroupList(){
@@ -21205,8 +21204,10 @@ class groupSection{
 
     setGroupIndex(index){
         this.groupObject['groupIndex'] = index
-        uptextvAPI.setGroupProperty(this.groupID,twitch.getCurrentUser().id,'groupIndex',index).catch((err)=>{
-            debug.error('error while calling api',err)
+        uptextvAPI.setGroupProperty(this.getGroupID(),twitch.getCurrentUser().id,'groupIndex',index).then(()=>{
+            debug.log('successly change index of group section in api',this.groupObject)
+        }).catch((err)=>{
+            debug.error('error while trying to change index of group section in api\n'+JSON.stringify(this.groupObject),err)
         })
     }
 
@@ -21254,7 +21255,6 @@ class groupSection{
 
         this.groupObject=newGroup
         this.updateVisual(oldGroup)
-        
     }
 
 
@@ -21432,7 +21432,7 @@ class streamTileToolTipHandler{
         
         let p0 = document.createElement('p')
         p0.className='tw-c-text-base tw-ellipsis tw-line-clamp-2'
-        p0.innerHTML=this.streamerInfo.title
+        p0.innerText=this.streamerInfo.title
         
         div0.appendChild(div1)
         div1.appendChild(div2)
@@ -21461,11 +21461,10 @@ function shouldSetup(groupID){
  * group section id ( main div ) =(GROUP NAME IN ASCII)_sideNavGroupSection
  * @param {String} groupID groupID in ASCII code 
  * @param {String} groupID_normal groupID in normal 
- * @param {Int} groupIndex 
  * @param {SideGroupsModule} sideGroupsModule 
  * @param {boolean} isGroupHiden
  */
-function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){ 
+function setup(groupID,groupID_normal,sideGroupsModule,isGroupHiden){ 
 
     let mainDivID = groupID+"_sideNavGroupSection"
     let parentDiv = document.getElementsByClassName('side-bar-contents')[0].firstChild.firstChild.firstChild // getting div parent
@@ -21492,7 +21491,7 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
 
     let titleH5 = document.createElement("h5") // use to display the group Section name
     titleH5.className="tw-font-size-6 tw-semibold tw-upcase"
-    titleH5.innerHTML=groupID_normal
+    titleH5.innerText=groupID_normal
 
     let imgsToWatchDarkLightMode = new Array()
     let giveImgsDesireStyle = function(img){
@@ -21543,7 +21542,9 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     imgDelete.src=uptextvIMG.less
     giveImgsDesireStyle(imgDelete)
     imgDelete.addEventListener('click',function(){
-        onDeleteButtonClick(groupID,groupIndex,sideGroupsModule)
+        let currentGroupIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+
+        onDeleteButtonClick(groupID,currentGroupIndex,sideGroupsModule)
     })
 
     let imgReorder = document.createElement('img')
@@ -21566,10 +21567,11 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     imgArrowUp.src=uptextvIMG.top_arrow
     giveImgsDesireStyle(imgArrowUp)
     imgArrowUp.addEventListener('click',function(){
-        let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+        let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
         let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex)
-        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex((currentIndex-1))
-        if((currentIndex-1)>=0){
+        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex-1)
+        // you check if the index you want really leads to a real group section 
+        if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex-1)>=0){
             onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
         }
     })
@@ -21578,10 +21580,11 @@ function setup(groupID,groupID_normal,groupIndex,sideGroupsModule,isGroupHiden){
     imgArrowDown.src=uptextvIMG.bottom_arrow
     giveImgsDesireStyle(imgArrowDown)
     imgArrowDown.addEventListener('click',function(){
-        let currentIndex = sideGroupsModule.getGroupSectionIndexByName(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
+        let currentIndex = sideGroupsModule.getGroupSectionIndexByID(groupID) // YOU MUST USE THIS FUNCTION TO GET THE INDEX BECAUSE THE INDEX ISN'T STATIC
         let groupSectionToMoveUp =  sideGroupsModule.getGroupSectionByIndex(currentIndex+1)
-        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex((currentIndex))
-        if((currentIndex+1)<=sideGroupsModule.getGroupsSection().length){
+        let groupSectionToMoveDown = sideGroupsModule.getGroupSectionByIndex(currentIndex)
+        // you check if the index you want really leads to a real group section 
+        if(groupSectionToMoveUp!=-1||groupSectionToMoveDown!=-1||(currentIndex+1)<=sideGroupsModule.getGroupsSection().length){
             onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDown,sideGroupsModule)
         }
     })
@@ -21896,7 +21899,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     let p0 = document.createElement("p")
     p0.className="tw-c-text-alt tw-ellipsis tw-ellipsis tw-flex-grow-1 tw-font-size-5 tw-line-height-heading tw-semibold"
     p0.title=streamerName
-    p0.innerHTML=streamerName
+    p0.innerText=streamerName
 
     let div7 = document.createElement("div")
     div7.className="side-nav-card__metadata tw-pd-r-05"
@@ -21906,7 +21909,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     p1.id=groupObject['name']+_streamerID+"currentgame"
     if(streamerIsStreaming){
         p1.title=streamerGame
-        p1.innerHTML=streamerGame
+        p1.innerText=streamerGame
     }
 
 
@@ -21935,9 +21938,9 @@ function addStreamerInHTML(groupObject,streamerInfo){
     span0.className="tw-c-text-alt tw-font-size-6"
     span0.id=groupObject['name']+_streamerID+"viewercount"
     if(streamerIsStreaming){
-        span0.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
+        span0.innerText=getViewerCountWithSpaces(streamerViewerCount)
     }else{
-        span0.innerHTML="Disconnected"
+        span0.innerText="Disconnected"
     }
 
     let mainDiv = document.getElementById(groupObject['name']+"_sideNavGroupSection")
@@ -22017,7 +22020,7 @@ function modifyStreamerViewerCount(groupID,streamerInfo){
     let _streamerID = streamerInfo.broadcaster_id
     let streamerViewerCount = streamerInfo.viewer_count
     let span = document.getElementById((groupID+_streamerID+"viewercount"))
-    span.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
+    span.innerText=getViewerCountWithSpaces(streamerViewerCount)
 }
 
 /**
@@ -22032,7 +22035,7 @@ function modifyStreamerGame(groupID,streamerInfo){
     let p = document.getElementById(groupID+_streamerID+"currentgame")
     console.log(groupID+_streamerID+"currentgame")
     p.title=streamerCurrentGame
-    p.innerHTML=streamerCurrentGame
+    p.innerText=streamerCurrentGame
 }
 
 /**
@@ -22059,7 +22062,7 @@ function streamerGoesOffline(groupID,streamerInfo){
     let spanDisconnected = document.createElement("span")
     spanDisconnected.className="tw-c-text-alt tw-font-size-6"
     spanDisconnected.id=groupID+_streamerID+"viewercount"
-    spanDisconnected.innerHTML="Disconnected"
+    spanDisconnected.innerText="Disconnected"
 
     let div_main_unknow = document.getElementById(groupID+_streamerID+'usedForUnknow')
     div_main_unknow.appendChild(spanDisconnected)
@@ -22098,7 +22101,7 @@ function streamerGoesOnline(groupID,streamerInfo){
     let span0 = document.createElement("span")
     span0.className="tw-c-text-alt tw-font-size-6"
     span0.id=groupObject['name']+_streamerID+"viewercount"
-    span0.innerHTML=getViewerCountWithSpaces(streamerViewerCount)
+    span0.innerText=getViewerCountWithSpaces(streamerViewerCount)
     
     divUsedForUnknow.appendChild(div9)
     div9.append(div10)
@@ -22221,7 +22224,7 @@ class groupSortBy{
   
       let optionToAdd=document.createElement('option')
       optionToAdd.value=index // value is to replace currentIndexsortBy in onChange in select
-      optionToAdd.innerHTML=object.name // getting function name
+      optionToAdd.innerText=object.name // getting function name
       toAdd.push(optionToAdd)
       index++
     })
@@ -22387,28 +22390,28 @@ var streamerID // id of streamerID
 class SideGroupsModule{
     constructor(){  
       watcher.on('load.sidenav',()=>{
-        /*uptexAPI.setGroupProperty('80_111_108_105_116_105_113_117_101',twitch.getCurrentUser().id,'groupIndex',2)
-        uptexAPI.setGroupProperty('65_79_69_32_73_73',twitch.getCurrentUser().id,'groupIndex',1)
-        uptexAPI.setGroupProperty('67_73_86_32_86_73',twitch.getCurrentUser().id,'groupIndex',0)
-        uptexAPI.setGroupProperty('82_111_99_107_101_116_32_108_101_97_103_117_101',twitch.getCurrentUser().id,'groupIndex',3)
-        uptexAPI.setGroupProperty('67_104_101_115_115',twitch.getCurrentUser().id,'groupIndex',4)*/
   
         userID = twitch.getCurrentUser().id
         uptextvAPI.setup(userID).then(()=>{
+          
+          /*uptextvAPI.setGroupProperty('82_111_99_107_101_116_32_108_101_97_103_117_101',twitch.getCurrentUser().id,'groupIndex',0)
+          uptextvAPI.setGroupProperty('65_79_69_32_73_73',twitch.getCurrentUser().id,'groupIndex',1)
+          uptextvAPI.setGroupProperty('67_73_86_32_86_73',twitch.getCurrentUser().id,'groupIndex',2)
+          uptextvAPI.setGroupProperty('80_111_108_105_116_105_113_117_101',twitch.getCurrentUser().id,'groupIndex',3)
+          uptextvAPI.setGroupProperty('67_72_69_83_83',twitch.getCurrentUser().id,'groupIndex',4)*/
           uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
-            //groups = _groups
             groups.sort((groupA,groupB)=>{
               return groupB.groupIndex - groupA.groupIndex
             })
             groups.forEach((currentGroup)=>{
               setupGroupSection(currentGroup,this)
+              sideBottomBar.setup(this)
             }) 
             handleUpdateEach5min(this)
           })
         }).catch((err)=>{
           debug.error('error:',err )
         })
-        sideBottomBar.setup(this)
       })
       watcher.on('load.followbutton',()=>{
         streamerID = twitch.getCurrentChannel().id
@@ -22440,6 +22443,10 @@ class SideGroupsModule{
           isGroupHiden:false,
           groupIndex:0
         }
+        // because you added a new group section you need to shift every group section index by one
+        groupsSection.forEach((currentGroupSection)=>{
+          currentGroupSection.setGroupIndex(currentGroupSection.getGroupIndex()+1)
+        }) 
         setupGroupSection(newGroupObject,this)
       }).catch((err)=>{
         debug.error('error while trying to add a new group in index.js',err)
@@ -22447,24 +22454,46 @@ class SideGroupsModule{
     }
 
     deleteGroupSection(indexOfGroup){  
-      groupsSection = groupsSection.splice(indexOfGroup, 1);
-      //groups = groups.splice(indexOfGroup,1)
+      // splice delete from groupsSection and stock in deletedGroupSection the deleted group section 
+      let deletedGroupSection = groupsSection.splice(indexOfGroup, 1)[0];
+      let deletedGroupSectionIndex = deletedGroupSection.getGroupIndex()
+      console.log(deletedGroupSection)
+
+      // for every group section you need to check if the 'current group section' is higher than the deleted group section index
+      // you have to do to decremente the value also you will have bugs
+      groupsSection.forEach((currentGroupSection)=>{
+        let currentGroupSectionIndex = currentGroupSection.getGroupIndex()
+        if(currentGroupSectionIndex>deletedGroupSectionIndex){
+          currentGroupSection.setGroupIndex(currentGroupSectionIndex-1)
+        }
+      })
     }
 
-    getGroupSectionIndexByName(name){
+    getGroupSectionIndexByID(groupID){
       let founded = false
       let cmpt = 0
       do{
-        if(groupsSection[cmpt].getGroupID()==name){
+        if(groupsSection[cmpt].getGroupID()==groupID){
           return groupsSection[cmpt].getGroupIndex()
         }
         cmpt++
       }while(cmpt<groupsSection.length&&!founded)
-      return null // normaly impossible
+      return -2 // normaly impossible
     }
 
     getGroupSectionByIndex(index){
-      return groupsSection[index]
+      if(index>=groupsSection.length||index<0){
+        return -1
+      }
+      let founded = false
+      let cmpt = 0
+      do{
+        if(groupsSection[cmpt].getGroupIndex()==index){
+          return groupsSection[cmpt]
+        }
+        cmpt++
+      }while(cmpt<groupsSection.length&&!founded)
+      return -1 // normaly impossible
     }
 
     groupsSectionSwitchElements(first_element_index,second_element_index){
@@ -22484,9 +22513,16 @@ class SideGroupsModule{
     }
 }
 
+/*function showGroupsIndex(){
+  groupsSection.forEach((currentGroupSection)=>{
+    console.log(currentGroupSection.getGroupID_normal()+' index ='+currentGroupSection.getGroupIndex())
+  })
+}*/
+
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){
   var currentGroupSection = groupSection.setup(currentGroup,sideGroupsModule) // groupsSection.length represent the position of the currentGroup
+  console.log(currentGroupSection)
   groupsSection.unshift(currentGroupSection)
 }
 
@@ -22564,7 +22600,7 @@ module.exports = new SideGroupsModule()
 
 },{"../../utils/debug":66,"../../utils/twitch":69,"../../utils/uptextv-api":70,"../../watcher":72,"./groupSection":58,"./pinButton":61,"./sideBottomBar":62}],61:[function(require,module,exports){
 const $ = require('jquery');
-const pin_icon_mouse_over_url = "https://uptextv.com/pe/pin-icon.svg"
+const uptextvIMG = require('../../utils/uptextv-image').get()
 const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
 
 var sideGroupsModule
@@ -22658,7 +22694,7 @@ function setup(){
   
       let img0 = document.createElement("img")
       img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
-      img0.src= pin_icon_mouse_over_url//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+      img0.src= uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
       img0.style.maxWidth='none'
   
       let span0 = document.createElement("span")
@@ -22797,7 +22833,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         })
 
         let label_current_group = document.createElement('label')
-        label_current_group.innerHTML = currentGroupID_normal
+        label_current_group.innerText = currentGroupID_normal
         label_current_group.style.marginLeft='0.25rem'
 
         div_current_group.append(input_current_group)
@@ -22866,7 +22902,7 @@ module.exports = {
         return new pinButton(_sideGroupsModule)
     }
 }
-},{"../../utils/dark-light-mode-watcher":65,"jquery":34}],62:[function(require,module,exports){
+},{"../../utils/dark-light-mode-watcher":65,"../../utils/uptextv-image":71,"jquery":34}],62:[function(require,module,exports){
 const debug = require('../../utils/debug')
 const uptextvAPI = require('../../utils/uptextv-api')
 const uptextvIMG = require('../../utils/uptextv-image').get()
@@ -22900,51 +22936,18 @@ class sideBottomBar{
      */
     setup(){
         if(this.shouldSetup()){
-            /*
-            <div class="side-nav-search-input tw-border-t tw-pd-1">
-                <div class="tw-search-input" >
-                    <div class="tw-relative">
-                        <button class="tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05">
-                            <p style="text-align: center;">
-                                Add new group
-                            </p>
-                        </button>
-                    </div>
-                </div>
-            </div>
-                
-                */
-
             let sideNav = document.getElementById('sideNav')
 
             if(sideNav){
                 
-                let div0 = document.createElement('div')
-                div0.id="sideBottomBar"
-                div0.className="side-nav-search-input tw-border-t tw-pd-1"
-                div0.style.maxHeight = document.getElementsByClassName('side-nav-search-input')[0].offsetHeight // search input offsetHeight
+                let sideBottomBar = document.createElement('div')
+                sideBottomBar.id="sideBottomBar"
+                sideBottomBar.className="side-nav-search-input tw-border-t tw-pd-1"
+                sideBottomBar.style.maxHeight = document.getElementsByClassName('side-nav-search-input')[0].offsetHeight // search input offsetHeight
 
-                let div1 = document.createElement('div')
-                div1.className='tw-search-input'
 
-                let div2 = document.createElement('div')
-                div2.className='tw-relative'
-
-                let button0 = document.createElement('button')
-                button0.className='tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05'
-                button0.addEventListener('click',()=>{
-                    this.button.onClick()
-                })
-
-                let p0 = document.createElement('p')
-                p0.style.textAlign='center'
-                p0.innerHTML='Add a new group'
-
-                sideNav.firstChild.firstChild.appendChild(div0)
-                div0.appendChild(div1)
-                div1.appendChild(div2)
-                div2.appendChild(button0)
-                button0.appendChild(p0)
+                sideNav.firstChild.firstChild.appendChild(sideBottomBar)
+                this.button.setup(sideBottomBar)
             }else{
                 debug.error('error while trying to find sideNav id in sideBottomBar. SideNav is null')
             }
@@ -22956,6 +22959,32 @@ class sideBottomBar{
  * handle all process of the add button
  */
 class AddButton{
+
+    // call on setup of sideBottomBar 
+    // use to create in html / css the button to add group
+    setup(sideBottomBarDiv){
+        let div1 = document.createElement('div')
+        div1.className='tw-search-input'
+
+        let div2 = document.createElement('div')
+        div2.className='tw-relative'
+
+        let button0 = document.createElement('button')
+        button0.className='tw-block tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-font-size-6 tw-full-width tw-input tw-pd-l-1 tw-pd-r-1 tw-pd-y-05'
+        button0.addEventListener('click',()=>{
+            this.moveSideNavToTop() 
+            this.onClick()
+        })
+
+        let p0 = document.createElement('p')
+        p0.style.textAlign='center'
+        p0.innerText='Add a new group'
+
+        sideBottomBarDiv.appendChild(div1)
+        div1.appendChild(div2)
+        div2.appendChild(button0)
+        button0.appendChild(p0)
+    }
 
     // call when user click on '+' buton in the side bottom bar
     // it basically add a temp title / input so user can decide the name of the new group
@@ -22997,7 +23026,7 @@ class AddButton{
 
                 let title_h5 = document.createElement('h5')
                 title_h5.className="tw-font-size-6 tw-semibold tw-upcase"
-                title_h5.innerHTML="Default name"
+                title_h5.innerText="Default name"
                 title_h5.id='add_group_title_id'
 
                 title_div0.append(title_h5)
@@ -23017,9 +23046,9 @@ class AddButton{
                 input_input.placeholder='Add a group'
                 input_input.addEventListener('input',function(){ // listen when the input change and so then change the group section title in consequence
                     if(input_input.value.length>0){
-                        title_h5.innerHTML=input_input.value
+                        title_h5.innerText=input_input.value
                     }else{
-                        title_h5.innerHTML="Default name"
+                        title_h5.innerText="Default name"
                     }
                 })
 
@@ -23078,6 +23107,15 @@ class AddButton{
         }
     }
 
+    /* Then user click on 'add group' the input will be on the top of the side nav
+     * You have a problem, sideNav is a custom scrollable div and user could have scroll so he won't see the input
+     * You solve the problem by moving scroll to 0,0
+     */
+    moveSideNavToTop(){
+        let scrollableDivElement = document.getElementsByClassName('simplebar-scroll-content')[0]
+        scrollableDivElement.scroll({top:0,left:0,behavior:"smooth"}) 
+    }
+
     // call when a temporary side group is create and user valid his action
     // first you need to check if this name is valid ( name / not already in db, etc ) and when add a groupSection
     onInputValidClick(input,inputMainDiv){
@@ -23109,12 +23147,12 @@ class AddButton{
     onInvalidInput(err,inputMainDiv){
         let p0 = document.getElementById('add_group_err')
         if(p0){ // checking is p already exist
-            p0.innerHTML = err
+            p0.innerText = err
         }else{
             p0 = document.createElement('p')
             p0.className='tw-c-text-alt-2 tw-font-size-6 tw-line-height-heading'
             p0.id = 'add_group_err'
-            p0.innerHTML = err
+            p0.innerText = err
             p0.style.marginTop='0.5rem'
             inputMainDiv.children[1].append(p0)
         }

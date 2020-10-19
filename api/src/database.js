@@ -3,7 +3,7 @@ const mongodb_username = 'main-access'
 const mongodb_password = 'zwDde5oFzJGz7Lir'
 const mongodb_db_name = 'api_db';
 const mongodb_users_collection = "users"
-const mongodb_uri = "mongodb+srv://"+mongodb_username+":"+mongodb_password+"@main.i8bys.mongodb.net/api?retryWrites=true&w=majority";
+const mongodb_uri = "mongodb+srv://"+mongodb_username+":"+mongodb_password+"@main.i8bys.mongodb.net/"+mongodb_db_name+"?retryWrites=true&w=majority";
 const mongodb_client = new MongoClient(mongodb_uri, { useNewUrlParser: true });
 
 const defaultLiveColor = '#007aa3'
@@ -14,6 +14,9 @@ function getDB(){
     return new Promise((resolve,reject)=>{
         if(!db){
             mongodb_client.connect(err => {
+                if(err){
+                    reject(err)
+                }
                 db = mongodb_client.db(mongodb_db_name);
                 resolve(db)
             });

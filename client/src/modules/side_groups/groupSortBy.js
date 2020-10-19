@@ -46,7 +46,7 @@ class groupSortBy{
   
       let optionToAdd=document.createElement('option')
       optionToAdd.value=index // value is to replace currentIndexsortBy in onChange in select
-      optionToAdd.innerHTML=object.name // getting function name
+      optionToAdd.innerText=object.name // getting function name
       toAdd.push(optionToAdd)
       index++
     })

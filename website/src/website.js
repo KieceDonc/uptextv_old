@@ -2,7 +2,8 @@ const express = require('express');
 const fs = require('fs')
 const https = require('https')
 const twitch = require('./twitch')
-const database = require('./database');
+const database = require('./database')
+const security = require('./security');
 const domain="uptextv.com"
 const port = 1000; 
 
@@ -31,13 +32,35 @@ var io = require('socket.io').listen(server);
 
 io.on('connection', (socket) => {
     socket.on('onLogin',(twitch_code)=>{
-        twitch.getAcccessTokenAndID(twitch_code).then((JSON0)=>{
-            console.log(JSON0)
-            let bearer_token = JSON0.access_token
-            twitch.getUserBasicInfo(bearer_token).then((JSON1)=>{
-                console.log(JSON1)
+        onLogin(twitch_code)
+    })
+
+});
+
+/**
+ * This function have two main role :
+ * handle work for user information in database
+ * handle work for security token 
+ * This function will also the callback cuz db_background_work() might take more time than security_work() and if you do a resolve in a promise it will stop the work
+ * @param {*} twitch_code 
+ */
+function onLogin(twitch_code){
+    twitch.getAcccessTokenAndID(twitch_code).then((JSON0)=>{
+        let bearer_token = JSON0.access_token
+        twitch.getUserBasicInfo(bearer_token).then((JSON1)=>{
+
+            security_work() = ()=>{
+                security.createToken(userID).then((token)=>{
+                    socket.emit('callback_onLogin','token',token)
+                })
+            }
+
+            security_work()
+
+            database_background_work() = ()=>{
                 let userID = JSON1.sub
                 twitch.getUserAllInfo(bearer_token,userID).then((JSON2)=>{
+                    
                     let userData = JSON2.data[0] 
                     let userEmail = userData['email']
                     let userID = userData['id']
@@ -45,32 +68,48 @@ io.on('connection', (socket) => {
                     let userType = userData['type']
                     let userBroadcasterType = userData['broadcaster_type']
                     let userViewCount = userData['view_count']
-                    let userProfilePicture = userData['profile_image_picture']
-
+                    let userProfilePicture = userData['profile_image_url']
+    
                     updateUser = ()=>{
-                        database.updateUser(userID,userName,userEmail,userType,userBroadcasterType,userViewCount,userProfilePicture).catch((err)=>{
-                            console.log(err)
+                        return new Promise((resolve)=>{
+                            database.updateUser(userID,userName,userEmail,userType,userBroadcasterType,userViewCount,userProfilePicture).then(()=>{
+                                resolve()
+                            })
                         })
                     }
 
                     database.isUserExist(userID).then((isUserExist)=>{
                         if(isUserExist){
-                            console.log('called')
-                            database.createUser(userID).then(()=>{
-                                updateUser()
+                            updateUser().then(()=>{
+                                resolve()
                             })
                         }else{
-                            updateUser()
+                            database.createUser(userID).then(()=>{
+                                updateUser().then(()=>{
+                                    resolve
+                                })
+                            })
                         }
-
-                    })
-                    //https://openclassrooms.com/fr/courses/5614116-go-full-stack-with-node-js-express-and-mongodb/5656296-create-authentication-tokens
-                    socket.emit('callback_onLogin','')
+                    })                 
                 })
-            })
-        }).catch((err)=>{
-            // normally not happening
-            socket.emit('callback_onLogin','err',err)
+            }
+
+            database_background_work()
+        })
+    }).catch((err)=>{
+        // normally not happening
+        socket.emit('callback_onLogin','err',err)
+    })
+}
+
+/**
+ * This function will check the security token 
+ * @param {*} token 
+ */
+function checkToken(token){
+    return new Promise((resolve)=>{
+        security.checkToken(token).then((isTokenValid)=>{
+            resolve(isTokenValid)
         })
     })
-});
+}

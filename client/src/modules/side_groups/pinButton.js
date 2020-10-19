@@ -232,7 +232,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         })
 
         let label_current_group = document.createElement('label')
-        label_current_group.innerHTML = currentGroupID_normal
+        label_current_group.innerText = currentGroupID_normal
         label_current_group.style.marginLeft='0.25rem'
 
         div_current_group.append(input_current_group)

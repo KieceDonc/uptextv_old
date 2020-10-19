@@ -73,7 +73,7 @@ class AddButton{
 
         let p0 = document.createElement('p')
         p0.style.textAlign='center'
-        p0.innerHTML='Add a new group'
+        p0.innerText='Add a new group'
 
         sideBottomBarDiv.appendChild(div1)
         div1.appendChild(div2)
@@ -121,7 +121,7 @@ class AddButton{
 
                 let title_h5 = document.createElement('h5')
                 title_h5.className="tw-font-size-6 tw-semibold tw-upcase"
-                title_h5.innerHTML="Default name"
+                title_h5.innerText="Default name"
                 title_h5.id='add_group_title_id'
 
                 title_div0.append(title_h5)
@@ -141,9 +141,9 @@ class AddButton{
                 input_input.placeholder='Add a group'
                 input_input.addEventListener('input',function(){ // listen when the input change and so then change the group section title in consequence
                     if(input_input.value.length>0){
-                        title_h5.innerHTML=input_input.value
+                        title_h5.innerText=input_input.value
                     }else{
-                        title_h5.innerHTML="Default name"
+                        title_h5.innerText="Default name"
                     }
                 })
 
@@ -242,12 +242,12 @@ class AddButton{
     onInvalidInput(err,inputMainDiv){
         let p0 = document.getElementById('add_group_err')
         if(p0){ // checking is p already exist
-            p0.innerHTML = err
+            p0.innerText = err
         }else{
             p0 = document.createElement('p')
             p0.className='tw-c-text-alt-2 tw-font-size-6 tw-line-height-heading'
             p0.id = 'add_group_err'
-            p0.innerHTML = err
+            p0.innerText = err
             p0.style.marginTop='0.5rem'
             inputMainDiv.children[1].append(p0)
         }
