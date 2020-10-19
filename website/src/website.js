@@ -32,7 +32,7 @@ var io = require('socket.io').listen(server);
 
 io.on('connection', (socket) => {
     socket.on('onLogin',(twitch_code)=>{
-        onLogin(twitch_code)
+        onLogin(twitch_code,socket)
     })
 
 });
@@ -44,21 +44,21 @@ io.on('connection', (socket) => {
  * This function will also the callback cuz db_background_work() might take more time than security_work() and if you do a resolve in a promise it will stop the work
  * @param {*} twitch_code 
  */
-function onLogin(twitch_code){
+function onLogin(twitch_code,socket){
     twitch.getAcccessTokenAndID(twitch_code).then((JSON0)=>{
         let bearer_token = JSON0.access_token
         twitch.getUserBasicInfo(bearer_token).then((JSON1)=>{
+            let userID = JSON1.sub
 
-            security_work() = ()=>{
-                security.createToken(userID).then((token)=>{
+            security_work = ()=>{
+                security.create_token(userID).then((token)=>{
                     socket.emit('callback_onLogin','token',token)
                 })
             }
 
             security_work()
 
-            database_background_work() = ()=>{
-                let userID = JSON1.sub
+            database_background_work = ()=>{
                 twitch.getUserAllInfo(bearer_token,userID).then((JSON2)=>{
                     
                     let userData = JSON2.data[0] 
@@ -71,23 +71,15 @@ function onLogin(twitch_code){
                     let userProfilePicture = userData['profile_image_url']
     
                     updateUser = ()=>{
-                        return new Promise((resolve)=>{
-                            database.updateUser(userID,userName,userEmail,userType,userBroadcasterType,userViewCount,userProfilePicture).then(()=>{
-                                resolve()
-                            })
-                        })
+                        database.updateUser(userID,userName,userEmail,userType,userBroadcasterType,userViewCount,userProfilePicture)
                     }
 
                     database.isUserExist(userID).then((isUserExist)=>{
                         if(isUserExist){
-                            updateUser().then(()=>{
-                                resolve()
-                            })
+                            updateUser()
                         }else{
                             database.createUser(userID).then(()=>{
-                                updateUser().then(()=>{
-                                    resolve
-                                })
+                                updateUser()
                             })
                         }
                     })                 

@@ -1,18 +1,28 @@
 const database = require('./database')
 
-/*
-  Your security work like this :
-  you create a unique token for one session 
-  everytime the user log out he will loose the refence of the token 
-*/
+module.exports = {
 
-function create_token(userID){
-  return new Promise((resolve)=>{
-    let token = generate_token()
-    database.updateUserToken(userID,token).then(()=>{
-      resolve(token)
+  /*
+    Your security work like this :
+    you create a unique token for one session 
+    everytime the user log out he will loose the refence of the token 
+  */
+  create_token(userID){
+    return new Promise((resolve)=>{
+      let token = generate_token()
+      database.updateUserToken(userID,token).then(()=>{
+        resolve(token)
+      })
     })
-  })
+  },
+
+  check_token(userID,token){
+    return new Promise((resolve)=>{
+      database.getUserToken(userID).then((db_token)=>{
+        resolve(token==db_token)
+      })
+    })
+  }
 }
 
 function generate_token(){
@@ -23,13 +33,7 @@ function generate_token(){
   return token
 }
 
-function check_token(userID,token){
-  return new Promise((resolve)=>{
-    database.getUserToken(userID).then((db_token)=>{
-      resolve(token==db_token)
-    })
-  })
-}
+
 
 function getRamdomLetter(){
   let upper_or_lower = randomIntFromInterval(0,1);
