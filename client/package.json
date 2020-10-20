@@ -6,13 +6,11 @@
   "scripts": {
     "build": "browserify ./src/index.js -o /var/www/extension/bundle.js",
     "watch": "watchify ./src/index.js -o /var/www/extension/bundle.js",
-    "release": "browserify ./src/index.js -o ./release/uptextv-bundle.js && javascript-obfuscator ./release/uptextv-bundle.js --output ./release/uptextv.js --identifier-names-generator mangled --simplify false --compact true --string-array false && mkdir ../to-zip/ && mkdir ../to-zip/mozilla_extension/ && cp ../client -r ../to-zip && mv ../to-zip/client ../to-zip/source_code && cp release/README.md ../to-zip/README.md && cp release/manifest.json ../to-zip/mozilla_extension/manifest.json && cp release/run.js ../to-zip/mozilla_extension/run.js && cp release/uptextv.js ../to-zip/mozilla_extension/uptextv.js && cd ../to-zip/ && zip -r uptextv.zip * && mv uptextv.zip ../uptextv.zip && cd ../client/ && rm -r ../to-zip && echo done"
+    "release": "npm install && browserify ./src/index.js -o ./release/uptextv-bundle.js && javascript-obfuscator ./release/uptextv-bundle.js --output ./release/uptextv.js --identifier-names-generator mangled --simplify false --compact true --string-array false && mkdir ../to-zip/ && mkdir ../to-zip/mozilla_extension/ && cp ../client -r ../to-zip && rm -r ../to-zip/client/node_modules && cp release/README.md ../to-zip/README.md && cp release/manifest.json ../to-zip/mozilla_extension/manifest.json && cp release/run.js ../to-zip/mozilla_extension/run.js && cp release/uptextv.js ../to-zip/mozilla_extension/uptextv.js && cd ../to-zip/ && zip -r uptextv.zip * && mv uptextv.zip ../uptextv.zip && cd ../ && rm -r to-zip && echo done"
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "browserify": "^16.5.2"
-  },
+  "devDependencies": {},
   "dependencies": {
     "@babel/core": "^7.12.3",
     "@babel/plugin-transform-runtime": "^7.12.1",
@@ -20,7 +18,9 @@
     "@babel/runtime": "^7.12.1",
     "autoprefixer": "^9.8.6",
     "babelify": "^10.0.0",
+    "browserify": "^17.0.0",
     "cookies-js": "^1.2.3",
+    "core-util-is": "^1.0.2",
     "del": "^5.1.0",
     "emojilib": "^2.4.0",
     "envify": "^4.1.0",

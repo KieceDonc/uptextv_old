@@ -1,8 +1,8 @@
 mozilla_extension -> folder of the web extension use by the user
-source_code -> my code
-source_code/modules/ -> library
-source_code/release/ -> use to welcome compiled file + some usefull file for release ( just continue reading you will understand )
-source_code/src/ -> my code 
+client -> source_code
+client/modules/ -> library ( only appear after npm run release)
+client/release/ -> use to welcome compiled file + some usefull file for release ( just continue reading you will understand )
+client/src/ -> my code 
 package.json & package-lock.json -> library handler / command handler and others things
 
 
@@ -12,11 +12,11 @@ So they're 2 steps to obtain the final source code ( uptextv.js ) use by the use
 2 - delete commentary / spaces etc
 
 I created a command that do this thing. Just run 'npm run release' in uptex/
-Then in uptex/source_code/release/ you will obtain 2 files : 
+Then in uptex/client/release/ you will obtain 2 files : 
 	1- uptextv-bundle.js
 	2- uptextv.js
 
-'npm run release' also create uptex.zip which is the file you normaly receive
+'npm run release' also install dependency and create uptex.zip which is the file you normaly receive
 	
 uptextv-bundle is the step 1 
 uptextv.js is the step 2 ( used in mozilla_extension )
