@@ -21,7 +21,7 @@
 
     debug.log(`Uptex loaded`);
 
-    window.Uptextv = {
+    window.uptextv = {
         version: debug.version,
         settings: require('./settings'),
         watcher: {

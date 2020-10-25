@@ -1,6 +1,7 @@
 const debug = require('../../utils/debug')
 const uptextvAPI = require('../../utils/uptextv-api')
 const uptextvIMG = require('../../utils/uptextv-image').get()
+const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
 
 let sideGroupsModule
 
@@ -174,7 +175,9 @@ class AddButton{
 
                 let input_valid_img = document.createElement('img')
                 input_valid_img.src=uptextvIMG.valid
-                input_valid_img.style.filter='brightness(0) invert(1)'
+                if(dark_light_mode_watcher.isInDarkMode()){
+                    input_valid_img.style.filter='brightness(0) invert(1)'
+                }
                 input_valid_img.style.width = input_imgs_height
                 input_valid_img.style.verticalAlign='middle'
                 input_valid_img.style.cursor='pointer'
@@ -183,10 +186,12 @@ class AddButton{
                 input_valid_img.addEventListener('click', ()=>{
                     this.onInputValidClick(input_input,mainDiv)
                 })
-
+    
                 let input_cancel_img = document.createElement('img')
                 input_cancel_img.src=uptextvIMG.cancel
-                input_cancel_img.style.filter='brightness(0) invert(1)'
+                if(dark_light_mode_watcher.isInDarkMode()){
+                    input_valid_img.style.filter='brightness(0) invert(1)'
+                }
                 input_cancel_img.style.width = input_imgs_height
                 input_cancel_img.style.verticalAlign='middle'
                 input_cancel_img.style.cursor='pointer'
@@ -196,6 +201,16 @@ class AddButton{
 
                 input_div1.append(input_valid_img)
                 input_div1.append(input_cancel_img)
+
+                dark_light_mode_watcher.onDarkMode(()=>{
+                    input_valid_img.style.filter='brightness(0) invert(1)'
+                    input_cancel_img.style.filter='brightness(0) invert(1)'
+                })
+
+                dark_light_mode_watcher.onLightMode(()=>{
+                    input_valid_img.style.filter=''
+                    input_cancel_img.style.filter=''
+                })
             }
         }else{
             debug.log('user is trying to add a new group but a temporary group already exist ( sideBottomBar )')

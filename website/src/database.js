@@ -5,7 +5,7 @@ const mongodb_password = 'Ea07u4tzOSgJV8Qh'
 const mongodb_db_name = 'website_db'
 const mongodb_users_collection = "users"
 const mongodb_uri = "mongodb+srv://"+mongodb_username+":"+mongodb_password+"@main.i8bys.mongodb.net/"+mongodb_db_name+"?retryWrites=true&w=majority";
-const mongodb_client = new MongoClient(mongodb_uri, { useNewUrlParser: true });
+const mongodb_client = new MongoClient(mongodb_uri, { useUnifiedTopology: true,suseNewUrlParser: true });
 
 var db = null
 

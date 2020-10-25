@@ -19,6 +19,7 @@ const credentials = {
 
 var app = express();  
 app.use((req, res, next) => {
+    console.log(req)
     res.append('Access-Control-Allow-Origin' , 'https://www.twitch.tv');
     res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     next();

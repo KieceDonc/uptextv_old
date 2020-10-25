@@ -10,28 +10,20 @@ const css_picture_profile_offline = "side-nav-card__avatar side-nav-card__avatar
 
 class groupSection{
 
-    /*groupSortBy=null
-    groupObject=null
-    groupID=''
-    groupID_normal=''
-
-    sideGroupsModule=null*/
-
     constructor(_groupObject,_sideGroupsModule){
-        this.groupObject = _groupObject
+        this.setGroupObject(_groupObject)
         this.groupObject['name_normal'] = decryptGroupID(this.getGroupID())
         this.sideGroupsModule=_sideGroupsModule
 
         if(shouldSetup(this.getGroupID())){
-            setup(this.getGroupID(),this.getGroupID_normal(),this.sideGroupsModule,this.groupObject['isGroupHiden'])
-            let sortByIndexValue = this.groupObject['sortByIndex']
+            setup(this.getGroupID(),this.getGroupID_normal(),this.sideGroupsModule,this.getIsGroupHiden())
+            let sortByIndexValue = this.getSortIndex()
             this.groupSortBy = groupSortBy.setup(this,sortByIndexValue)
-            setupStreamers(this.groupObject,()=>{
-                if(this.groupObject['isGroupHiden']){
+            setupStreamers(this.getGroupObject(),()=>{
+                if(this.getIsGroupHiden()){
                     hideInHTML(this.getGroupID(),null)
                 }
             })
-
         }
     }  
 
@@ -40,12 +32,12 @@ class groupSection{
      * @param {String} _streamerID normal
      */
     addStreamer(_streamerID){
-        let oldGroup = this.groupObject['list']// use to calculate old and new position of streamers in current group
+        let oldGroup = this.getGroupList()// use to calculate old and new position of streamers in current group
         uptextvAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
-            this.groupObject['list'].push(streamerInfo)
-            addStreamerInHTML(this.groupObject,streamerInfo)
+            this.getGroupList().push(streamerInfo)
+            addStreamerInHTML(this.getGroupObject(),streamerInfo)
             addStreamerInAPI(this.getGroupID(),_streamerID)
-            this.onGroupUpdate(oldGroup,this.groupObject['list'])
+            this.onGroupUpdate(oldGroup,this.getGroupList())
         }).catch((err)=>{
             debug.error('error while trying to get information streamer in api. This error has been catch in addStreamer() in groupSection',err)
         })
@@ -56,7 +48,8 @@ class groupSection{
      * @param {String} _streamerID 
      */
     deleteStreamer(_streamerID){
-        this.groupObject['list']= this.groupObject['list'].filter(e => e.broadcaster_id != _streamerID)
+        let newGroupList = this.getGroupObject()['list'].filter(e => e.broadcaster_id != _streamerID)
+        this.setGroupList(newGroupList)
         deleteStreamerInHTML(this.getGroupID(),_streamerID,true)
         deleteStreamerInAPI(this.getGroupID(),_streamerID)
     }
@@ -65,39 +58,51 @@ class groupSection{
      * use to get the group id in ASCII
      */
     getGroupID(){
-        return this.groupObject.name
+        return this.getGroupObject().name
     }
     
     /**
      * use to get the group id in normal and not in ASCII
      */
     getGroupID_normal(){
-        return this.groupObject.name_normal
+        return this.getGroupObject().name_normal
     }
 
     getGroupList(){
-        return this.groupObject.list
+        return this.getGroupObject().list
     }
 
     getGroupObject(){
         return this.groupObject
     }
 
+    setGroupObject(_groupObject){
+        this.groupObject = _groupObject
+    }
+
     setGroupList(_list){
-        this.groupObject.list = _list
+        this.getGroupObject().list = _list
     }
 
     getGroupIndex(){
-        return this.groupObject.groupIndex
+        return this.getGroupObject().groupIndex
+    }
+
+    getSortIndex(){
+        return this.getGroupObject().sortByIndex
     }
 
     setGroupIndex(index){
-        this.groupObject['groupIndex'] = index
+        this.getGroupObject()['groupIndex'] = index
         uptextvAPI.setGroupProperty(this.getGroupID(),twitch.getCurrentUser().id,'groupIndex',index).then(()=>{
-            debug.log('successly change index of group section in api',this.groupObject)
+            debug.log('successly change index of group section in api',this.getGroupObject())
         }).catch((err)=>{
-            debug.error('error while trying to change index of group section in api\n'+JSON.stringify(this.groupObject),err)
+            debug.error('error while trying to change index of group section in api\n'+JSON.stringify(this.getGroupObject()),err)
         })
+    }
+
+    getIsGroupHiden(){
+        return this.getGroupObject().isGroupHiden
     }
 
     // this.groupObject has been update
@@ -106,7 +111,7 @@ class groupSection{
         let goesOnline = new Array()
         let goesOffline = new Array()
         let updateOnline = new Array()
-        let oldGroup = this.groupObject['list']
+        let oldGroup = this.getGroupList()
         newGroup['list'].forEach((newStreamerInfo)=>{
             let oldStreamerInfo = -1
             for(let y=0;y<oldGroup.length;y++){ // trying to find oldStreamerInfo in oldGroup
@@ -130,19 +135,19 @@ class groupSection{
             }
         })
         goesOnline.forEach(streamerInfo => {
-            streamerGoesOnline(this.groupID,streamerInfo)
+            streamerGoesOnline(this.getGroupID(),streamerInfo)
         });
 
         goesOffline.forEach(streamerInfo =>{
-            streamerGoesOffline(this.groupID,streamerInfo)
+            streamerGoesOffline(this.getGroupID(),streamerInfo)
         })
 
         updateOnline.forEach(streamerInfo=>{
-            modifyStreamerGame(this.groupID,streamerInfo)
-            modifyStreamerViewerCount(this.groupID,streamerInfo)
+            modifyStreamerGame(this.getGroupID(),streamerInfo)
+            modifyStreamerViewerCount(this.getGroupID(),streamerInfo)
         })
 
-        this.groupObject=newGroup
+        this.setGroupObject(newGroup)
         this.updateVisual(oldGroup)
     }
 
@@ -162,10 +167,10 @@ class groupSection{
             let oldPosition = this.getStreamerIndex(currentStreamerID,oldGroup)
             let newPosition = this.getStreamerIndex(currentStreamerID)
             if(newPosition!=oldPosition&&oldPosition!=-1){
-                makeTranslateYForOneStreamer(this.groupID,currentStreamerInfo,oldPosition,newPosition)
+                makeTranslateYForOneStreamer(this.getGroupID(),currentStreamerInfo,oldPosition,newPosition)
                 setTimeout(function () { // use to replace in good order in html  
-                    temp_groupSection.groupObject['list'].forEach((currentStreamerInfo)=>{
-                        deleteStreamerInHTML(temp_groupSection.groupID,currentStreamerInfo.broadcaster_id,false)
+                    temp_groupSection.getGroupList().forEach((currentStreamerInfo)=>{
+                        deleteStreamerInHTML(temp_groupSection.getGroupID(),currentStreamerInfo.broadcaster_id,false)
                         addStreamerInHTML(temp_groupSection.groupObject,currentStreamerInfo)
                     })
                 }, 500);
@@ -636,7 +641,7 @@ function onHide_ShowButtonClic(imgHide_Show,groupID){
         showInHTML(groupID,null)
         imgHide_Show.style.transform='scale(0)'
         setTimeout(()=>{
-            imgHide_Show.src=uptextvIMG.show
+            imgHide_Show.src=uptextvIMG.hide
             imgHide_Show.style.transform='scale(1)'
         },250)
         uptextvAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',false)

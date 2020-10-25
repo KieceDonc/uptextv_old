@@ -85,7 +85,6 @@ class SideGroupsModule{
       // splice delete from groupsSection and stock in deletedGroupSection the deleted group section 
       let deletedGroupSection = groupsSection.splice(indexOfGroup, 1)[0];
       let deletedGroupSectionIndex = deletedGroupSection.getGroupIndex()
-      console.log(deletedGroupSection)
 
       // for every group section you need to check if the 'current group section' is higher than the deleted group section index
       // you have to do to decremente the value also you will have bugs
@@ -150,7 +149,6 @@ class SideGroupsModule{
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){
   var currentGroupSection = groupSection.setup(currentGroup,sideGroupsModule) // groupsSection.length represent the position of the currentGroup
-  console.log(currentGroupSection)
   groupsSection.unshift(currentGroupSection)
 }
 
