@@ -17,8 +17,8 @@ class groupSection{
 
         if(shouldSetup(this.getGroupID())){
             setup(this.getGroupID(),this.getGroupID_normal(),this.sideGroupsModule,this.getIsGroupHiden())
-            let sortByIndexValue = this.getSortIndex()
-            this.groupSortBy = groupSortBy.setup(this,sortByIndexValue)
+            this.groupSortBy = groupSortBy.setup(this)
+            this.sortStreamer()
             setupStreamers(this.getGroupObject(),()=>{
                 if(this.getIsGroupHiden()){
                     hideInHTML(this.getGroupID(),null)
@@ -27,17 +27,22 @@ class groupSection{
         }
     }  
 
+    sortStreamer(){
+        this.groupSortBy.sort()
+    }
+
     /**
      * use to add a streamer in the group section and in the api
      * @param {String} _streamerID normal
      */
     addStreamer(_streamerID){
-        let oldGroup = this.getGroupList()// use to calculate old and new position of streamers in current group
         uptextvAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
-            this.getGroupList().push(streamerInfo)
             addStreamerInHTML(this.getGroupObject(),streamerInfo)
             addStreamerInAPI(this.getGroupID(),_streamerID)
-            this.onGroupUpdate(oldGroup,this.getGroupList())
+            let oldList = this.getGroupList().slice()
+            this.getGroupList().push(streamerInfo)
+            this.sortStreamer()
+            this.onListUpdate(oldList)
         }).catch((err)=>{
             debug.error('error while trying to get information streamer in api. This error has been catch in addStreamer() in groupSection',err)
         })
@@ -77,7 +82,13 @@ class groupSection{
     }
 
     setGroupObject(_groupObject){
-        this.groupObject = _groupObject
+        if(this.groupObject!=null){ 
+            let oldList = this.getGroupList()
+            this.groupObject = _groupObject
+            this.onListUpdate(oldList)
+        }else{ // initialization
+            this.groupObject = _groupObject
+        }
     }
 
     setGroupList(_list){
@@ -90,6 +101,10 @@ class groupSection{
 
     getSortIndex(){
         return this.getGroupObject().sortByIndex
+    }
+
+    setSortIndex(index){
+        this.getGroupObject().sortByIndex = index
     }
 
     setGroupIndex(index){
@@ -105,18 +120,15 @@ class groupSection{
         return this.getGroupObject().isGroupHiden
     }
 
-    // this.groupObject has been update
-    // you must parse it and make thing with it 
-    onGroupUpdate(newGroup){
+    onListUpdate(oldList){
         let goesOnline = new Array()
         let goesOffline = new Array()
         let updateOnline = new Array()
-        let oldGroup = this.getGroupList()
-        newGroup['list'].forEach((newStreamerInfo)=>{
+        this.getGroupList().forEach((newStreamerInfo)=>{
             let oldStreamerInfo = -1
-            for(let y=0;y<oldGroup.length;y++){ // trying to find oldStreamerInfo in oldGroup
-                if(oldGroup[y].broadcaster_id==newStreamerInfo.broadcaster_id){
-                    oldStreamerInfo=oldGroup[y]
+            for(let y=0;y<oldList.length;y++){ // trying to find oldStreamerInfo in oldGroup
+                if(oldList[y].broadcaster_id==newStreamerInfo.broadcaster_id){
+                    oldStreamerInfo=oldList[y]
                 }
             }
             
@@ -146,27 +158,23 @@ class groupSection{
             modifyStreamerGame(this.getGroupID(),streamerInfo)
             modifyStreamerViewerCount(this.getGroupID(),streamerInfo)
         })
-
-        this.setGroupObject(newGroup)
-        this.updateVisual(oldGroup)
+        this.updateVisual(oldList)
     }
 
 
     // handle every thing in html / css about update
     // handle transition etc ....
-    updateVisual(oldGroup){
-        if(!oldGroup){ 
-            // sometimes you update groupObject from onCurrentUpdate so you need it. 
-            // sometimes you just want to update from groupSortBy so you don't need it
-            oldGroup = this.groupObject['list'].slice()// use to calculate old and new position of streamers in current group
-        }
+    updateVisual(oldList){
         let temp_groupSection = this
-        this.groupSortBy.sort()
-        temp_groupSection.groupObject['list'].forEach((currentStreamerInfo)=>{
+        this.getGroupList().forEach((currentStreamerInfo)=>{
             let currentStreamerID = currentStreamerInfo.broadcaster_id
-            let oldPosition = this.getStreamerIndex(currentStreamerID,oldGroup)
+            let oldPosition = this.getStreamerIndex(currentStreamerID,oldList)
             let newPosition = this.getStreamerIndex(currentStreamerID)
-            if(newPosition!=oldPosition&&oldPosition!=-1){
+            if(newPosition!=oldPosition){
+                if(oldPosition==-1){
+                    // streamer has just been added
+                    oldPosition=this.getGroupList().length                 
+                }
                 makeTranslateYForOneStreamer(this.getGroupID(),currentStreamerInfo,oldPosition,newPosition)
                 setTimeout(function () { // use to replace in good order in html  
                     temp_groupSection.getGroupList().forEach((currentStreamerInfo)=>{
@@ -219,7 +227,7 @@ class groupSection{
 
 // this class is the tooltip display right to streamerInHTLM to show their streamt title
 // just call new streamerTitleToolTipHandler() to handle this option
-class streamTileToolTipHandler{
+class streamTitleToolTipHandler{
     /*streamerInfo = null
     aElement = null
     elementToolTip = null
@@ -762,7 +770,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
         window.history.go(-1);
     
     })
-    new streamTileToolTipHandler(streamerInfo,a0)
+    new streamTitleToolTipHandler(streamerInfo,a0)
 
     let div3 = document.createElement("div")
     div3.id=groupObject['name']+_streamerID+"profile_picture"
@@ -923,11 +931,9 @@ function modifyStreamerViewerCount(groupID,streamerInfo){
  * @param {Object} streamerInfo 
  */
 function modifyStreamerGame(groupID,streamerInfo){
-    console.log(streamerInfo)
     let _streamerID = streamerInfo.broadcaster_id
     let streamerCurrentGame = streamerInfo.game_name
     let p = document.getElementById(groupID+_streamerID+"currentgame")
-    console.log(groupID+_streamerID+"currentgame")
     p.title=streamerCurrentGame
     p.innerText=streamerCurrentGame
 }

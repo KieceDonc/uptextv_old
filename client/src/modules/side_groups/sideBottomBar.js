@@ -190,7 +190,7 @@ class AddButton{
                 let input_cancel_img = document.createElement('img')
                 input_cancel_img.src=uptextvIMG.cancel
                 if(dark_light_mode_watcher.isInDarkMode()){
-                    input_valid_img.style.filter='brightness(0) invert(1)'
+                    input_cancel_img.style.filter='brightness(0) invert(1)'
                 }
                 input_cancel_img.style.width = input_imgs_height
                 input_cancel_img.style.verticalAlign='middle'

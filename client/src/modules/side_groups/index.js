@@ -21,12 +21,6 @@ class SideGroupsModule{
   
         userID = twitch.getCurrentUser().id
         uptextvAPI.setup(userID).then(()=>{
-          
-          /*uptextvAPI.setGroupProperty('82_111_99_107_101_116_32_108_101_97_103_117_101',twitch.getCurrentUser().id,'groupIndex',0)
-          uptextvAPI.setGroupProperty('65_79_69_32_73_73',twitch.getCurrentUser().id,'groupIndex',1)
-          uptextvAPI.setGroupProperty('67_73_86_32_86_73',twitch.getCurrentUser().id,'groupIndex',2)
-          uptextvAPI.setGroupProperty('80_111_108_105_116_105_113_117_101',twitch.getCurrentUser().id,'groupIndex',3)
-          uptextvAPI.setGroupProperty('67_72_69_83_83',twitch.getCurrentUser().id,'groupIndex',4)*/
           uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
             groups.sort((groupA,groupB)=>{
               return groupB.groupIndex - groupA.groupIndex
@@ -140,12 +134,6 @@ class SideGroupsModule{
     }
 }
 
-/*function showGroupsIndex(){
-  groupsSection.forEach((currentGroupSection)=>{
-    console.log(currentGroupSection.getGroupID_normal()+' index ='+currentGroupSection.getGroupIndex())
-  })
-}*/
-
 // setup for one group setup a side nav group section
 function setupGroupSection(currentGroup,sideGroupsModule){
   var currentGroupSection = groupSection.setup(currentGroup,sideGroupsModule) // groupsSection.length represent the position of the currentGroup
@@ -161,60 +149,27 @@ function handleUpdateEach5min(sideGroupsModule){
 
 // handle to update streamers info
 function updateStreamersInfo(sideGroupsModule){
-  //let oldList = groups.slice()
-
-  uptextvAPI.getGroupsStreamers(userID).then((newGroups)=>{
-      //let groups = newGroups
-      // your purpose here is to find the old group section index 
-      // if not exist before ( a bit strange but this case could exist if, in the future, you allow user to add groups from the website version)
-      /*groups.forEach((currentNewGroup)=>{ // parsing newGroups
-          let groupAlreadyExist = false
-          let index = 0 
-          let currentOldGroup = null
-          oldGroups.forEach((_currentOldGroup)=>{ // trying to find old group index
-            if(_currentOldGroup.name===currentNewGroup.name){
-              groupAlreadyExist=true
-              currentOldGroup = _currentOldGroup
-            }else{
-              index++
-            }
-          })
-          if(!groupAlreadyExist){ // if doesn't exist you setup it
-            setupGroupSection(currentNewGroup,sideGroupsModule)
-          }else{ // exist so u update it
-            groupsSection[index].onGroupUpdate(currentOldGroup['list'],currentNewGroup['list'])
-          }
-        })*/
-        /*newGroups.forEach((currentNewGroup)=>{
-          let idToFind = currentNewGroup['name']
-          let founded = false
-          let index = -1 
-          do{
-            index++
-            let currentGroupSectionID = groupsSection[index].getGroupID()
-            founded = currentGroupSectionID === idToFind
-          }while(index<groupsSection.length&&!founded)
-          if(founded){
-            groupsSection[index].onGroupUpdate()
-          }else{
-            setupGroupSection(currentNewGroup,sideGroupsModule)
-          }
-        })*/
-        newGroups.forEach((currentNewGroup)=>{
-          let idToFind = currentNewGroup['name']
-          let founded = false
-          let index = -1 
-          do{
-            index+=1
-            let currentGroupSectionID = groupsSection[index].getGroupID()
-            founded = currentGroupSectionID === idToFind
-          }while(index<groupsSection.length&&!founded)
-          if(founded){
-            groupsSection[index].onGroupUpdate(currentNewGroup)
-          }else{
-            setupGroupSection(currentNewGroup,sideGroupsModule)
-          }
-        })
+   uptextvAPI.getGroupsStreamers(userID).then((newGroupsObject)=>{
+    newGroupsObject.forEach((currentNewGroupObject)=>{
+        let idToFind = currentNewGroupObject['name']
+        let founded = false
+        let index = -1 
+        do{
+          index+=1
+          let currentGroupSectionID = groupsSection[index].getGroupID()
+          founded = currentGroupSectionID === idToFind
+        }while(index<groupsSection.length&&!founded)
+        if(founded){
+          let currentGroupSection = groupsSection[index]
+          let oldGroupList = currentGroupSection.getGroupList()
+          let newGroupList = currentNewGroupObject['list']
+          currentGroupSection.setGroupList(newGroupList)
+          currentGroupSection.sortStreamer()
+          currentGroupSection.onListUpdate(oldGroupList)
+        }else{
+          setupGroupSection(currentNewGroupObject,sideGroupsModule)
+        }
+      })
     }).catch((err)=>{
         debug.error('error while trying to get pinned streamers through the api. err :',err )
     })

@@ -160,7 +160,7 @@ class Watcher extends SafeEventEmitter {
         const startTime = Date.now();
         return Promise.race([
             new Promise(resolve => {
-                timeout = setTimeout(resolve, 10000);
+                timeout = setTimeout(resolve, 30000);
             }),
             new Promise(resolve => {
                 const loaded = loadPredicates[type];
