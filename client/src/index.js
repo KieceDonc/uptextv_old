@@ -19,7 +19,7 @@
         }).join(' ');
     }});
 
-    debug.log(`Uptex loaded`);
+    debug.log(`uptextv loaded`);
 
     window.uptextv = {
         version: debug.version,

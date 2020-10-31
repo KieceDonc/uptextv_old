@@ -16,14 +16,15 @@ class groupSection{
         this.sideGroupsModule=_sideGroupsModule
 
         if(shouldSetup(this.getGroupID())){
-            setup(this.getGroupID(),this.getGroupID_normal(),this.sideGroupsModule,this.getIsGroupHiden())
+            setup(this)
             this.groupSortBy = groupSortBy.setup(this)
             this.sortStreamer()
-            setupStreamers(this.getGroupObject(),()=>{
-                if(this.getIsGroupHiden()){
-                    hideInHTML(this.getGroupID(),null)
-                }
+            this.getGroupList().forEach((currentStreamerInfo)=>{
+                addStreamerInHTML(this.getGroupID(),currentStreamerInfo,this.getLiveColor())
             })
+            if(this.getIsGroupHiden()){
+                hideInHTML(this.getGroupID(),null)
+            }
         }
     }  
 
@@ -37,7 +38,7 @@ class groupSection{
      */
     addStreamer(_streamerID){
         uptextvAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
-            addStreamerInHTML(this.getGroupObject(),streamerInfo)
+            addStreamerInHTML(this.getGroupID(),streamerInfo,this.getLiveColor())
             addStreamerInAPI(this.getGroupID(),_streamerID)
             let oldList = this.getGroupList().slice()
             this.getGroupList().push(streamerInfo)
@@ -71,6 +72,10 @@ class groupSection{
      */
     getGroupID_normal(){
         return this.getGroupObject().name_normal
+    }
+
+    getLiveColor(){
+        return this.getGroupObject().liveColor
     }
 
     getGroupList(){
@@ -120,6 +125,10 @@ class groupSection{
         return this.getGroupObject().isGroupHiden
     }
 
+    getSideGroupsModule(){
+        return this.sideGroupsModule
+    }
+
     onListUpdate(oldList){
         let goesOnline = new Array()
         let goesOffline = new Array()
@@ -147,7 +156,7 @@ class groupSection{
             }
         })
         goesOnline.forEach(streamerInfo => {
-            streamerGoesOnline(this.getGroupID(),streamerInfo)
+            streamerGoesOnline(this.getGroupID(),streamerInfo,this.getLiveColor())
         });
 
         goesOffline.forEach(streamerInfo =>{
@@ -179,7 +188,7 @@ class groupSection{
                 setTimeout(function () { // use to replace in good order in html  
                     temp_groupSection.getGroupList().forEach((currentStreamerInfo)=>{
                         deleteStreamerInHTML(temp_groupSection.getGroupID(),currentStreamerInfo.broadcaster_id,false)
-                        addStreamerInHTML(temp_groupSection.groupObject,currentStreamerInfo)
+                        addStreamerInHTML(temp_groupSection.getGroupID(),currentStreamerInfo,temp_groupSection.getLiveColor())
                     })
                 }, 500);
             }
@@ -200,7 +209,7 @@ class groupSection{
         if(_currentGroup){ // checking if we want to parse current group list array or a custom group list Array
             arrayToParse = _currentGroup
         }else{
-            arrayToParse = this.groupObject.list
+            arrayToParse = this.getGroupList()
         }  
     
         if(arrayToParse.length==0){
@@ -361,12 +370,17 @@ function shouldSetup(groupID){
 /** 
  * setup side nav group section to welcome current group streamers
  * group section id ( main div ) =(GROUP NAME IN ASCII)_sideNavGroupSection
- * @param {String} groupID groupID in ASCII code 
- * @param {String} groupID_normal groupID in normal 
- * @param {SideGroupsModule} sideGroupsModule 
- * @param {boolean} isGroupHiden
+ * @param {groupSection} currentGroupSection
  */
-function setup(groupID,groupID_normal,sideGroupsModule,isGroupHiden){ 
+function setup(currentGroupSection){ 
+
+    let groupID = currentGroupSection.getGroupID()
+    let groupID_normal = currentGroupSection.getGroupID_normal()
+    let groupList = currentGroupSection.getGroupList()
+    let liveColor = currentGroupSection.getLiveColor()
+    let isGroupHiden = currentGroupSection.getIsGroupHiden()
+    let sideGroupsModule = currentGroupSection.getSideGroupsModule()
+
 
     let mainDivID = groupID+"_sideNavGroupSection"
     let parentDiv = document.getElementsByClassName('side-bar-contents')[0].firstChild.firstChild.firstChild // getting div parent
@@ -499,6 +513,14 @@ function setup(groupID,groupID_normal,sideGroupsModule,isGroupHiden){
         onSettingsButtonClick(imgSettings,divSettingsMenu)
     })
 
+    let imgColorPicker = document.createElement('img')
+    imgColorPicker.src=uptextvIMG.color_picker
+    giveImgsDesireStyle(imgColorPicker)
+
+    imgColorPicker.addEventListener('click',function(){
+        onColorPickerButtonClick(groupID,groupList,liveColor)
+    })
+
 
     // every time user switch to dark mode we change imgs to white ( from black )
     dark_light_mode_watcher.onDarkMode(()=>{
@@ -524,6 +546,7 @@ function setup(groupID,groupID_normal,sideGroupsModule,isGroupHiden){
     divSettingsMenu.appendChild(imgBackArrowSettingsMenu)
     divSettingsMenu.appendChild(imgDelete)
     divSettingsMenu.appendChild(imgReorder)
+    divSettingsMenu.append(imgColorPicker)
     divReorderMenu.appendChild(imgBackArrowReorderMenu)
     divReorderMenu.appendChild(imgArrowUp)
     divReorderMenu.appendChild(imgArrowDown)
@@ -531,17 +554,6 @@ function setup(groupID,groupID_normal,sideGroupsModule,isGroupHiden){
     }else{
         debug.error('parentdiv is null, you should look at css properties about getElementsByClassName')
     }
-}
-
-/**
- * use right after groupObject received. It basically add current group streamers in group section
- * @param {Object} groupObject 
- */
-function setupStreamers(groupObject,callback){
-    for(let x=0;x<groupObject.list.length;x++){
-        addStreamerInHTML(groupObject,groupObject.list[x])
-    }
-    callback()
 }
 
 /**
@@ -634,6 +646,16 @@ function onDeleteButtonClick(groupID,groupIndex,sideGroupsModule){
         sideGroupsModule.deleteGroupSection(groupIndex)
         uptextvAPI.deleteGroup(groupID,twitch.getCurrentUser().id)
     })
+}
+
+function onColorPickerButtonClick(groupID,groupList,oldLiveColor){
+    changeLiveColor = (liveColor)=>{
+        groupList.forEach((currentStreamerInfo)=>{
+            let currentStreamerID = currentStreamerInfo.broadcaster_id
+            let div10 = document.getElementById(groupID+currentStreamerID+'unknow1')
+            div10.style.setProperty("background-color", liveColor, "important");
+        })
+    }
 }
 
 function onHide_ShowButtonClic(imgHide_Show,groupID){
@@ -730,10 +752,11 @@ function onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDow
  * div with css properties of picture profile have the id of (GROUP NAME IN ASCII)_+streamerID+ "picture_profile"
  * span of number of viewer have the id of = (GROUP NAME IN ASCII)_+streamerID + "viewercount"
  * p of the current game of the id of = (GROUP NAME IN ASCII)_+streamerID + "currentgame"
- * @param {Object} groupObject 
+ * @param {String} groupID 
  * @param {Oject} streamerInfo 
+ * @param {String} liveColor
  */
-function addStreamerInHTML(groupObject,streamerInfo){
+function addStreamerInHTML(groupID,streamerInfo,liveColor){
 
     let _streamerID = streamerInfo.broadcaster_id
     let streamerIsStreaming = streamerInfo.isStreaming
@@ -745,7 +768,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     let div0 = document.createElement("div")
     div0.className="tw-transition tw-transition--enter-done tw-transition__scale-over tw-transition__scale-over--enter-done"
     div0.style="transition-property: transform, opacity; transition-timing-function: ease; transition-duration: 250ms;"
-    div0.id=groupObject['name']+_streamerID
+    div0.id=groupID+_streamerID
 
 
     let div1 = document.createElement("div")
@@ -773,7 +796,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
     new streamTitleToolTipHandler(streamerInfo,a0)
 
     let div3 = document.createElement("div")
-    div3.id=groupObject['name']+_streamerID+"profile_picture"
+    div3.id=groupID+_streamerID+"profile_picture"
     if(streamerIsStreaming){
         div3.className=css_picture_profile_online
     }else{
@@ -784,7 +807,6 @@ function addStreamerInHTML(groupObject,streamerInfo){
     figure0.className="tw-avatar tw-avatar--size-30"
 
     let img0 = document.createElement("img")
-    img0.id=groupObject['name']+_streamerID+'picture_profile'
     img0.className="tw-block tw-border-radius-rounded tw-image tw-image-avatar"
     img0.alt=streamerName
     img0.src=streamerIcon
@@ -808,7 +830,7 @@ function addStreamerInHTML(groupObject,streamerInfo){
 
     let p1 = document.createElement("p")
     p1.className="tw-c-text-alt-2 tw-ellipsis tw-font-size-6 tw-line-height-heading"
-    p1.id=groupObject['name']+_streamerID+"currentgame"
+    p1.id=groupID+_streamerID+"currentgame"
     if(streamerIsStreaming){
         p1.title=streamerGame
         p1.innerText=streamerGame
@@ -816,21 +838,21 @@ function addStreamerInHTML(groupObject,streamerInfo){
 
 
     let div8 = document.createElement("div")
-    div8.id=groupObject['name']+_streamerID+"usedForUnknow"
+    div8.id=groupID+_streamerID+"usedForUnknow"
     div8.className="side-nav-card__live-status tw-flex-shrink-0 tw-mg-l-05"
 
     let div9 = document.createElement("div")
-    div9.id=groupObject['name']+_streamerID+"unknow0"
+    div9.id=groupID+_streamerID+"unknow0"
     let div10 = document.createElement("div")
-    div10.id=groupObject['name']+_streamerID+"unknow1"
+    div10.id=groupID+_streamerID+"unknow1"
     let div11 = document.createElement("div")
-    div11.id=groupObject['name']+_streamerID+"unknow2"
+    div11.id=groupID+_streamerID+"unknow2"
     if(streamerIsStreaming){
 
         div9.className = "tw-align-items-center tw-flex"
 
         div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
-        div10.style.setProperty("background-color", groupObject.liveColor, "important");
+        div10.style.setProperty("background-color", liveColor, "important");
 
         div11.className="tw-mg-l-05"
     }
@@ -838,14 +860,14 @@ function addStreamerInHTML(groupObject,streamerInfo){
 
     let span0 = document.createElement("span")
     span0.className="tw-c-text-alt tw-font-size-6"
-    span0.id=groupObject['name']+_streamerID+"viewercount"
+    span0.id=groupID+_streamerID+"viewercount"
     if(streamerIsStreaming){
         span0.innerText=getViewerCountWithSpaces(streamerViewerCount)
     }else{
         span0.innerText="Disconnected"
     }
 
-    let mainDiv = document.getElementById(groupObject['name']+"_sideNavGroupSection")
+    let mainDiv = document.getElementById(groupID+"_sideNavGroupSection")
     mainDiv.appendChild(div0)
     div0.appendChild(div1)
     div1.appendChild(div2)
@@ -967,6 +989,7 @@ function streamerGoesOffline(groupID,streamerInfo){
     let div_main_unknow = document.getElementById(groupID+_streamerID+'usedForUnknow')
     div_main_unknow.appendChild(spanDisconnected)
 
+    streamerInfo.game_name=''
     modifyStreamerGame(groupID,streamerInfo)
 }
 
@@ -975,21 +998,24 @@ function streamerGoesOffline(groupID,streamerInfo){
  * @param {String} groupID 
  * @param {Object} streamerInfo 
  */
-function streamerGoesOnline(groupID,streamerInfo){
+function streamerGoesOnline(groupID,streamerInfo,liveColor){
     let _streamerID = streamerInfo.broadcaster_id
     let streamerViewerCount = streamerInfo.viewer_count
 
+    let profile_picture = document.getElementById(groupID+_streamerID+'profile_picture')
+    profile_picture.className=css_picture_profile_online
+
     let div9 = document.createElement("div")
-    div9.id=groupObject['name']+_streamerID+"unknow0"
+    div9.id=groupID+_streamerID+"unknow0"
     let div10 = document.createElement("div")
-    div10.id=groupObject['name']+_streamerID+"unknow1"
+    div10.id=groupID+_streamerID+"unknow1"
     let div11 = document.createElement("div")
-    div11.id=groupObject['name']+_streamerID+"unknow2"
+    div11.id=groupID+_streamerID+"unknow2"
 
     div9.className = "tw-align-items-center tw-flex"
 
     div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
-    div10.style.setProperty("background-color", groupObject.liveColor, "important");
+    div10.style.setProperty("background-color", liveColor, "important");
 
     div11.className="tw-mg-l-05"
     
@@ -1000,7 +1026,7 @@ function streamerGoesOnline(groupID,streamerInfo){
 
     let span0 = document.createElement("span")
     span0.className="tw-c-text-alt tw-font-size-6"
-    span0.id=groupObject['name']+_streamerID+"viewercount"
+    span0.id=groupID+_streamerID+"viewercount"
     span0.innerText=getViewerCountWithSpaces(streamerViewerCount)
     
     divUsedForUnknow.appendChild(div9)

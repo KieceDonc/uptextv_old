@@ -17,7 +17,8 @@ let imgs = {
   show : src_url+'show.png',
   top_arrow : src_url+'top_arrow.png',
   trash : src_url+'trash.svg',
-  valid : src_url+'valid.png'
+  valid : src_url+'valid.png',
+  color_picker : src_url+'color_picker.png'
 }
 
 module.exports = {

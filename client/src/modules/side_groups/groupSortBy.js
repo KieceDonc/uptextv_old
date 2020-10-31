@@ -3,18 +3,18 @@ const twitch = require('../../utils/twitch')
 
 class groupSortBy{
 
-  constructor(_currentGroupSection){
-    this.currentGroupSection = _currentGroupSection
-    this.sortGroupStreamersFunction = getSortGroupStreamersFunctions(_currentGroupSection)
+  constructor(_groupSection){
+    this.groupSection = _groupSection
+    this.sortGroupStreamersFunction = getSortGroupStreamersFunctions(this.groupSection)
     this.htmlSetup();
   }
 
   getSortIndex(){
-    return this.currentGroupSection.getSortIndex()
+    return this.groupSection.getSortIndex()
   }
 
   setSortIndex(index){
-    this.currentGroupSection.setSortIndex(index)
+    this.groupSection.setSortIndex(index)
   }
 
   sort(){
@@ -48,7 +48,7 @@ class groupSortBy{
       index++
     })
   
-    let mainDiv = document.getElementById(this.currentGroupSection.getGroupID()+"_sideNavGroupSection")
+    let mainDiv = document.getElementById(this.groupSection.getGroupID()+"_sideNavGroupSection")
     if(mainDiv!=null){
         mainDiv.prepend(div0)
         div0.append(div1)
@@ -63,26 +63,26 @@ class groupSortBy{
   // call back of onChange() of groupSelect
   selectOnChange(selectElement){
       this.setSortIndex(selectElement.value)
-      uptextvAPI.setGroupProperty(this.currentGroupSection.getGroupID(),twitch.getCurrentUser().id,'sortByIndex',this.getSortIndex())
-      let oldList = this.currentGroupSection.getGroupList()
+      uptextvAPI.setGroupProperty(this.groupSection.getGroupID(),twitch.getCurrentUser().id,'sortByIndex',this.getSortIndex())
+      let oldList = this.groupSection.getGroupList()
       this.sort()
-      this.currentGroupSection.onListUpdate(oldList)
+      this.groupSection.onListUpdate(oldList)
   }
 }
 
-function getSortGroupStreamersFunctions(currentGroupSection){
+function getSortGroupStreamersFunctions(groupSection){
   return [
     {
       'name':'Viewer',
       'treatment':function(){
-        sortCurrentGroupStreamersByPropertie(currentGroupSection,'viewer_count')
+        sortCurrentGroupStreamersByPropertie(groupSection,'viewer_count')
       }
     },
   
     {
       'name':'Streamer name',
       'treatment': function(){ 
-        let newList = currentGroupSection.getGroupList().slice()
+        let newList = groupSection.getGroupList().slice()
         newList.sort(function(a,b){
           let a_broadcaster_name = a["login"]
           let b_broadcaster_name = b["login"]
@@ -94,14 +94,14 @@ function getSortGroupStreamersFunctions(currentGroupSection){
             return 0 
           }
         }) 
-        currentGroupSection.setGroupList(newList)
+        groupSection.setGroupList(newList)
       }
     },
   
     {
       'name':'Game name',
       'treatment': function(){ 
-        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(currentGroupSection)
+        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
         splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
           let a_broadcaster_name = a["game_name"].toLowerCase()
           let b_broadcaster_name = b["game_name"].toLowerCase()
@@ -114,14 +114,14 @@ function getSortGroupStreamersFunctions(currentGroupSection){
           }
         })
         let newList = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
-        currentGroupSection.setGroupList(newList)
+        groupSection.setGroupList(newList)
       }
     },
   
     {
       'name':'Uptime',
       'treatment': function(){ 
-        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(currentGroupSection)
+        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
         splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
           let a_live_start = new Date(a["started_at"]).getTime() // date in second from 1970
           let b_live_start = new Date(b["started_at"]).getTime() // date in second from 1970
@@ -134,27 +134,27 @@ function getSortGroupStreamersFunctions(currentGroupSection){
           }
         })
         let newList = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
-        currentGroupSection.setGroupList(newList)
+        groupSection.setGroupList(newList)
       }
     }
   ]
 }
 
 // sort current group list streamers by a propertie
-function sortCurrentGroupStreamersByPropertie(currentGroupSection,propertieName){
-  let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(currentGroupSection)
+function sortCurrentGroupStreamersByPropertie(groupSection,propertieName){
+  let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
   splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy(propertieName))
   let newList = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
-  currentGroupSection.setGroupList(newList)
+  groupSection.setGroupList(newList)
 }
 
 // return an object like this {online:ARRAY,offline:ARRAY}
 // online is list of current group list streamer online
 // offline is list of current group list streamer offline
-function getOnlineAndOfflineCurrentGroupStreamers(currentGroupSection){
+function getOnlineAndOfflineCurrentGroupStreamers(groupSection){
     let offline = new Array()
     let online = new Array()
-    let currentGroupStreamers = currentGroupSection.getGroupList()
+    let currentGroupStreamers = groupSection.getGroupList()
     currentGroupStreamers.forEach((currentStreamerInfo)=>{
     if(currentStreamerInfo.isStreaming == true){
         online.push(currentStreamerInfo)
