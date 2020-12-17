@@ -1,4 +1,5 @@
 import { TOptionsPreset } from '../../types/options/TOptionsPreset';
+import { TStringArrayIndexesType } from '../../types/options/TStringArrayIndexesType';
 import { TStringArrayEncoding } from '../../types/options/TStringArrayEncoding';
 import { TStringArrayWrappersType } from '../../types/options/TStringArrayWrappersType';
 import { TTypeFromEnum } from '../../types/utils/TTypeFromEnum';
@@ -21,6 +22,7 @@ export interface IOptions {
     readonly identifierNamesGenerator: TTypeFromEnum<typeof IdentifierNamesGenerator>;
     readonly identifiersDictionary: string[];
     readonly identifiersPrefix: string;
+    readonly ignoreRequireImports: boolean;
     readonly inputFileName: string;
     readonly log: boolean;
     readonly numbersToExpressions: boolean;
@@ -42,8 +44,11 @@ export interface IOptions {
     readonly splitStringsChunkLength: number;
     readonly stringArray: boolean;
     readonly stringArrayEncoding: TStringArrayEncoding[];
+    readonly stringArrayIndexesType: TStringArrayIndexesType[];
+    readonly stringArrayIndexShift: boolean;
     readonly stringArrayWrappersChainedCalls: boolean;
     readonly stringArrayWrappersCount: number;
+    readonly stringArrayWrappersParametersMaxCount: number;
     readonly stringArrayWrappersType: TStringArrayWrappersType;
     readonly stringArrayThreshold: number;
     readonly target: TTypeFromEnum<typeof ObfuscationTarget>;

@@ -17,9 +17,8 @@ var streamerID // id of streamerID
 
 class SideGroupsModule{
     constructor(){  
+      userID = twitch.getCurrentUser().id
       watcher.on('load.sidenav',()=>{
-  
-        userID = twitch.getCurrentUser().id
         uptextvAPI.setup(userID).then(()=>{
           uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
             groups.sort((groupA,groupB)=>{

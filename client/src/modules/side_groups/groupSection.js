@@ -513,13 +513,13 @@ function setup(currentGroupSection){
         onSettingsButtonClick(imgSettings,divSettingsMenu)
     })
 
-    let imgColorPicker = document.createElement('img')
+    /*let imgColorPicker = document.createElement('img')
     imgColorPicker.src=uptextvIMG.color_picker
     giveImgsDesireStyle(imgColorPicker)
 
     imgColorPicker.addEventListener('click',function(){
         onColorPickerButtonClick(groupID,groupList,liveColor)
-    })
+    })*/
 
 
     // every time user switch to dark mode we change imgs to white ( from black )
@@ -546,7 +546,7 @@ function setup(currentGroupSection){
     divSettingsMenu.appendChild(imgBackArrowSettingsMenu)
     divSettingsMenu.appendChild(imgDelete)
     divSettingsMenu.appendChild(imgReorder)
-    divSettingsMenu.append(imgColorPicker)
+    //divSettingsMenu.append(imgColorPicker)
     divReorderMenu.appendChild(imgBackArrowReorderMenu)
     divReorderMenu.appendChild(imgArrowUp)
     divReorderMenu.appendChild(imgArrowDown)
@@ -648,7 +648,7 @@ function onDeleteButtonClick(groupID,groupIndex,sideGroupsModule){
     })
 }
 
-function onColorPickerButtonClick(groupID,groupList,oldLiveColor){
+/*function onColorPickerButtonClick(groupID,groupList,oldLiveColor){
     changeLiveColor = (liveColor)=>{
         groupList.forEach((currentStreamerInfo)=>{
             let currentStreamerID = currentStreamerInfo.broadcaster_id
@@ -656,7 +656,7 @@ function onColorPickerButtonClick(groupID,groupList,oldLiveColor){
             div10.style.setProperty("background-color", liveColor, "important");
         })
     }
-}
+}*/
 
 function onHide_ShowButtonClic(imgHide_Show,groupID){
     if(imgHide_Show.src==uptextvIMG.hide){ // you must hide the group Section

@@ -20,6 +20,7 @@ import {
 
 import { TInputOptions } from '../types/options/TInputOptions';
 import { TOptionsPreset } from '../types/options/TOptionsPreset';
+import { TStringArrayIndexesType } from '../types/options/TStringArrayIndexesType';
 import { TStringArrayEncoding } from '../types/options/TStringArrayEncoding';
 import { TStringArrayWrappersType } from '../types/options/TStringArrayWrappersType';
 import { TTypeFromEnum } from '../types/utils/TTypeFromEnum';
@@ -31,6 +32,7 @@ import { IdentifierNamesGenerator } from '../enums/generators/identifier-names-g
 import { ObfuscationTarget } from '../enums/ObfuscationTarget';
 import { OptionsPreset } from '../enums/options/presets/OptionsPreset';
 import { SourceMapMode } from '../enums/source-map/SourceMapMode';
+import { StringArrayIndexesType } from '../enums/node-transformers/string-array-transformers/StringArrayIndexesType';
 import { StringArrayEncoding } from '../enums/node-transformers/string-array-transformers/StringArrayEncoding';
 import { StringArrayWrappersType } from '../enums/node-transformers/string-array-transformers/StringArrayWrappersType';
 
@@ -164,6 +166,12 @@ export class Options implements IOptions {
     )
     @ArrayNotEmpty()
     public readonly identifiersDictionary!: string[];
+
+    /**
+     * @type {boolean}
+     */
+    @IsBoolean()
+    public readonly ignoreRequireImports!: boolean;
 
     /**
      * @type {string}
@@ -309,6 +317,21 @@ export class Options implements IOptions {
     public readonly stringArrayEncoding!: TStringArrayEncoding[];
 
     /**
+     * @type {TStringArrayIndexesType[]}
+     */
+    @IsArray()
+    @ArrayNotEmpty()
+    @ArrayUnique()
+    @IsIn([StringArrayIndexesType.HexadecimalNumber, StringArrayIndexesType.HexadecimalNumericString], { each: true })
+    public readonly stringArrayIndexesType!: TStringArrayIndexesType[];
+
+    /**
+     * @type {boolean}
+     */
+    @IsBoolean()
+    public readonly stringArrayIndexShift!: boolean;
+
+    /**
      * @type {boolean}
      */
     @IsBoolean()
@@ -320,6 +343,13 @@ export class Options implements IOptions {
     @IsNumber()
     @Min(0)
     public readonly stringArrayWrappersCount!: number;
+
+    /**
+     * @type {boolean}
+     */
+    @IsNumber()
+    @Min(2)
+    public readonly stringArrayWrappersParametersMaxCount!: number;
 
     /**
      * @type {TStringArrayWrappersType}

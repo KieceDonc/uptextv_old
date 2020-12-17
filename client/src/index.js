@@ -6,6 +6,20 @@
 
     const debug = require('./utils/debug');
     const watcher = require('./watcher');
+    const cookies = require('cookies-js');
+    const twitch = require('./utils/twitch');
+
+    const userCookie = cookies.get('twilight-user');
+    if (userCookie) {
+        try {
+            const {authToken, id, login, displayName} = JSON.parse(userCookie);
+            twitch.setCurrentUser(authToken, id, login, displayName);
+        } catch (_) {
+            debug.log('error loading user from twilight user cookie');
+        }
+    }
+
+    watcher.setup();
 
     require('./modules/side_groups/index.js', {mode: (base, files) => {
         return files.map(module => {
