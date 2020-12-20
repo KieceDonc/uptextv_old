@@ -1,7 +1,7 @@
 const groupSortBy = require('./groupSortBy')
 const debug = require('../../utils/debug')
 const twitch = require('../../utils/twitch')
-const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+const darkmode = require('../../watchers/darkmode.js')
 const uptextvAPI = require('../../utils/uptextv-api')
 const uptextvIMG = require('./../../utils/uptextv-image').get()
 
@@ -412,7 +412,7 @@ function setup(currentGroupSection){
     let imgsToWatchDarkLightMode = new Array()
     let giveImgsDesireStyle = function(img){
         imgsToWatchDarkLightMode.push(img)
-        if(dark_light_mode_watcher.isInDarkMode()){
+        if(darkmode.isInDarkMode()){
             img.style.filter='brightness(0) invert(1)'
         }
         img.style.cursor='pointer'
@@ -523,14 +523,14 @@ function setup(currentGroupSection){
 
 
     // every time user switch to dark mode we change imgs to white ( from black )
-    dark_light_mode_watcher.onDarkMode(()=>{
+    darkmode.onDarkMode(()=>{
         imgsToWatchDarkLightMode.forEach((currentElement)=>{
             currentElement.style.filter='brightness(0) invert(1)'
         })
     })
 
     // every time user switch to dark mode we change imgs to black ( from white )
-    dark_light_mode_watcher.onLightMode(()=>{
+    darkmode.onLightMode(()=>{
         imgsToWatchDarkLightMode.forEach((currentElement)=>{
             currentElement.style.filter=''
         })
@@ -851,7 +851,7 @@ function addStreamerInHTML(groupID,streamerInfo,liveColor){
 
         div9.className = "tw-align-items-center tw-flex"
 
-        div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
+        div10.className="ScChannelStatusIndicator-sc-1cf6j56-0 fSVvnY tw-channel-status-indicator"
         div10.style.setProperty("background-color", liveColor, "important");
 
         div11.className="tw-mg-l-05"

@@ -1,7 +1,7 @@
 const debug = require('../../utils/debug')
 const uptextvAPI = require('../../utils/uptextv-api')
 const uptextvIMG = require('../../utils/uptextv-image').get()
-const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+const darkmode = require('../../watchers/darkmode.js')
 
 let sideGroupsModule
 
@@ -175,7 +175,7 @@ class AddButton{
 
                 let input_valid_img = document.createElement('img')
                 input_valid_img.src=uptextvIMG.valid
-                if(dark_light_mode_watcher.isInDarkMode()){
+                if(darkmode.isInDarkMode()){
                     input_valid_img.style.filter='brightness(0) invert(1)'
                 }
                 input_valid_img.style.width = input_imgs_height
@@ -189,7 +189,7 @@ class AddButton{
     
                 let input_cancel_img = document.createElement('img')
                 input_cancel_img.src=uptextvIMG.cancel
-                if(dark_light_mode_watcher.isInDarkMode()){
+                if(darkmode.isInDarkMode()){
                     input_cancel_img.style.filter='brightness(0) invert(1)'
                 }
                 input_cancel_img.style.width = input_imgs_height
@@ -202,12 +202,12 @@ class AddButton{
                 input_div1.append(input_valid_img)
                 input_div1.append(input_cancel_img)
 
-                dark_light_mode_watcher.onDarkMode(()=>{
+                darkmode.onDarkMode(()=>{
                     input_valid_img.style.filter='brightness(0) invert(1)'
                     input_cancel_img.style.filter='brightness(0) invert(1)'
                 })
 
-                dark_light_mode_watcher.onLightMode(()=>{
+                darkmode.onLightMode(()=>{
                     input_valid_img.style.filter=''
                     input_cancel_img.style.filter=''
                 })

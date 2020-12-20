@@ -11,13 +11,8 @@ let sidenav_loaded = false
 
 const loadPredicates = {
     following: () => !!$('.tw-tabs div[data-test-selector="ACTIVE_TAB_INDICATOR"]').length,
-    followbutton: () => {
-        const currentChannel = twitch.updateCurrentChannel();
-        if(!currentChannel || !currentChannel.id) {
-            return false
-        }
-        let pinbutton = document.getElementById('pin-button')
-        return !!$('.follow-btn__follow-btn-container--following').length&&!pinbutton
+    followbar: () => {
+        return !!$('.follow-btn__follow-btn').length
     },
     channel: () => {
         const href = (
@@ -61,7 +56,7 @@ function waitForLoad(type, context = null) {
     const startTime = Date.now();
     return Promise.race([
         new Promise(resolve => {
-            timeout = setTimeout(resolve, 10000);
+            timeout = setTimeout(resolve, 15000);
         }),
         new Promise(resolve => {
             const loaded = loadPredicates[type];
@@ -117,8 +112,8 @@ function onRouteChange(location) {
         })
     }
 
-    waitForLoad('followbutton').then(() => {
-        watcher.emit('load.followbutton')
+    waitForLoad('followbar').then(() => {
+        watcher.emit('load.followbar')
     })
     switch (route) {
         case routes.DIRECTORY_FOLLOWING:

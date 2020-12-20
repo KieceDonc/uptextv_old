@@ -5,6 +5,7 @@ const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
 const sideBottomBar = require('./sideBottomBar');
+const follow = require('../../watchers/follow')
 
 const defaultLiveColor = '#007aa3'
 
@@ -18,6 +19,7 @@ var streamerID // id of streamerID
 class SideGroupsModule{
     constructor(){  
       userID = twitch.getCurrentUser().id
+      
       watcher.on('load.sidenav',()=>{
         uptextvAPI.setup(userID).then(()=>{
           uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
@@ -34,9 +36,22 @@ class SideGroupsModule{
           debug.error('error:',err )
         })
       })
-      watcher.on('load.followbutton',()=>{
-        streamerID = twitch.getCurrentChannel().id
-        pinButton.setup(this)
+
+      follow.onReady(()=>{
+        var pinButtonInstance = null
+
+        if(follow.isFollowing){
+          pinButtonInstance = pinButton.setup(this)
+        }
+
+        follow.onFollow(()=>{
+          pinButtonInstance = pinButton.setup(this)
+        })
+
+        follow.onUnfollow(()=>{
+          pinButtonInstance.selfRemove()
+          pinButtonInstance = null
+        })
       }) 
     }
 
@@ -174,6 +189,4 @@ function updateStreamersInfo(sideGroupsModule){
     })
 }
 
-
 module.exports = new SideGroupsModule()
-

@@ -1,6 +1,6 @@
 const $ = require('jquery');
 const uptextvIMG = require('../../utils/uptextv-image').get()
-const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+const darkmode = require('../../watchers/darkmode.js')
 
 var sideGroupsModule
 
@@ -10,6 +10,10 @@ class pinButton{
         if(shouldSetup()){
             setup()
         }
+    }
+
+    selfRemove(){
+        document.getElementById('pin-button').parentElement.parentElement.parentElement.parentElement.remove()
     }
 }
 
@@ -55,7 +59,7 @@ function setup(){
 
       // you have a small bug when you switch from light to dark 
       // button rgba aren't the same so you handle it here
-      dark_light_mode_watcher.onDarkMode(()=>{
+      darkmode.onDarkMode(()=>{
         if(!isMenuToPinSetup()){
             button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
         }
@@ -63,7 +67,7 @@ function setup(){
 
       // you have a small bug when you switch from light to dark 
       // button rgba aren't the same so you handle it here
-      dark_light_mode_watcher.onLightMode(()=>{
+      darkmode.onLightMode(()=>{
           if(!isMenuToPinSetup()){
             button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
           }
