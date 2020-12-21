@@ -8,11 +8,27 @@ let watcher;
 let currentPath = '';
 let currentRoute = '';
 let sidenav_loaded = false
+let followButton = null
+let oldFollowButton = ''
 
 const loadPredicates = {
     following: () => !!$('.tw-tabs div[data-test-selector="ACTIVE_TAB_INDICATOR"]').length,
     followbar: () => {
-        return !!$('.follow-btn__follow-btn').length
+        // you had multiple problems with this 'follow bar'
+        // on  route change, follow bar isn't update directly
+        // it cause multiple problems with pinButton.js
+        // you have to manually check when it's update
+        followButton = $('.follow-btn__follow-btn')[0]
+        if(followButton){
+            if(followButton!=oldFollowButton){
+                oldFollowButton=followButton
+                return true
+            }else{
+                return null
+            }
+        }else{
+            return null
+        }
     },
     channel: () => {
         const href = (
@@ -91,7 +107,7 @@ function getRouteFromPath(path) {
 }
 
 function onRouteChange(location) {
-    const lastPath = currentPath;
+    const lastPath = currentPath
     const lastRoute = currentRoute;
     const path = location.pathname;
     const route = getRouteFromPath(path);
@@ -112,13 +128,12 @@ function onRouteChange(location) {
         })
     }
 
-    waitForLoad('followbar').then(() => {
-        watcher.emit('load.followbar')
-    })
+
     switch (route) {
         case routes.DIRECTORY_FOLLOWING:
             if (lastRoute === routes.DIRECTORY_FOLLOWING_LIVE) break;
             waitForLoad('following').then(() => watcher.emit('load.directory.following'));
+            waitForLoad('followbar').then(() => watcher.emit('load.followbar'));
             break;
         case routes.VOD:
             waitForLoad('vod').then(() => watcher.emit('load.vod'));
@@ -130,6 +145,7 @@ function onRouteChange(location) {
         case routes.CHANNEL:
             waitForLoad('channel').then(() => watcher.emit('load.channel'));
             waitForLoad('player').then(() => watcher.emit('load.player'));
+            waitForLoad('followbar').then(() => watcher.emit('load.followbar'));
             break;
         case routes.HOMEPAGE:
             waitForLoad('homepage').then(() => watcher.emit('load.homepage'));

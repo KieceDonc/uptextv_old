@@ -13,8 +13,6 @@ var groupsSection = new Array()
 //var groups = new Array()
 
 var userID // id of current user
-var streamerID // id of streamerID
-
 
 class SideGroupsModule{
     constructor(){  
@@ -57,10 +55,6 @@ class SideGroupsModule{
 
     getUserID(){
       return userID
-    }
-
-    getStreamerID(){
-      return streamerID
     }
 
     getGroupsSection(){

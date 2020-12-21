@@ -1,6 +1,8 @@
 const $ = require('jquery');
 const uptextvIMG = require('../../utils/uptextv-image').get()
 const darkmode = require('../../watchers/darkmode.js')
+const twitch = require('../../utils/twitch')
+const debug = require('../../utils/debug')
 
 var sideGroupsModule
 
@@ -201,10 +203,16 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     div0.append(div1)
     div1.append(div2)
     div1.append(div3)
-    let groupsSection = sideGroupsModule.getGroupsSection().slice().reverse() // slice is needed so you can .reverse() each time to get each groupSection name in the same order as displayed
-    groupsSection.forEach((currentGroupSection)=>{
+
+    let groupsSection = sideGroupsModule.getGroupsSection()
+    for(let x=0;x<groupsSection.length;x++){
+        // we parse array from the end to the beginning
+        // we do to get each groupSection name in the same order as displayed
+
+        let currentGroupSection = groupsSection[x]
         let currentGroupID = currentGroupSection.getGroupID()
         let currentGroupID_normal = currentGroupSection.getGroupID_normal()
+        let streamerID = twitch.getCurrentChannel().id
 
         /*
         <div>
@@ -221,17 +229,18 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         input_current_group.type='checkbox'
         input_current_group.style.verticalAlign='middle'
         input_current_group.style.pointerEvents='all'
-        let currentStreamerIndexInCurrentGroupSection = currentGroupSection.getStreamerIndex(sideGroupsModule.getStreamerID())
+        let streamerIndex = currentGroupSection.getStreamerIndex(streamerID)
         
         // return -1 if streamer isn't in list in current group section
-        if(currentStreamerIndexInCurrentGroupSection!=-1){ 
+        if(streamerIndex!=-1){ 
             input_current_group.checked="checked"
         }
         input_current_group.addEventListener('change', (event) => { // detect if checked to unchecked or unchecked to checked
+            debug.log(streamerID)
             if (event.target.checked) { // need to add streamer
-                currentGroupSection.addStreamer(sideGroupsModule.getStreamerID())
+                currentGroupSection.addStreamer(streamerID)
             } else { // need to delete streamer
-                currentGroupSection.deleteStreamer(sideGroupsModule.getStreamerID())
+                currentGroupSection.deleteStreamer(streamerID)
             }
         })
 
@@ -242,7 +251,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         div_current_group.append(input_current_group)
         div_current_group.append(label_current_group)
         div3.append(div_current_group)
-    })
+    }
 
     // adding scroll bar only when it's necessary
     if(div3.offsetHeight>250){
