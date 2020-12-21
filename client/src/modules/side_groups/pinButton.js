@@ -9,20 +9,26 @@ var sideGroupsModule
 class pinButton{
     constructor(_sideGroupsModule){
         sideGroupsModule = _sideGroupsModule
-        if(shouldSetup()){
-            setup()
-        }
+        checkSetup()
+        setup()
     }
 
     selfRemove(){
-        document.getElementById('pin-button').parentElement.parentElement.parentElement.parentElement.remove()
+        removePinButton()
     }
 }
 
-// check if pin button exist
-function shouldSetup(){
-    let button = document.getElementById('pin-button')
-    return button==null
+// check if pin button already exist in page
+// if yes delete it
+function checkSetup(){
+    let pinButton = document.getElementById('pin-button')
+    if(pinButton){
+        removePinButton()
+    }
+}
+
+function removePinButton(){
+    document.getElementById('pin-button').parentElement.parentElement.parentElement.parentElement.remove()
 }
 
 // this code add the pin button
@@ -236,7 +242,6 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
             input_current_group.checked="checked"
         }
         input_current_group.addEventListener('change', (event) => { // detect if checked to unchecked or unchecked to checked
-            debug.log(streamerID)
             if (event.target.checked) { // need to add streamer
                 currentGroupSection.addStreamer(streamerID)
             } else { // need to delete streamer

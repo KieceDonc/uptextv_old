@@ -22,6 +22,7 @@ const loadPredicates = {
         if(followButton){
             if(followButton!=oldFollowButton){
                 oldFollowButton=followButton
+                debug.log(twitch.updateCurrentChannel())
                 return true
             }else{
                 return null
@@ -121,8 +122,8 @@ function onRouteChange(location) {
     currentRoute = route;
     if (currentPath === lastPath) return;
 
-
     if(!sidenav_loaded){
+        sidenav_loaded = true
         waitForLoad('sidenav').then(() => {
             watcher.emit('load.sidenav')
         })
