@@ -6,7 +6,7 @@
   "scripts": {
     "build": "browserify ./src/index.js -o /var/www/extension/bundle.js",
     "watch": "watchify ./src/index.js -o /var/www/extension/bundle.js",
-    "release": "npm install && browserify ./src/index.js -o ./release/uptextv-bundle.js && javascript-obfuscator ./release/uptextv-bundle.js --output ./release/uptextv.js --identifier-names-generator mangled --simplify false --compact true --string-array false && mkdir ../to-zip/ && mkdir ../to-zip/mozilla_extension/ && cp ../client -r ../to-zip && rm -r ../to-zip/client/node_modules && cp release/README.md ../to-zip/README.md && cp release/manifest.json ../to-zip/mozilla_extension/manifest.json && cp release/run.js ../to-zip/mozilla_extension/run.js && cp release/uptextv.js ../to-zip/mozilla_extension/uptextv.js && cd ../to-zip/ && zip -r uptextv.zip * && mv uptextv.zip ../uptextv.zip && cd ../ && rm -r to-zip && echo done"
+    "release": "npm install && browserify ./src/index.js -o ./release/uptextv-bundle.js && javascript-obfuscator ./release/uptextv-bundle.js --output ./release/uptextv.js --identifier-names-generator mangled --simplify false --compact true --string-array false && mkdir ../to-zip/ && mkdir ../to-zip/mozilla_extension/ && sudo cp ../client -r ../to-zip && rm -r ../to-zip/client/node_modules && cp release/README.md ../to-zip/README.md && cp release/manifest.json ../to-zip/mozilla_extension/manifest.json && cp release/run.js ../to-zip/mozilla_extension/run.js && cp release/uptextv.js ../to-zip/mozilla_extension/uptextv.js && cd ../to-zip/ && zip -r uptextv.zip * && mv uptextv.zip ../uptextv.zip && cd ../ && rm -r to-zip && echo done"
   },
   "author": "",
   "license": "ISC",

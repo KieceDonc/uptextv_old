@@ -21037,6 +21037,20 @@ module.exports = yeast;
 
     const debug = require('./utils/debug');
     const watcher = require('./watcher');
+    const cookies = require('cookies-js');
+    const twitch = require('./utils/twitch');
+
+    const userCookie = cookies.get('twilight-user');
+    if (userCookie) {
+        try {
+            const {authToken, id, login, displayName} = JSON.parse(userCookie);
+            twitch.setCurrentUser(authToken, id, login, displayName);
+        } catch (_) {
+            debug.log('error loading user from twilight user cookie');
+        }
+    }
+
+    watcher.setup();
 
     require('./modules/side_groups/index.js', {mode: (base, files) => {
         return files.map(module => {
@@ -21061,11 +21075,11 @@ module.exports = yeast;
     };
 })();
 
-},{"./modules/side_groups/index.js":60,"./settings":63,"./utils/debug":66,"./watcher":72}],58:[function(require,module,exports){
+},{"./modules/side_groups/index.js":60,"./settings":65,"./utils/debug":67,"./utils/twitch":70,"./watcher":73,"cookies-js":12}],58:[function(require,module,exports){
 const groupSortBy = require('./groupSortBy')
 const debug = require('../../utils/debug')
 const twitch = require('../../utils/twitch')
-const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+const darkmode = require('../../watchers/darkmode.js')
 const uptextvAPI = require('../../utils/uptextv-api')
 const uptextvIMG = require('./../../utils/uptextv-image').get()
 
@@ -21355,18 +21369,20 @@ class streamTitleToolTipHandler{
 
     getElement(aRectTop,aWidth,aHeight){
         /*
-        div0 <div class="tooltip-layer" style="transform: translate(0px, 356px); width: 242px; height: 42px;">
-        div1     <div class="rich-content-tooltip">
-        div2        <div style="width: 242px; height: 42px;">
-                    </div>
-        div3        <div class="tw-absolute tw-balloon tw-balloon--center tw-balloon--right tw-block" role="dialog">
-        div4            <div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2">
-        div5                <div class="rich-content-tooltip__pointer-target">
-        div6                    <div class="tw-pd-05">
-        div7                        <div class="online-side-nav-channel-tooltip__body tw-pd-x-05">
-        p0                               <p class="tw-c-text-base tw-ellipsis tw-line-clamp-2">
-                                                LIVE: Complexity vs. Astralis - ESL Pro League Season 12 - Group B - EU
-                                            </p>
+        <div class="dialog-layer">
+            <div class="ReactModal__Overlay ReactModal__Overlay--after-open react-modal__overlay" style="position: fixed; top: 0px; left: 0px; width: 1px; height: 1px;">
+                <div class="ReactModal__Content ReactModal__Content--after-open react-modal__content" tabindex="-1" role="dialog" aria-modal="true">
+                    <div style="position: absolute; inset: 0px auto auto 0px; transform: translate(240px, 485px);" data-popper-reference-hidden="false" data-popper-escaped="true" data-popper-placement="right-start">
+                        <div>
+                            <div class="tw-transition tw-transition--enter-done tw-transition__fade tw-transition__fade--enter-done" style="transition-delay: 0ms; transition-duration: 250ms;">
+                                <div class="tw-pd-l-1">
+                                    <div class="tw-balloon tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 tw-inline-block" role="dialog">
+                                        <div class="tw-pd-x-05 tw-pd-y-05">
+                                            <div class="online-side-nav-channel-tooltip__body tw-pd-x-05">
+                                                <p class="tw-c-text-base tw-ellipsis tw-line-clamp-2">Ranked All Day !prime !gfuel</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -21377,46 +21393,61 @@ class streamTitleToolTipHandler{
         */
 
         let div0 = document.createElement('div')
-        div0.className='tooltip-layer'
+        div0.className='dialog-layer'
         div0.id='tooltip-layer-stream-title'
-        div0.style.transform='translate('+(aWidth+5)+'px,'+(aRectTop+aHeight/2)+'px)'
-        div0.style.width = aWidth
-        div0.style.height = aHeight
+        //div0.style.width = aWidth
+        //div0.style.height = aHeight
         
         let div1 = document.createElement('div')
-        div1.className='rich-content-tooltip'
+        div1.className='ReactModal__Overlay ReactModal__Overlay--after-open react-modal__overlay'
+        div1.style.position ='fixed'
+        div1.style.top='0px'
+        div1.style.left='0px'
+        div1.style.width='1px'
+        div1.style.height='1px'
         
         let div2 = document.createElement('div')
-        div2.style.width = aWidth
-        div2.style.height = aHeight
-        
+        div2.className='ReactModal__Content ReactModal__Content--after-open react-modal__content'
+
         let div3 = document.createElement('div')
-        div3.className='tw-absolute tw-balloon tw-balloon--center tw-balloon--right tw-block'
+        div3.className=''
+        div3.style.transform='translate('+(aWidth+2)+'px,'+(aRectTop)+'px)'
+        div3.style.position = 'absolute'
         
         let div4 = document.createElement('div')
-        div4.className='tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2'
+        div4.className=''
         
         let div5 = document.createElement('div')
-        div5.className='rich-content-tooltip__pointer-target'
+        div5.style.transitionDelay='0ms'
+        div5.style.transitionDuration='250ms'
+        div5.className='tw-transition tw-transition--enter-done tw-transition__fade tw-transition__fade--enter-done'
         
         let div6 = document.createElement('div')
-        div6.className='tw-pd-05'
+        div6.className='tw-pd-l-1'
         
         let div7 = document.createElement('div')
-        div7.className='online-side-nav-channel-tooltip__body tw-pd-x-05'
+        div7.className='tw-balloon tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 tw-inline-block'
+
+        let div8 = document.createElement('div')
+        div8.className='tw-pd-x-05 tw-pd-y-05'
+
+        let div9 = document.createElement('div')
+        div9.className='online-side-nav-channel-tooltip__body tw-pd-x-05'
         
         let p0 = document.createElement('p')
-        p0.className='tw-c-text-base tw-ellipsis tw-line-clamp-2'
+        p0.className='online-side-nav-channel-tooltip__body tw-pd-x-05'
         p0.innerText=this.streamerInfo.title
         
         div0.appendChild(div1)
         div1.appendChild(div2)
-        div1.appendChild(div3)
+        div2.appendChild(div3)
         div3.appendChild(div4)
         div4.appendChild(div5)
         div5.appendChild(div6)
         div6.appendChild(div7)
-        div7.appendChild(p0)
+        div7.appendChild(div8)
+        div8.appendChild(div9)
+        div9.appendChild(p0)
         return div0
     }
 }
@@ -21476,7 +21507,7 @@ function setup(currentGroupSection){
     let imgsToWatchDarkLightMode = new Array()
     let giveImgsDesireStyle = function(img){
         imgsToWatchDarkLightMode.push(img)
-        if(dark_light_mode_watcher.isInDarkMode()){
+        if(darkmode.isInDarkMode()){
             img.style.filter='brightness(0) invert(1)'
         }
         img.style.cursor='pointer'
@@ -21587,14 +21618,14 @@ function setup(currentGroupSection){
 
 
     // every time user switch to dark mode we change imgs to white ( from black )
-    dark_light_mode_watcher.onDarkMode(()=>{
+    darkmode.onDarkMode(()=>{
         imgsToWatchDarkLightMode.forEach((currentElement)=>{
             currentElement.style.filter='brightness(0) invert(1)'
         })
     })
 
     // every time user switch to dark mode we change imgs to black ( from white )
-    dark_light_mode_watcher.onLightMode(()=>{
+    darkmode.onLightMode(()=>{
         imgsToWatchDarkLightMode.forEach((currentElement)=>{
             currentElement.style.filter=''
         })
@@ -21915,7 +21946,7 @@ function addStreamerInHTML(groupID,streamerInfo,liveColor){
 
         div9.className = "tw-align-items-center tw-flex"
 
-        div10.className="tw-border-radius-rounded tw-channel-status-indicator--live tw-channel-status-indicator--small tw-inline-block tw-relative"
+        div10.className="ScChannelStatusIndicator-sc-1cf6j56-0 fSVvnY tw-channel-status-indicator"
         div10.style.setProperty("background-color", liveColor, "important");
 
         div11.className="tw-mg-l-05"
@@ -22165,7 +22196,7 @@ module.exports = {
         return new groupSection(_groupObject,_sideGroupsModule)
     }
 }
-},{"../../utils/dark-light-mode-watcher":65,"../../utils/debug":66,"../../utils/twitch":69,"../../utils/uptextv-api":70,"./../../utils/uptextv-image":71,"./groupSortBy":59}],59:[function(require,module,exports){
+},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-api":71,"../../watchers/darkmode.js":74,"./../../utils/uptextv-image":72,"./groupSortBy":59}],59:[function(require,module,exports){
 const uptextvAPI = require('../../utils/uptextv-api')
 const twitch = require('../../utils/twitch')
 
@@ -22243,7 +22274,7 @@ function getSortGroupStreamersFunctions(groupSection){
     {
       'name':'Viewer',
       'treatment':function(){
-        sortCurrentGroupStreamersByPropertie(groupSection,'viewer_count')
+        sortStreamersByPropertie(groupSection,'viewer_count')
       }
     },
   
@@ -22269,7 +22300,7 @@ function getSortGroupStreamersFunctions(groupSection){
     {
       'name':'Game name',
       'treatment': function(){ 
-        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
+        let splitByOnlineAndOffline = getOnlineAndOfflineStreamers(groupSection)
         splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
           let a_broadcaster_name = a["game_name"].toLowerCase()
           let b_broadcaster_name = b["game_name"].toLowerCase()
@@ -22289,7 +22320,7 @@ function getSortGroupStreamersFunctions(groupSection){
     {
       'name':'Uptime',
       'treatment': function(){ 
-        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
+        let splitByOnlineAndOffline = getOnlineAndOfflineStreamers(groupSection)
         splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
           let a_live_start = new Date(a["started_at"]).getTime() // date in second from 1970
           let b_live_start = new Date(b["started_at"]).getTime() // date in second from 1970
@@ -22309,8 +22340,8 @@ function getSortGroupStreamersFunctions(groupSection){
 }
 
 // sort current group list streamers by a propertie
-function sortCurrentGroupStreamersByPropertie(groupSection,propertieName){
-  let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
+function sortStreamersByPropertie(groupSection,propertieName){
+  let splitByOnlineAndOffline = getOnlineAndOfflineStreamers(groupSection)
   splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy(propertieName))
   let newList = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
   groupSection.setGroupList(newList)
@@ -22319,7 +22350,7 @@ function sortCurrentGroupStreamersByPropertie(groupSection,propertieName){
 // return an object like this {online:ARRAY,offline:ARRAY}
 // online is list of current group list streamer online
 // offline is list of current group list streamer offline
-function getOnlineAndOfflineCurrentGroupStreamers(groupSection){
+function getOnlineAndOfflineStreamers(groupSection){
     let offline = new Array()
     let online = new Array()
     let currentGroupStreamers = groupSection.getGroupList()
@@ -22351,7 +22382,7 @@ module.exports = {
         return new groupSortBy(_currentGroupSection)
     }
 }     
-},{"../../utils/twitch":69,"../../utils/uptextv-api":70}],60:[function(require,module,exports){
+},{"../../utils/twitch":70,"../../utils/uptextv-api":71}],60:[function(require,module,exports){
 const watcher = require('../../watcher');
 const twitch = require('../../utils/twitch')
 const uptextvAPI = require('../../utils/uptextv-api')
@@ -22359,6 +22390,7 @@ const debug = require('../../utils/debug')
 const groupSection = require('./groupSection')
 const pinButton = require('./pinButton');
 const sideBottomBar = require('./sideBottomBar');
+const follow = require('../../watchers/follow')
 
 const defaultLiveColor = '#007aa3'
 
@@ -22366,14 +22398,12 @@ var groupsSection = new Array()
 //var groups = new Array()
 
 var userID // id of current user
-var streamerID // id of streamerID
-
 
 class SideGroupsModule{
     constructor(){  
+      userID = twitch.getCurrentUser().id
+      
       watcher.on('load.sidenav',()=>{
-  
-        userID = twitch.getCurrentUser().id
         uptextvAPI.setup(userID).then(()=>{
           uptextvAPI.getGroupsStreamers(userID).then((groups)=>{
             groups.sort((groupA,groupB)=>{
@@ -22389,18 +22419,27 @@ class SideGroupsModule{
           debug.error('error:',err )
         })
       })
-      watcher.on('load.followbutton',()=>{
-        streamerID = twitch.getCurrentChannel().id
-        pinButton.setup(this)
+
+      watcher.on('load.followbar',()=>{
+        var pinButtonInstance = null
+
+        if(follow.isFollowing){
+          pinButtonInstance = pinButton.setup(this)
+        }
+
+        follow.onFollow(()=>{
+          pinButtonInstance = pinButton.setup(this)
+        })
+
+        follow.onUnfollow(()=>{
+          pinButtonInstance.selfRemove()
+          pinButtonInstance = null
+        })  
       }) 
     }
 
     getUserID(){
       return userID
-    }
-
-    getStreamerID(){
-      return streamerID
     }
 
     getGroupsSection(){
@@ -22529,30 +22568,39 @@ function updateStreamersInfo(sideGroupsModule){
     })
 }
 
-
 module.exports = new SideGroupsModule()
-
-
-},{"../../utils/debug":66,"../../utils/twitch":69,"../../utils/uptextv-api":70,"../../watcher":72,"./groupSection":58,"./pinButton":61,"./sideBottomBar":62}],61:[function(require,module,exports){
+},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-api":71,"../../watcher":73,"../../watchers/follow":75,"./groupSection":58,"./pinButton":61,"./sideBottomBar":62}],61:[function(require,module,exports){
 const $ = require('jquery');
 const uptextvIMG = require('../../utils/uptextv-image').get()
-const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+const darkmode = require('../../watchers/darkmode.js')
+const twitch = require('../../utils/twitch')
+const debug = require('../../utils/debug')
 
 var sideGroupsModule
 
 class pinButton{
     constructor(_sideGroupsModule){
         sideGroupsModule = _sideGroupsModule
-        if(shouldSetup()){
-            setup()
-        }
+        checkSetup()
+        setup()
+    }
+
+    selfRemove(){
+        removePinButton()
     }
 }
 
-// check if pin button exist
-function shouldSetup(){
-    let button = document.getElementById('pin-button')
-    return button==null
+// check if pin button already exist in page
+// if yes delete it
+function checkSetup(){
+    let pinButton = document.getElementById('pin-button')
+    if(pinButton){
+        removePinButton()
+    }
+}
+
+function removePinButton(){
+    document.getElementById('pin-button').parentElement.parentElement.parentElement.parentElement.remove()
 }
 
 // this code add the pin button
@@ -22591,7 +22639,7 @@ function setup(){
 
       // you have a small bug when you switch from light to dark 
       // button rgba aren't the same so you handle it here
-      dark_light_mode_watcher.onDarkMode(()=>{
+      darkmode.onDarkMode(()=>{
         if(!isMenuToPinSetup()){
             button0.style.backgroundColor='rgba(255, 255, 255, 0.15)'
         }
@@ -22599,7 +22647,7 @@ function setup(){
 
       // you have a small bug when you switch from light to dark 
       // button rgba aren't the same so you handle it here
-      dark_light_mode_watcher.onLightMode(()=>{
+      darkmode.onLightMode(()=>{
           if(!isMenuToPinSetup()){
             button0.style.backgroundColor='rgba(0, 0, 0, 0.05)'
           }
@@ -22718,7 +22766,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     div0.style.height = div0_height
 
     let div1 = document.createElement('div')
-    div1.className="tw-inline-flex tw-relative tw-tooltip-wrapper tw-tooltip-wrapper--show"
+    div1.className="tw-inline-flex tw-relative tw-tooltip__container tw-tooltip__container--show"//tw-tooltip-wrapper tw-tooltip-wrapper--show"
 
     let div2 = document.createElement('div')
     div2.style.width = div0_width
@@ -22733,10 +22781,16 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     div0.append(div1)
     div1.append(div2)
     div1.append(div3)
-    let groupsSection = sideGroupsModule.getGroupsSection().slice().reverse() // slice is needed so you can .reverse() each time to get each groupSection name in the same order as displayed
-    groupsSection.forEach((currentGroupSection)=>{
+
+    let groupsSection = sideGroupsModule.getGroupsSection()
+    for(let x=0;x<groupsSection.length;x++){
+        // we parse array from the end to the beginning
+        // we do to get each groupSection name in the same order as displayed
+
+        let currentGroupSection = groupsSection[x]
         let currentGroupID = currentGroupSection.getGroupID()
         let currentGroupID_normal = currentGroupSection.getGroupID_normal()
+        let streamerID = twitch.getCurrentChannel().id
 
         /*
         <div>
@@ -22753,17 +22807,17 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         input_current_group.type='checkbox'
         input_current_group.style.verticalAlign='middle'
         input_current_group.style.pointerEvents='all'
-        let currentStreamerIndexInCurrentGroupSection = currentGroupSection.getStreamerIndex(sideGroupsModule.getStreamerID())
+        let streamerIndex = currentGroupSection.getStreamerIndex(streamerID)
         
         // return -1 if streamer isn't in list in current group section
-        if(currentStreamerIndexInCurrentGroupSection!=-1){ 
+        if(streamerIndex!=-1){ 
             input_current_group.checked="checked"
         }
         input_current_group.addEventListener('change', (event) => { // detect if checked to unchecked or unchecked to checked
             if (event.target.checked) { // need to add streamer
-                currentGroupSection.addStreamer(sideGroupsModule.getStreamerID())
+                currentGroupSection.addStreamer(streamerID)
             } else { // need to delete streamer
-                currentGroupSection.deleteStreamer(sideGroupsModule.getStreamerID())
+                currentGroupSection.deleteStreamer(streamerID)
             }
         })
 
@@ -22774,7 +22828,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
         div_current_group.append(input_current_group)
         div_current_group.append(label_current_group)
         div3.append(div_current_group)
-    })
+    }
 
     // adding scroll bar only when it's necessary
     if(div3.offsetHeight>250){
@@ -22837,11 +22891,11 @@ module.exports = {
         return new pinButton(_sideGroupsModule)
     }
 }
-},{"../../utils/dark-light-mode-watcher":65,"../../utils/uptextv-image":71,"jquery":34}],62:[function(require,module,exports){
+},{"../../utils/debug":67,"../../utils/twitch":70,"../../utils/uptextv-image":72,"../../watchers/darkmode.js":74,"jquery":34}],62:[function(require,module,exports){
 const debug = require('../../utils/debug')
 const uptextvAPI = require('../../utils/uptextv-api')
 const uptextvIMG = require('../../utils/uptextv-image').get()
-const dark_light_mode_watcher = require('../../utils/dark-light-mode-watcher')
+const darkmode = require('../../watchers/darkmode.js')
 
 let sideGroupsModule
 
@@ -22851,7 +22905,7 @@ class sideBottomBar{
 
     constructor(_sideGroupsModule){
         sideGroupsModule=_sideGroupsModule
-        this.button=new AddButton
+        this.addButton=new AddButton
         this.setup()
     }
 
@@ -22883,7 +22937,7 @@ class sideBottomBar{
 
 
                 sideNav.firstChild.firstChild.appendChild(sideBottomBar)
-                this.button.setup(sideBottomBar)
+                this.addButton.setup(sideBottomBar)
             }else{
                 debug.error('error while trying to find sideNav id in sideBottomBar. SideNav is null')
             }
@@ -23015,7 +23069,7 @@ class AddButton{
 
                 let input_valid_img = document.createElement('img')
                 input_valid_img.src=uptextvIMG.valid
-                if(dark_light_mode_watcher.isInDarkMode()){
+                if(darkmode.isInDarkMode()){
                     input_valid_img.style.filter='brightness(0) invert(1)'
                 }
                 input_valid_img.style.width = input_imgs_height
@@ -23029,7 +23083,7 @@ class AddButton{
     
                 let input_cancel_img = document.createElement('img')
                 input_cancel_img.src=uptextvIMG.cancel
-                if(dark_light_mode_watcher.isInDarkMode()){
+                if(darkmode.isInDarkMode()){
                     input_cancel_img.style.filter='brightness(0) invert(1)'
                 }
                 input_cancel_img.style.width = input_imgs_height
@@ -23042,12 +23096,12 @@ class AddButton{
                 input_div1.append(input_valid_img)
                 input_div1.append(input_cancel_img)
 
-                dark_light_mode_watcher.onDarkMode(()=>{
+                darkmode.onDarkMode(()=>{
                     input_valid_img.style.filter='brightness(0) invert(1)'
                     input_cancel_img.style.filter='brightness(0) invert(1)'
                 })
 
-                dark_light_mode_watcher.onLightMode(()=>{
+                darkmode.onLightMode(()=>{
                     input_valid_img.style.filter=''
                     input_cancel_img.style.filter=''
                 })
@@ -23124,7 +23178,278 @@ module.exports = {
         return new sideBottomBar(_sideGroupsModule)
     }
 }
-},{"../../utils/dark-light-mode-watcher":65,"../../utils/debug":66,"../../utils/uptextv-api":70,"../../utils/uptextv-image":71}],63:[function(require,module,exports){
+},{"../../utils/debug":67,"../../utils/uptextv-api":71,"../../utils/uptextv-image":72,"../../watchers/darkmode.js":74}],63:[function(require,module,exports){
+const SafeEventEmitter = require('../utils/safe-event-emitter');
+
+const IGNORED_HTML_TAGS = new Set(['BR', 'HEAD', 'LINK', 'META', 'SCRIPT', 'STYLE']);
+
+let observer;
+const observedIds = Object.create(null);
+const observedClassNames = Object.create(null);
+const observedTestSelectors = Object.create(null);
+const attributeObservers = new Map();
+
+function parseSelector(selector) {
+    const partialSelectors = selector.split(',').map(s => s.trim());
+    const ids = [];
+    const classNames = [];
+    const testSelectors = [];
+    for (const partialSelector of partialSelectors) {
+        if (partialSelector.startsWith('#')) {
+            ids.push({
+                key: partialSelector.split(' ')[0].split('#')[1],
+                partialSelector
+            });
+        } else if (partialSelector.startsWith('.')) {
+            classNames.push({
+                key: partialSelector.split(' ')[0].split('.')[1],
+                partialSelector
+            });
+        } else if (partialSelector.includes('[data-test-selector')) {
+            testSelectors.push({
+                key: partialSelector.split(' ')[0].split('[data-test-selector="')[1].split('"]')[0],
+                partialSelector
+            });
+        }
+    }
+    return {
+        ids,
+        classNames,
+        testSelectors
+    };
+}
+
+function startAttributeObserver(observedType, emitter, node) {
+    const attributeObserver = new window.MutationObserver(
+        () => emitter.emit(observedType.selector, node, node.isConnected)
+    );
+    attributeObserver.observe(node, {attributes: true, subtree: true});
+    attributeObservers.set(observedType, attributeObserver);
+}
+
+function stopAttributeObserver(observedType) {
+    const attributeObserver = attributeObservers.get(observedType);
+    if (!attributeObserver) {
+        return;
+    }
+
+    attributeObserver.disconnect();
+    attributeObservers.delete(observedType);
+}
+
+function processObservedResults(emitter, node, results) {
+    if (!results || results.length === 0) {
+        return;
+    }
+
+    for (const observedType of results) {
+        const {partialSelector, selector, options} = observedType;
+        const foundNode = partialSelector.includes(' ') ? node.querySelector(selector) : node;
+        if (!foundNode) {
+            continue;
+        }
+        if (options && options.useParentNode) {
+            foundNode = node;
+        }
+        const isConnected = foundNode.isConnected;
+        if (options && options.attributes) {
+            if (isConnected) {
+                startAttributeObserver(observedType, emitter, foundNode);
+            } else {
+                stopAttributeObserver(observedType);
+            }
+        }
+        emitter.emit(selector, foundNode, isConnected);
+    }
+}
+
+function processMutations(emitter, nodes) {
+    if (!nodes || nodes.length === 0) {
+        return;
+    }
+
+    for (const node of nodes) {
+        let nodeId = node.id;
+        if (typeof nodeId === 'string' && nodeId.length > 0) {
+            nodeId = nodeId.trim();
+            processObservedResults(emitter, node, observedIds[nodeId]);
+        }
+
+        let testSelector = node.getAttribute('data-test-selector');
+        if (typeof testSelector === 'string' && testSelector.length > 0) {
+            testSelector = testSelector.trim();
+            processObservedResults(emitter, node, observedTestSelectors[testSelector]);
+        }
+
+        const nodeClassList = node.classList;
+        if (nodeClassList && nodeClassList.length > 0) {
+            for (let className of nodeClassList) {
+                className = className.trim();
+                processObservedResults(emitter, node, observedClassNames[className]);
+            }
+        }
+    }
+}
+
+class DOMObserver extends SafeEventEmitter {
+    constructor() {
+        super();
+
+        observer = new window.MutationObserver(mutations => {
+            const pendingNodes = [];
+            for (const {addedNodes, removedNodes} of mutations) {
+                if (!addedNodes || !removedNodes || (addedNodes.length === 0 && removedNodes.length === 0)) {
+                    continue;
+                }
+
+                for (let i = 0; i < 2; i++) {
+                    const nodes = i === 0 ? addedNodes : removedNodes;
+                    for (const node of nodes) {
+                        if (node.nodeType !== Node.ELEMENT_NODE || IGNORED_HTML_TAGS.has(node.nodeName)) {
+                            continue;
+                        }
+
+                        pendingNodes.push(node);
+                        if (node.childElementCount === 0) {
+                            continue;
+                        }
+
+                        for (const childNode of node.querySelectorAll('[id],[class]')) {
+                            pendingNodes.push(childNode);
+                        }
+                    }
+                }
+            }
+
+            if (pendingNodes.length === 0) {
+                return;
+            }
+
+            processMutations(this, pendingNodes);
+        });
+        observer.observe(document, {childList: true, subtree: true});
+    }
+
+    on(selector, callback, options) {
+        const parsedSelector = parseSelector(selector);
+
+        const initialNodes = [];
+        for (const selectorType of Object.keys(parsedSelector)) {
+            let observedSelectorType;
+            switch (selectorType) {
+                case 'ids':
+                    observedSelectorType = observedIds;
+                    break;
+                case 'classNames':
+                    observedSelectorType = observedClassNames;
+                    break;
+                case 'testSelectors':
+                    observedSelectorType = observedTestSelectors;
+                    break;
+            }
+
+            for (const {key, partialSelector} of parsedSelector[selectorType]) {
+                const currentObservedTypeSelectors = observedSelectorType[key];
+                const observedType = {partialSelector, selector, options};
+                if (!currentObservedTypeSelectors) {
+                    observedSelectorType[key] = [observedType];
+                } else {
+                    currentObservedTypeSelectors.push(observedType);
+                }
+
+                if (observedSelectorType === observedIds) {
+                    const initialNode = document.getElementById(key);
+                    if (initialNode) {
+                        initialNodes.push(initialNode);
+                    }
+                } else if (observedSelectorType === observedClassNames) {
+                    initialNodes.push(...document.getElementsByClassName(key));
+                }
+            }
+        }
+
+        const result = super.on(selector, callback);
+
+        // trigger dom mutations for existing elements for on page
+        processMutations(this, initialNodes);
+
+        return result;
+    }
+
+    // Note: you cannot call this directly as this is behind SafeEventEmitter
+    //       use the closure returned from `on` to remove the event listener if needed
+    off(selector, callback) {
+        this.removeListener(selector, callback);
+
+        if (this.listenerCount(selector) > 0) {
+            return;
+        }
+
+        const parsedSelector = parseSelector(selector);
+
+        for (const selectorType of Object.keys(parsedSelector)) {
+            let observedSelectorType;
+            switch (selectorType) {
+                case 'ids':
+                    observedSelectorType = observedIds;
+                    break;
+                case 'classNames':
+                    observedSelectorType = observedClassNames;
+                    break;
+                case 'testSelectors':
+                    observedSelectorType = observedTestSelectors;
+                    break;
+            }
+
+            for (const {key} of parsedSelector[selectorType]) {
+                const currentObservedTypeSelectors = observedSelectorType[key];
+                if (!currentObservedTypeSelectors) {
+                    continue;
+                }
+                const observedTypeIndex = currentObservedTypeSelectors.findIndex(
+                    observedType => observedType.selector === selector
+                );
+                if (observedTypeIndex === -1) {
+                    continue;
+                }
+                const observedType = currentObservedTypeSelectors[observedTypeIndex];
+                stopAttributeObserver(observedType);
+                currentObservedTypeSelectors.splice(observedTypeIndex);
+                if (currentObservedTypeSelectors.length === 0) {
+                    delete observedSelectorType[key];
+                }
+            }
+        }
+    }
+}
+
+module.exports = new DOMObserver();
+},{"../utils/safe-event-emitter":68}],64:[function(require,module,exports){
+const SafeEventEmitter = require('../utils/safe-event-emitter');
+
+class HistoryObserver extends SafeEventEmitter {
+    constructor() {
+        super();
+
+        const pushState = history.pushState;
+        const replaceState = history.replaceState;
+
+        history.pushState = (...args) => {
+            const state = args[0];
+            pushState.apply(history, args);
+            this.emit('pushState', location, state);
+        };
+        history.replaceState = (...args) => {
+            const state = args[0];
+            replaceState.apply(history, args);
+            this.emit('replaceState', location, state);
+        };
+        window.addEventListener('popstate', ({state}) => this.emit('popState', location, state));
+    }
+}
+
+module.exports = new HistoryObserver();
+},{"../utils/safe-event-emitter":68}],65:[function(require,module,exports){
 const SafeEventEmitter = require('./utils/safe-event-emitter');
 const storage = require('./storage');
 
@@ -23176,7 +23501,7 @@ class Settings extends SafeEventEmitter {
 
 module.exports = new Settings();
 
-},{"./storage":64,"./utils/safe-event-emitter":67}],64:[function(require,module,exports){
+},{"./storage":66,"./utils/safe-event-emitter":68}],66:[function(require,module,exports){
 const cookies = require('cookies-js');
 const SafeEventEmitter = require('./utils/safe-event-emitter');
 
@@ -23256,60 +23581,7 @@ class Storage extends SafeEventEmitter {
 
 module.exports = new Storage();
 
-},{"./utils/safe-event-emitter":67,"cookies-js":12}],65:[function(require,module,exports){
-let elementToObserve = document.getElementsByTagName('head')[0].parentElement
-
-let callback_list_dark = new Array()
-let callback_list_light = new Array()
-
-let classNameDark = 'tw-root--theme-dark'
-
-// https://stackoverflow.com/questions/10612024/event-trigger-on-a-class-change
-const dark_light_mode_observer = new MutationObserver((mutations) => {
-    mutations.forEach(mu => {
-      if (mu.type !== "attributes" && mu.attributeName !== "class") return;
-      let classList = mu.target.classList
-      let founded = false
-      let cmpt = 0 
-      do{
-          let currentClass= classList[cmpt]
-          if(currentClass==classNameDark){
-              founded=true
-          }
-          cmpt+=1
-      }while(!founded&&cmpt<classList.length)
-      if(founded){
-        callback_list_dark.forEach((callback_dark)=>{
-            callback_dark()
-        })
-      }else{
-          callback_list_light.forEach((callback_light)=>{
-            callback_light()
-          })
-      }
-    });
-});
-
-dark_light_mode_observer.observe(elementToObserve, {attributes: true})
-
-module.exports = {
-    onDarkMode(fct){
-        callback_list_dark.push(fct)
-    },
-
-    onLightMode(fct){
-        callback_list_light.push(fct)
-    },
-
-    isInDarkMode(){
-        return elementToObserve.className.includes(classNameDark);
-    }
-}
-
-    
-
-
-},{}],66:[function(require,module,exports){
+},{"./utils/safe-event-emitter":68,"cookies-js":12}],67:[function(require,module,exports){
 (function (process){(function (){
 const storage = require('../storage');
 
@@ -23329,7 +23601,7 @@ module.exports = {
 };
 
 }).call(this)}).call(this,require('_process'))
-},{"../storage":64,"_process":38}],67:[function(require,module,exports){
+},{"../storage":66,"_process":38}],68:[function(require,module,exports){
 const EventEmitter = require('events').EventEmitter;
 
 function newListener(listener, ...args) {
@@ -23344,18 +23616,25 @@ function newListener(listener, ...args) {
 class SafeEventEmitter extends EventEmitter {
     constructor() {
         super();
-        // Monkey-patch on/once to be "safer" & log errors
-        const oldOn = this.on;
-        const oldOnce = this.once;
-        this.on = (type, listener) => oldOn.call(this, type, newListener.bind(this, listener));
-        this.once = (type, listener) => oldOnce.call(this, type, newListener.bind(this, listener));
+
         this.setMaxListeners(100);
+    }
+
+    on(type, listener) {
+        const callback = newListener.bind(this, listener);
+        super.on(type, listener);
+        return () => this.off(type, callback);
+    }
+
+    once(type, listener) {
+        const callback = newListener.bind(this, listener);
+        super.once(type, listener);
+        return () => this.off(type, callback);
     }
 }
 
 module.exports = SafeEventEmitter;
-
-},{"./debug":66,"events":28}],68:[function(require,module,exports){
+},{"./debug":67,"events":28}],69:[function(require,module,exports){
 const $ = require('jquery');
 const querystring = require('querystring');
 
@@ -23422,7 +23701,7 @@ module.exports = {
     }
 };
 
-},{"jquery":34,"querystring":41}],69:[function(require,module,exports){
+},{"jquery":34,"querystring":41}],70:[function(require,module,exports){
 const $ = require('jquery');
 const twitchAPI = require('./twitch-api');
 
@@ -23912,8 +24191,7 @@ module.exports = {
     }
 
 };
-
-},{"./twitch-api":68,"jquery":34}],70:[function(require,module,exports){
+},{"./twitch-api":69,"jquery":34}],71:[function(require,module,exports){
 const io = require('socket.io-client')
 const socket = io('https://uptextv.com:3000',{transport:["websocket"]});
 
@@ -24198,7 +24476,7 @@ function randomIntFromInterval(min, max) { // min and max included
 }
 
 
-},{"socket.io-client":42}],71:[function(require,module,exports){
+},{"socket.io-client":42}],72:[function(require,module,exports){
 const src_url = 'https://uptextv.com/extension/'
 
 /**
@@ -24227,91 +24505,186 @@ module.exports = {
     return imgs
   }
 }
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 const debug = require('./utils/debug');
-const twitch = require('./utils/twitch');
 const SafeEventEmitter = require('./utils/safe-event-emitter');
+
+class Watcher extends SafeEventEmitter {
+    setup() {
+        require('./watchers/routes')(this);
+    
+        debug.log('watcher started');
+    }
+}
+
+module.exports = new Watcher();
+},{"./utils/debug":67,"./utils/safe-event-emitter":68,"./watchers/routes":76}],74:[function(require,module,exports){
+let elementToObserve = document.getElementsByTagName('head')[0].parentElement
+
+let callback_list_dark = new Array()
+let callback_list_light = new Array()
+
+let classNameDark = 'tw-root--theme-dark'
+
+// https://stackoverflow.com/questions/10612024/event-trigger-on-a-class-change
+const dark_light_mode_observer = new MutationObserver((mutations) => {
+    mutations.forEach(mu => {
+      if (mu.type !== "attributes" && mu.attributeName !== "class") return;
+      let classList = mu.target.classList
+      let founded = false
+      let cmpt = 0 
+      do{
+          let currentClass= classList[cmpt]
+          if(currentClass==classNameDark){
+              founded=true
+          }
+          cmpt+=1
+      }while(!founded&&cmpt<classList.length)
+      if(founded){
+        callback_list_dark.forEach((callback_dark)=>{
+            callback_dark()
+        })
+      }else{
+          callback_list_light.forEach((callback_light)=>{
+            callback_light()
+          })
+      }
+    });
+});
+
+dark_light_mode_observer.observe(elementToObserve, {attributes: true})
+
+module.exports = {
+    onDarkMode(fct){
+        callback_list_dark.push(fct)
+    },
+
+    onLightMode(fct){
+        callback_list_light.push(fct)
+    },
+
+    isInDarkMode(){
+        return elementToObserve.className.includes(classNameDark);
+    }
+}
+
+    
+
+
+},{}],75:[function(require,module,exports){
+const watcher = require('../watcher')
+
+var button = null
+var isFollowing = false
+var callback_onFollow = new Array()
+var callback_onUnfollow = new Array()
+var callback_onReady = new Array()
+
+watcher.on('load.followbar',()=>{
+  button = getFollowButton()
+  
+  isFollowing = (button!=null)
+
+  if(!isFollowing){
+    button = getUnfollowButton()
+  }  
+
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.attributeName === 'data-a-target') {
+        isFollowing = !(button.dataset.aTarget === 'follow-button') 
+        if(isFollowing){
+          callback_onFollow.forEach((callback)=>{
+            callback()
+          })
+        }else{
+          callback_onUnfollow.forEach((callback)=>{
+            callback()
+          })
+        }
+      }
+    });
+  });
+  observer.observe(button, {
+    attributes: true, childList: false, characterData: false
+  });
+
+  callback_onReady.forEach((callback)=>{
+    callback()
+  })
+}) 
+
+
+function getFollowButton(){
+  return document.querySelectorAll('[data-a-target="follow-button"]')[0]
+}
+
+function getUnfollowButton(){
+  return document.querySelectorAll('[data-a-target="unfollow-button"]')[0]
+}
+
+module.exports = {
+
+  onReady(callback){
+    callback_onReady.push(callback)
+  },
+
+  onFollow(callback){
+    callback_onFollow.push(callback)
+  },
+
+  onUnfollow(callback){
+    callback_onUnfollow.push(callback)
+  },
+
+  isFollowing(){
+    return isFollowing
+  }
+}
+},{"../watcher":73}],76:[function(require,module,exports){
 const $ = require('jquery');
+const twitch = require('../utils/twitch');
+const debug = require('../utils/debug');
+const domObserver = require('../observers/dom');
+const historyObserver = require('../observers/history');
 
-const CLIPS_HOSTNAME = 'clips.twitch.tv';
-const CANCEL_VOD_RECOMMENDATION_SELECTOR = '.recommendations-overlay .pl-rec__cancel.pl-button, .autoplay-vod__content-container button';
-const CHAT_ROOM_SELECTOR = 'section[data-test-selector="chat-room-component-layout"]';
-const CHAT_SQUAD_WRAPPER = 'div[data-test-selector="chat-wrapper"]';
-
-let router;
+let watcher;
 let currentPath = '';
 let currentRoute = '';
-let chatWatcher;
-let vodChatWatcher;
-let clipsChatWatcher;
-let squadChatWatcher;
-let currentChatReference;
-let currentChatChannelId;
-let currentChannelId;
-let channel = {};
-let sidenav_loaded=false
-let first_load_follow_button = true
+let sidenav_loaded = false
+let followButton = null
+let oldFollowButton = ''
 
 const loadPredicates = {
     following: () => !!$('.tw-tabs div[data-test-selector="ACTIVE_TAB_INDICATOR"]').length,
+    followbar: () => {
+        // you had multiple problems with this 'follow bar'
+        // on  route change, follow bar isn't update directly
+        // it cause multiple problems with pinButton.js
+        // you have to manually check when it's update
+        followButton = $('.follow-btn__follow-btn')[0]
+        if(followButton){
+            if(followButton!=oldFollowButton){
+                oldFollowButton=followButton
+                debug.log(twitch.updateCurrentChannel())
+                return true
+            }else{
+                return null
+            }
+        }else{
+            return null
+        }
+    },
     channel: () => {
         const href = (
             $('.channel-header__user-avatar img').attr('src') ||
             $('h3[data-test-selector="side-nav-channel-info__name_link"] a').attr('href') ||
             $('.channel-info-content img.tw-image-avatar').attr('src')
         );
-        const currentChannel = twitch.updateCurrentChannel();
-        if (!currentChannel || !currentChannel.id || (currentChannelId && currentChannelId === currentChannel.id)) return false;
-        currentChannelId = currentChannel.id;
-        return !!href;
+        return !!href && !!twitch.updateCurrentChannel();
     },
-    followbutton: () => {
-        const currentChannel = twitch.updateCurrentChannel();
-        let isfollowbuttonsetup = !!$('.follow-btn__follow-btn-container--following').length
-        if(!first_load_follow_button){
-            if(!currentChannel || !currentChannel.id || (currentChannelId && currentChannelId === currentChannel.id)) {
-                return false
-            }
-        }
-
-        if(isfollowbuttonsetup&&first_load_follow_button){
-            first_load_follow_button=false
-        }
-        
-        return isfollowbuttonsetup;  
-    },
-    chat: context => {
-        if (!twitch.updateCurrentChannel()) return false;
-
-        if (!$(CHAT_ROOM_SELECTOR).length) return false;
-
-        const lastReference = currentChatReference;
-        const currentChat = twitch.getCurrentChat();
-        if (!currentChat) return false;
-
-        let checkReferences = true;
-        if (context && context.forceReload) {
-            if (context.checkReferences === undefined) {
-                context.checkReferences = true;
-            }
-            checkReferences = context.checkReferences;
-            context.checkReferences = false;
-        }
-
-        if (checkReferences) {
-            if (currentChat === lastReference) return false;
-            if (currentChat.props.channelID === currentChatChannelId) return false;
-        }
-
-        currentChatReference = currentChat;
-        currentChatChannelId = currentChat.props.channelID;
-
-        return true;
-    },
-    clips: () => twitch.updateCurrentChannel(),
     player: () => !!twitch.getCurrentPlayer(),
-    vod: () => twitch.updateCurrentChannel() && $('.video-chat__input textarea').length,
-    vodRecommendation: () => $(CANCEL_VOD_RECOMMENDATION_SELECTOR).length,
+    vod: () => !!twitch.updateCurrentChannel(),
     homepage: () => !!$('.front-page-carousel .video-player__container').length,
     sidenav: () => !!$('.side-nav-section').length
 };
@@ -24321,7 +24694,6 @@ const routes = {
     DIRECTORY_FOLLOWING_LIVE: 'DIRECTORY_FOLLOWING_LIVE',
     DIRECTORY_FOLLOWING: 'DIRECTORY_FOLLOWING',
     DIRECTORY: 'DIRECTORY',
-    CHAT: 'CHAT',
     CHANNEL: 'CHANNEL',
     CHANNEL_SQUAD: 'CHANNEL_SQUAD',
     DASHBOARD: 'DASHBOARD',
@@ -24333,360 +24705,112 @@ const routeKeysToPaths = {
     [routes.DIRECTORY_FOLLOWING_LIVE]: /^\/directory\/following\/live$/i,
     [routes.DIRECTORY_FOLLOWING]: /^\/directory\/following$/i,
     [routes.DIRECTORY]: /^\/directory/i,
-    [routes.CHAT]: /^(\/popout)?\/[a-z0-9-_]+\/chat$/i,
     [routes.VOD]: /^(\/videos\/[0-9]+|\/[a-z0-9-_]+\/clip\/[a-z0-9-_]+)$/i,
     [routes.DASHBOARD]: /^(\/[a-z0-9-_]+\/dashboard|\/u\/[a-z0-9-_]+\/stream-manager)/i,
     [routes.CHANNEL_SQUAD]: /^\/[a-z0-9-_]+\/squad/i,
     [routes.CHANNEL]: /^\/[a-z0-9-_]+/i
 };
 
+function waitForLoad(type, context = null) {
+    let timeout;
+    let interval;
+    const startTime = Date.now();
+    return Promise.race([
+        new Promise(resolve => {
+            timeout = setTimeout(resolve, 15000);
+        }),
+        new Promise(resolve => {
+            const loaded = loadPredicates[type];
+            if (loaded(context)) {
+                resolve();
+                return;
+            }
+            interval = setInterval(() => loaded(context) && resolve(), 100);
+        })
+    ]).then(() => {
+        debug.log(`waited for ${type} load: ${Date.now() - startTime}ms`);
+        clearTimeout(timeout);
+        clearInterval(interval);
+    }).then(() => watcher.emit('load'));
+}
+
 function getRouteFromPath(path) {
+    let route = null;
     for (const name of Object.keys(routeKeysToPaths)) {
         const regex = routeKeysToPaths[name];
         if (!regex.test(path)) continue;
-        return name;
+        route = name;
+        break;
     }
 
-    return null;
+    // twitch's embed subdomain only supports channel view
+    if (route === routes.HOMEPAGE && location.hostname === 'embed.twitch.tv') {
+        return routes.CHANNEL;
+    }
+
+    return route;
 }
 
-class Watcher extends SafeEventEmitter {
-    constructor() {
-        super();
+function onRouteChange(location) {
+    const lastPath = currentPath
+    const lastRoute = currentRoute;
+    const path = location.pathname;
+    const route = getRouteFromPath(path);
 
-        if (window.location.hostname === CLIPS_HOSTNAME) {
-            this.loadClips();
-            return;
-        }
+    debug.log(`New route: ${location.pathname} as ${route}`);
 
-        const loadInterval = setInterval(() => {
-            let user;
-            try {
-                router = twitch.getRouter();
-                const connectStore = twitch.getConnectStore();
-                if (!connectStore || !router) {
-                    debug.error('Initialization failed, missing : ', {connectStore, router});
-                    return;
-                }
-                user = connectStore.getState().session.user;
-            } catch (_) {
-                return;
-            }
+    // trigger on all loads (like resize functions)
+    watcher.emit('load');
 
-            if (!router || !user) {
-                debug.error('Initialization failed, missing : ', {router, user});
-                return;
-            }
-            clearInterval(loadInterval);
+    currentPath = path;
+    currentRoute = route;
+    if (currentPath === lastPath) return;
 
-            twitch.setCurrentUser(user.authToken, user.id, user.login, user.displayName);
-            this.load();
-        }, 25);
+    if(!sidenav_loaded){
+        sidenav_loaded = true
+        waitForLoad('sidenav').then(() => {
+            watcher.emit('load.sidenav')
+        })
     }
 
-    waitForLoad(type, context = null) {
-        let timeout;
-        let interval;
-        const startTime = Date.now();
-        return Promise.race([
-            new Promise(resolve => {
-                timeout = setTimeout(resolve, 30000);
-            }),
-            new Promise(resolve => {
-                const loaded = loadPredicates[type];
-                if (loaded(context)) {
-                    resolve();
-                    return;
-                }
-                interval = setInterval(() => loaded(context) && resolve(), 25);
-            })
-        ]).then(() => {
-            debug.log(`waited for ${type} load: ${Date.now() - startTime}ms`);
-            clearTimeout(timeout);
-            clearInterval(interval);
-        }).then(() => this.emit('load'));
-    }
 
-    loadClips() {
-        this.clipsChatObserver();
-        this.channelObserver();
-        this.waitForLoad('clips').then(() => {
-            this.emit('load.clips');
-            this.emit('load.channel');
-        });
-    }
-
-    load() {
-        this.channelObserver();
-        this.conversationObserver();
-        this.chatObserver();
-        this.vodChatObserver();
-        this.routeObserver();
-        this.squadChatObserver();
-
-        debug.log('Watcher started');
-    }
-
-    forceReloadChat() {
-        currentChatReference = null;
-        this.waitForLoad('chat', {forceReload: true}).then(() => this.emit('load.chat'));
-    }
-
-    routeObserver() {
-        const onRouteChange = location => {
-            const lastPath = currentPath;
-            const lastRoute = currentRoute;
-            const path = location.pathname;
-            const route = getRouteFromPath(path);
-
-            debug.log(`New route: ${location.pathname} as ${route}`);
-
-            // trigger on all loads (like resize functions)
-            this.emit('load');
-
-            currentPath = path;
-            currentRoute = route;
-            if (currentPath === lastPath) return;
-
-            if(!sidenav_loaded){
-                this.waitForLoad('sidenav').then(() => {
-                    this.emit('load.sidenav')
-                    sidenav_loaded=true
-                })
-            }
-
-            switch (route) {
-                case routes.DIRECTORY_FOLLOWING:
-                    if (lastRoute === routes.DIRECTORY_FOLLOWING_LIVE) break;
-                    this.waitForLoad('following').then(() => this.emit('load.directory.following'));
-                    break;
-                case routes.CHAT:
-                    this.waitForLoad('chat').then(() => this.emit('load.chat'));
-                    break;
-                case routes.VOD:
-                    this.waitForLoad('vod').then(() => this.emit('load.vod'));
-                    this.waitForLoad('player').then(() => this.emit('load.player'));
-                    break;
-                case routes.CHANNEL_SQUAD:
-                    this.waitForLoad('chat').then(() => this.emit('load.chat.squad')).then(() => this.emit('load.chat'));
-                    this.waitForLoad('player').then(() => this.emit('load.player'));
-                    break;
-                case routes.CHANNEL:
-                    this.waitForLoad('followbutton').then((() => this.emit('load.followbutton')))
-                    this.waitForLoad('channel').then(() => this.emit('load.channel'));
-                    this.waitForLoad('chat').then(() => this.emit('load.chat'));
-                    this.waitForLoad('player').then(() => this.emit('load.player'));
-                    break;
-                case routes.HOMEPAGE:
-                    this.waitForLoad('homepage').then(() => this.emit('load.homepage'));
-                    break;
-                case routes.DASHBOARD:
-                    this.waitForLoad('chat').then(() => this.emit('load.chat'));
-                    break;
-            }
-        };
-
-        router.history.listen(location => onRouteChange(location));
-        onRouteChange(router.history.location);
-    }
-
-    conversationObserver() {
-        const emitMessage = element => {
-            const msgObject = twitch.getConversationMessageObject(element);
-            if (!msgObject) return;
-            this.emit('conversation.message', $(element), msgObject);
-        };
-
-        const conversationWatcher = new window.MutationObserver(mutations =>
-            mutations.forEach(mutation => {
-                for (const el of mutation.addedNodes) {
-                    const $el = $(el);
-                    if ($el.hasClass('thread-message__message')) {
-                        emitMessage($el[0]);
-                    } else {
-                        const $thread = $el.find('.whispers-thread');
-                        if ($thread.length) {
-                            this.emit('conversation.new', $thread);
-                        }
-
-                        const $messages = $el.find('.thread-message__message');
-                        for (const message of $messages) {
-                            emitMessage(message);
-                        }
-                    }
-                }
-            })
-        );
-
-        const timer = setInterval(() => {
-            const element = $('.whispers-open-threads')[0];
-            if (!element) return;
-            clearInterval(timer);
-            conversationWatcher.observe(element, {childList: true, subtree: true});
-        }, 1000);
-    }
-
-    chatObserver() {
-        const emitMessage = $el => {
-            const msgObject = twitch.getChatMessageObject($el[0]);
-            if (!msgObject) return;
-            this.emit('chat.message', $el, msgObject);
-        };
-
-        const observe = (watcher, element) => {
-            if (!element) return;
-            if (watcher) watcher.disconnect();
-            watcher.observe(element, {childList: true, subtree: true});
-
-            // late load messages events
-            $(element).find('.chat-line__message').each((index, el) => emitMessage($(el)));
-        };
-
-        chatWatcher = new window.MutationObserver(mutations =>
-            mutations.forEach(mutation => {
-                const target = mutation.target;
-                if (target && target.classList && target.classList.contains('viewer-card')) {
-                    const $el = $(target);
-                    this.emit('chat.moderator_card.open', $el);
-                    return;
-                }
-
-                for (const el of mutation.addedNodes) {
-                    const $el = $(el);
-
-                    if ($el.hasClass('chat-line__message')) {
-                        emitMessage($el);
-                    } else if ($el.children('.channel-points-reward-line, .user-notice-line')) {
-                        const channelPointsHighlight = $el.find('.chat-line__message');
-                        if (channelPointsHighlight.length > 0) {
-                            emitMessage(channelPointsHighlight);
-                        }
-                    }
-
-                    if ($el.hasClass('viewer-card')) {
-                        this.emit('chat.moderator_card.open', $el);
-                    } else if ($el.hasClass('viewer-card-layer__draggable') || $el.parent().hasClass('viewer-card-layer__draggable')) {
-                        const $viewerCard = $el.find('.viewer-card');
-                        if ($viewerCard.length) {
-                            this.emit('chat.moderator_card.open', $viewerCard);
-                        }
-                    }
-
-                    if ($el.hasClass('chat-input')) {
-                        this.forceReloadChat();
-                    }
-                }
-
-                for (const el of mutation.removedNodes) {
-                    const $el = $(el);
-
-                    if ($el.hasClass('viewer-card-layer__draggable')) {
-                        this.emit('chat.moderator_card.close');
-                    }
-                }
-            })
-        );
-
-        this.on('load.chat', () => observe(chatWatcher, $(CHAT_ROOM_SELECTOR)[0]));
-
-        // force reload of chat on room swap
-        $('body').on(
-            'click',
-            '.room-picker button[data-test-selector="stream-chat-room-picker-option"], .room-picker button[data-test-selector="room-option-interactable"], .room-selector__header button[data-test-selector="open-room-picker-button"], .room-selector__header button[data-test-selector="close-room-picker-button"]',
-            () => this.forceReloadChat()
-        );
-    }
-
-    vodChatObserver() {
-        const emitMessage = chatContent => this.emit('vod.message', $(chatContent));
-
-        const observe = (watcher, element) => {
-            if (!element) return;
-            if (watcher) watcher.disconnect();
-            watcher.observe(element, {childList: true, subtree: true});
-
-            // late load messages events
-            $(element).find('.vod-message__content,.vod-message').each((_, el) => emitMessage(el));
-        };
-
-        vodChatWatcher = new window.MutationObserver(mutations =>
-            mutations.forEach(mutation => {
-                for (const el of mutation.addedNodes) {
-                    const $el = $(el);
-
-                    const $chatContents = $el.find('.vod-message__content,.vod-message');
-
-                    for (const chatContent of $chatContents) {
-                        emitMessage(chatContent);
-                    }
-                }
-            })
-        );
-
-        this.on('load.vod', () => observe(vodChatWatcher, $('.qa-vod-chat')[0]));
-    }
-
-    channelObserver() {
-        const updateChannel = () => {
-            const currentChannel = twitch.getCurrentChannel();
-            if (!currentChannel || (channel && currentChannel.id === channel.id)) return;
-
-            debug.log(`Channel Observer: ${currentChannel.name} (${currentChannel.id}) loaded.`);
-
-            channel = currentChannel;
-        };
-
-        this.on('load.channel', updateChannel);
-        this.on('load.chat', updateChannel);
-        this.on('load.vod', updateChannel);
-    }
-
-    clipsChatObserver() {
-        const observe = (watcher, element) => {
-            if (!element) return;
-            if (watcher) watcher.disconnect();
-            watcher.observe(element, {childList: true, subtree: true});
-        };
-
-        clipsChatWatcher = new window.MutationObserver(mutations =>
-            mutations.forEach(mutation => {
-                for (const el of mutation.addedNodes) {
-                    const $el = $(el);
-
-                    if ($el.hasClass('tw-mg-b-1') && $el.find('span[data-a-target="chat-message-text"]').length) {
-                        this.emit('clips.message', $el);
-                    }
-                }
-            })
-        );
-
-        this.on('load.clips', () => observe(clipsChatWatcher, $('body')[0]));
-    }
-
-    squadChatObserver() {
-        let squadChatWrapper;
-
-        const observe = (watcher, element) => {
-            if (!element) return;
-            squadChatWrapper = element;
-            if (watcher) watcher.disconnect();
-            watcher.observe(element, {subtree: true, attributes: true});
-        };
-
-        squadChatWatcher = new window.MutationObserver(mutations =>
-            mutations.forEach(mutation => {
-                if (mutation.type !== 'attributes') return;
-                // stream chat changed, so force update current channel and chat
-                if (mutation.target.parentElement === squadChatWrapper) {
-                    this.forceReloadChat();
-                }
-            })
-        );
-
-        this.on('load.chat.squad', () => observe(squadChatWatcher, $(CHAT_SQUAD_WRAPPER)[0]));
+    switch (route) {
+        case routes.DIRECTORY_FOLLOWING:
+            if (lastRoute === routes.DIRECTORY_FOLLOWING_LIVE) break;
+            waitForLoad('following').then(() => watcher.emit('load.directory.following'));
+            waitForLoad('followbar').then(() => watcher.emit('load.followbar'));
+            break;
+        case routes.VOD:
+            waitForLoad('vod').then(() => watcher.emit('load.vod'));
+            waitForLoad('player').then(() => watcher.emit('load.player'));
+            break;
+        case routes.CHANNEL_SQUAD:
+            waitForLoad('player').then(() => watcher.emit('load.player'));
+            break;
+        case routes.CHANNEL:
+            waitForLoad('channel').then(() => watcher.emit('load.channel'));
+            waitForLoad('player').then(() => watcher.emit('load.player'));
+            waitForLoad('followbar').then(() => watcher.emit('load.followbar'));
+            break;
+        case routes.HOMEPAGE:
+            waitForLoad('homepage').then(() => watcher.emit('load.homepage'));
+            break;
     }
 }
 
-module.exports = new Watcher();
 
-},{"./utils/debug":66,"./utils/safe-event-emitter":67,"./utils/twitch":69,"jquery":34}]},{},[57]);
+module.exports = watcher_ => {
+    watcher = watcher_;
+    
+    historyObserver.on('pushState', location => onRouteChange(location));
+    historyObserver.on('replaceState', location => onRouteChange(location));
+    historyObserver.on('popState', location => onRouteChange(location));
+    onRouteChange(location);
+
+    // force reload player when the player gets recreated
+    domObserver.on('.persistent-player', (node, isConnected) => {
+        if (!isConnected) return;
+        waitForLoad('player').then(() => watcher.emit('load.player'));
+    });
+};
+},{"../observers/dom":63,"../observers/history":64,"../utils/debug":67,"../utils/twitch":70,"jquery":34}]},{},[57]);
