@@ -186,7 +186,7 @@ DOMRect { x: 1315.2166748046875, y: 386, width: 40, height: 30, top: 386, right:
     div0.style.height = div0_height
 
     let div1 = document.createElement('div')
-    div1.className="tw-inline-flex tw-relative tw-tooltip-wrapper tw-tooltip-wrapper--show"
+    div1.className="tw-inline-flex tw-relative tw-tooltip__container tw-tooltip__container--show"//tw-tooltip-wrapper tw-tooltip-wrapper--show"
 
     let div2 = document.createElement('div')
     div2.style.width = div0_width

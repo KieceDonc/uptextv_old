@@ -75,7 +75,7 @@ function getSortGroupStreamersFunctions(groupSection){
     {
       'name':'Viewer',
       'treatment':function(){
-        sortCurrentGroupStreamersByPropertie(groupSection,'viewer_count')
+        sortStreamersByPropertie(groupSection,'viewer_count')
       }
     },
   
@@ -101,7 +101,7 @@ function getSortGroupStreamersFunctions(groupSection){
     {
       'name':'Game name',
       'treatment': function(){ 
-        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
+        let splitByOnlineAndOffline = getOnlineAndOfflineStreamers(groupSection)
         splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
           let a_broadcaster_name = a["game_name"].toLowerCase()
           let b_broadcaster_name = b["game_name"].toLowerCase()
@@ -121,7 +121,7 @@ function getSortGroupStreamersFunctions(groupSection){
     {
       'name':'Uptime',
       'treatment': function(){ 
-        let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
+        let splitByOnlineAndOffline = getOnlineAndOfflineStreamers(groupSection)
         splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(function(a,b){
           let a_live_start = new Date(a["started_at"]).getTime() // date in second from 1970
           let b_live_start = new Date(b["started_at"]).getTime() // date in second from 1970
@@ -141,8 +141,8 @@ function getSortGroupStreamersFunctions(groupSection){
 }
 
 // sort current group list streamers by a propertie
-function sortCurrentGroupStreamersByPropertie(groupSection,propertieName){
-  let splitByOnlineAndOffline = getOnlineAndOfflineCurrentGroupStreamers(groupSection)
+function sortStreamersByPropertie(groupSection,propertieName){
+  let splitByOnlineAndOffline = getOnlineAndOfflineStreamers(groupSection)
   splitByOnlineAndOffline.online = splitByOnlineAndOffline.online.sort(sortBy(propertieName))
   let newList = splitByOnlineAndOffline.online.concat(splitByOnlineAndOffline.offline)
   groupSection.setGroupList(newList)
@@ -151,7 +151,7 @@ function sortCurrentGroupStreamersByPropertie(groupSection,propertieName){
 // return an object like this {online:ARRAY,offline:ARRAY}
 // online is list of current group list streamer online
 // offline is list of current group list streamer offline
-function getOnlineAndOfflineCurrentGroupStreamers(groupSection){
+function getOnlineAndOfflineStreamers(groupSection){
     let offline = new Array()
     let online = new Array()
     let currentGroupStreamers = groupSection.getGroupList()

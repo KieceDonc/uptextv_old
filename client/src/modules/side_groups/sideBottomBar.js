@@ -11,7 +11,7 @@ class sideBottomBar{
 
     constructor(_sideGroupsModule){
         sideGroupsModule=_sideGroupsModule
-        this.button=new AddButton
+        this.addButton=new AddButton
         this.setup()
     }
 
@@ -43,7 +43,7 @@ class sideBottomBar{
 
 
                 sideNav.firstChild.firstChild.appendChild(sideBottomBar)
-                this.button.setup(sideBottomBar)
+                this.addButton.setup(sideBottomBar)
             }else{
                 debug.error('error while trying to find sideNav id in sideBottomBar. SideNav is null')
             }

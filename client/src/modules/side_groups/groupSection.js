@@ -291,18 +291,20 @@ class streamTitleToolTipHandler{
 
     getElement(aRectTop,aWidth,aHeight){
         /*
-        div0 <div class="tooltip-layer" style="transform: translate(0px, 356px); width: 242px; height: 42px;">
-        div1     <div class="rich-content-tooltip">
-        div2        <div style="width: 242px; height: 42px;">
-                    </div>
-        div3        <div class="tw-absolute tw-balloon tw-balloon--center tw-balloon--right tw-block" role="dialog">
-        div4            <div class="tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2">
-        div5                <div class="rich-content-tooltip__pointer-target">
-        div6                    <div class="tw-pd-05">
-        div7                        <div class="online-side-nav-channel-tooltip__body tw-pd-x-05">
-        p0                               <p class="tw-c-text-base tw-ellipsis tw-line-clamp-2">
-                                                LIVE: Complexity vs. Astralis - ESL Pro League Season 12 - Group B - EU
-                                            </p>
+        <div class="dialog-layer">
+            <div class="ReactModal__Overlay ReactModal__Overlay--after-open react-modal__overlay" style="position: fixed; top: 0px; left: 0px; width: 1px; height: 1px;">
+                <div class="ReactModal__Content ReactModal__Content--after-open react-modal__content" tabindex="-1" role="dialog" aria-modal="true">
+                    <div style="position: absolute; inset: 0px auto auto 0px; transform: translate(240px, 485px);" data-popper-reference-hidden="false" data-popper-escaped="true" data-popper-placement="right-start">
+                        <div>
+                            <div class="tw-transition tw-transition--enter-done tw-transition__fade tw-transition__fade--enter-done" style="transition-delay: 0ms; transition-duration: 250ms;">
+                                <div class="tw-pd-l-1">
+                                    <div class="tw-balloon tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 tw-inline-block" role="dialog">
+                                        <div class="tw-pd-x-05 tw-pd-y-05">
+                                            <div class="online-side-nav-channel-tooltip__body tw-pd-x-05">
+                                                <p class="tw-c-text-base tw-ellipsis tw-line-clamp-2">Ranked All Day !prime !gfuel</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -313,46 +315,61 @@ class streamTitleToolTipHandler{
         */
 
         let div0 = document.createElement('div')
-        div0.className='tooltip-layer'
+        div0.className='dialog-layer'
         div0.id='tooltip-layer-stream-title'
-        div0.style.transform='translate('+(aWidth+5)+'px,'+(aRectTop+aHeight/2)+'px)'
-        div0.style.width = aWidth
-        div0.style.height = aHeight
+        //div0.style.width = aWidth
+        //div0.style.height = aHeight
         
         let div1 = document.createElement('div')
-        div1.className='rich-content-tooltip'
+        div1.className='ReactModal__Overlay ReactModal__Overlay--after-open react-modal__overlay'
+        div1.style.position ='fixed'
+        div1.style.top='0px'
+        div1.style.left='0px'
+        div1.style.width='1px'
+        div1.style.height='1px'
         
         let div2 = document.createElement('div')
-        div2.style.width = aWidth
-        div2.style.height = aHeight
-        
+        div2.className='ReactModal__Content ReactModal__Content--after-open react-modal__content'
+
         let div3 = document.createElement('div')
-        div3.className='tw-absolute tw-balloon tw-balloon--center tw-balloon--right tw-block'
+        div3.className=''
+        div3.style.transform='translate('+(aWidth+2)+'px,'+(aRectTop)+'px)'
+        div3.style.position = 'absolute'
         
         let div4 = document.createElement('div')
-        div4.className='tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2'
+        div4.className=''
         
         let div5 = document.createElement('div')
-        div5.className='rich-content-tooltip__pointer-target'
+        div5.style.transitionDelay='0ms'
+        div5.style.transitionDuration='250ms'
+        div5.className='tw-transition tw-transition--enter-done tw-transition__fade tw-transition__fade--enter-done'
         
         let div6 = document.createElement('div')
-        div6.className='tw-pd-05'
+        div6.className='tw-pd-l-1'
         
         let div7 = document.createElement('div')
-        div7.className='online-side-nav-channel-tooltip__body tw-pd-x-05'
+        div7.className='tw-balloon tw-border-radius-large tw-c-background-base tw-c-text-inherit tw-elevation-2 tw-inline-block'
+
+        let div8 = document.createElement('div')
+        div8.className='tw-pd-x-05 tw-pd-y-05'
+
+        let div9 = document.createElement('div')
+        div9.className='online-side-nav-channel-tooltip__body tw-pd-x-05'
         
         let p0 = document.createElement('p')
-        p0.className='tw-c-text-base tw-ellipsis tw-line-clamp-2'
+        p0.className='online-side-nav-channel-tooltip__body tw-pd-x-05'
         p0.innerText=this.streamerInfo.title
         
         div0.appendChild(div1)
         div1.appendChild(div2)
-        div1.appendChild(div3)
+        div2.appendChild(div3)
         div3.appendChild(div4)
         div4.appendChild(div5)
         div5.appendChild(div6)
         div6.appendChild(div7)
-        div7.appendChild(p0)
+        div7.appendChild(div8)
+        div8.appendChild(div9)
+        div9.appendChild(p0)
         return div0
     }
 }

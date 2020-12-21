@@ -37,7 +37,7 @@ class SideGroupsModule{
         })
       })
 
-      follow.onReady(()=>{
+      watcher.on('load.followbar',()=>{
         var pinButtonInstance = null
 
         if(follow.isFollowing){
@@ -51,7 +51,7 @@ class SideGroupsModule{
         follow.onUnfollow(()=>{
           pinButtonInstance.selfRemove()
           pinButtonInstance = null
-        })
+        })  
       }) 
     }
 
