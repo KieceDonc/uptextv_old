@@ -535,15 +535,6 @@ function setup(currentGroupSection){
         onSettingsButtonClick(imgSettings,divSettingsMenu)
     })
 
-    /*let imgColorPicker = document.createElement('img')
-    imgColorPicker.src=uptextvIMG.color_picker
-    giveImgsDesireStyle(imgColorPicker)
-
-    imgColorPicker.addEventListener('click',function(){
-        onColorPickerButtonClick(groupID,groupList,liveColor)
-    })*/
-
-
     // every time user switch to dark mode we change imgs to white ( from black )
     darkmode.onDarkMode(()=>{
         imgsToWatchDarkLightMode.forEach((currentElement)=>{
