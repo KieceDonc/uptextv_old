@@ -21098,7 +21098,8 @@ class groupSection{
             this.groupSortBy = groupSortBy.setup(this)
             this.sortStreamer()
             this.getGroupList().forEach((currentStreamerInfo)=>{
-                addStreamerInHTML(this.getGroupID(),currentStreamerInfo,this.getLiveColor())
+                // you're passing false for isGroupIsHiden to have a nice animation hidding all streamers
+                addStreamerInHTML(this.getGroupID(),currentStreamerInfo,this.getLiveColor(),false)
             })
             if(this.getIsGroupHiden()){
                 hideInHTML(this.getGroupID(),null)
@@ -21116,7 +21117,7 @@ class groupSection{
      */
     addStreamer(_streamerID){
         uptextvAPI.getStreamerInfo(_streamerID).then((streamerInfo)=>{
-            addStreamerInHTML(this.getGroupID(),streamerInfo,this.getLiveColor())
+            addStreamerInHTML(this.getGroupID(),streamerInfo,this.getLiveColor(),this.getIsGroupHiden())
             addStreamerInAPI(this.getGroupID(),_streamerID)
             let oldList = this.getGroupList().slice()
             this.getGroupList().push(streamerInfo)
@@ -21203,6 +21204,10 @@ class groupSection{
         return this.getGroupObject().isGroupHiden
     }
 
+    modifyIsGroupHiden(value){
+        this.getGroupObject().isGroupHiden = value
+    }
+
     getSideGroupsModule(){
         return this.sideGroupsModule
     }
@@ -21266,7 +21271,7 @@ class groupSection{
                 setTimeout(function () { // use to replace in good order in html  
                     temp_groupSection.getGroupList().forEach((currentStreamerInfo)=>{
                         deleteStreamerInHTML(temp_groupSection.getGroupID(),currentStreamerInfo.broadcaster_id,false)
-                        addStreamerInHTML(temp_groupSection.getGroupID(),currentStreamerInfo,temp_groupSection.getLiveColor())
+                        addStreamerInHTML(temp_groupSection.getGroupID(),currentStreamerInfo,temp_groupSection.getLiveColor(),temp_groupSection.getIsGroupHiden())
                     })
                 }, 500);
             }
@@ -21528,7 +21533,7 @@ function setup(currentGroupSection){
         imgHide_Show.src= uptextvIMG.hide
     }
     imgHide_Show.addEventListener('click',()=>{
-        onHide_ShowButtonClic(imgHide_Show,groupID)
+        onHide_ShowButtonClic(currentGroupSection,imgHide_Show,groupID)
     })
     
 
@@ -21674,12 +21679,14 @@ function showInHTML(groupID,callback){
 }
 
 /**
- * delete all streamers and the sort by button in html
+ * hide all streamers and the sort by button in html
  */
 function hideInHTML(groupID,callback){
+    // if you update translate ( animation when hide / show streamer ), please also update addStreamerInHTML
+    // TODO regroup the way you're giving animation style to hide / show streamer
     let mainDiv =  document.getElementById(groupID+"_sideNavGroupSection")
     let childs = [].slice.call(mainDiv.children).reverse()
-    let translateXWidth = childs[0].offsetWidth
+    let translateXWidth = document.getElementById('sideNav').offsetWidth
     let cmpt=0
     childs.forEach((currentChild)=>{
         setTimeout(function(){
@@ -21743,17 +21750,7 @@ function onDeleteButtonClick(groupID,groupIndex,sideGroupsModule){
     })
 }
 
-/*function onColorPickerButtonClick(groupID,groupList,oldLiveColor){
-    changeLiveColor = (liveColor)=>{
-        groupList.forEach((currentStreamerInfo)=>{
-            let currentStreamerID = currentStreamerInfo.broadcaster_id
-            let div10 = document.getElementById(groupID+currentStreamerID+'unknow1')
-            div10.style.setProperty("background-color", liveColor, "important");
-        })
-    }
-}*/
-
-function onHide_ShowButtonClic(imgHide_Show,groupID){
+function onHide_ShowButtonClic(currentGroupSection,imgHide_Show,groupID){
     if(imgHide_Show.src==uptextvIMG.hide){ // you must hide the group Section
         hideInHTML(groupID,null)
         imgHide_Show.style.transform='scale(0)'
@@ -21762,6 +21759,7 @@ function onHide_ShowButtonClic(imgHide_Show,groupID){
             imgHide_Show.style.transform='scale(1)'
         },250)
         uptextvAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',true)
+        currentGroupSection.modifyIsGroupHiden(true)
     }else{// you must show the group Section
         showInHTML(groupID,null)
         imgHide_Show.style.transform='scale(0)'
@@ -21770,6 +21768,7 @@ function onHide_ShowButtonClic(imgHide_Show,groupID){
             imgHide_Show.style.transform='scale(1)'
         },250)
         uptextvAPI.setGroupProperty(groupID,twitch.getCurrentUser().id,'isGroupHiden',false)
+        currentGroupSection.modifyIsGroupHiden(false)
     }
 }
 
@@ -21851,7 +21850,7 @@ function onReorderUpOrDownButtonClick(groupSectionToMoveUp,groupSectionToMoveDow
  * @param {Oject} streamerInfo 
  * @param {String} liveColor
  */
-function addStreamerInHTML(groupID,streamerInfo,liveColor){
+function addStreamerInHTML(groupID,streamerInfo,liveColor,isGroupHiden){
 
     let _streamerID = streamerInfo.broadcaster_id
     let streamerIsStreaming = streamerInfo.isStreaming
@@ -21865,6 +21864,14 @@ function addStreamerInHTML(groupID,streamerInfo,liveColor){
     div0.style="transition-property: transform, opacity; transition-timing-function: ease; transition-duration: 250ms;"
     div0.id=groupID+_streamerID
 
+    if(isGroupHiden){
+        // this is necessecary cuz addStreamerInHTML can be call after setup ( pin button )
+        // if you update translate ( animation when hide / show streamer ), please also update hideInHTML
+        // TODO regroup the way you're giving animation style to hide / show streamer
+        div0.style.setProperty("display", "none", "important")
+        let translateXWidth = document.getElementById('sideNav').offsetWidth
+        div0.style.transform='translateX(-'+translateXWidth+'px)'
+    }
 
     let div1 = document.createElement("div")
 
@@ -22154,6 +22161,7 @@ function giveTransitionStyle(element){
     element.style.transitionTimingFunction='ease'
     element.style.transitionDuration='250ms'
 }
+
 /**
  * group id is in ascii code and each letter is separate by _
  * ex:

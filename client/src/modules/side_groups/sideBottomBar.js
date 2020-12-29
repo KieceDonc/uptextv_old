@@ -32,7 +32,11 @@ class sideBottomBar{
      */
     setup(){
         if(this.shouldSetup()){
-            let sideNav = document.getElementById('sideNav')
+            let sideNav = document.getElementsByClassName('side-nav-content')[0]
+
+            if(sideNav==null){
+                sideNav = document.getElementById('sideNav').firstChild
+            }
 
             if(sideNav){
                 
@@ -42,7 +46,7 @@ class sideBottomBar{
                 sideBottomBar.style.maxHeight = document.getElementsByClassName('side-nav-search-input')[0].offsetHeight // search input offsetHeight
 
 
-                sideNav.firstChild.firstChild.appendChild(sideBottomBar)
+                sideNav.firstChild.appendChild(sideBottomBar)
                 this.addButton.setup(sideBottomBar)
             }else{
                 debug.error('error while trying to find sideNav id in sideBottomBar. SideNav is null')

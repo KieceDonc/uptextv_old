@@ -15,8 +15,13 @@ var groupsSection = new Array()
 var userID // id of current user
 
 class SideGroupsModule{
-    constructor(){  
-      userID = twitch.getCurrentUser().id
+    constructor(){
+      if(!twitch.getCurrentUser()){
+        // user isn't connected
+        return null
+      }  
+
+      userID = twitch.getCurrentUser().id 
       
       watcher.on('load.sidenav',()=>{
         uptextvAPI.setup(userID).then(()=>{
