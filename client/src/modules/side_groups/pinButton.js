@@ -105,8 +105,22 @@ function setup(){
   
       let img0 = document.createElement("img")
       img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
-      img0.src= uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
-      img0.style.maxWidth='none'
+      img0.src=uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+      img0.style.maxWidth='20px'
+
+      if(darkmode.isInDarkMode()){
+          img0.style.filter="invert(90%)"
+      }else{
+          img0.style.filter="invert(10%)"
+      }
+
+      darkmode.onDarkMode(()=>{
+        img0.style.filter="invert(90%)"
+      })
+
+      darkmode.onLightMode(()=>{
+        img0.style.filter="invert(10%)"
+      })
   
       let span0 = document.createElement("span")
       span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"
