@@ -21613,15 +21613,6 @@ function setup(currentGroupSection){
         onSettingsButtonClick(imgSettings,divSettingsMenu)
     })
 
-    /*let imgColorPicker = document.createElement('img')
-    imgColorPicker.src=uptextvIMG.color_picker
-    giveImgsDesireStyle(imgColorPicker)
-
-    imgColorPicker.addEventListener('click',function(){
-        onColorPickerButtonClick(groupID,groupList,liveColor)
-    })*/
-
-
     // every time user switch to dark mode we change imgs to white ( from black )
     darkmode.onDarkMode(()=>{
         imgsToWatchDarkLightMode.forEach((currentElement)=>{
@@ -22230,16 +22221,27 @@ class groupSortBy{
 
   // add in css / html the select element to let user sort by something he want
   // select id = (GROUP NAME IN ASCII)+groupSelect
+  /*
+  height: 70%;
+  border-radius: 8px;
+  border: none;
+  padding-left: 2px;
+  */
   htmlSetup(){
     let div0 = document.createElement('div')
-    div0.className="tw-border-radius-medium tw-c-background-base tw-inline-flex tw-overflow-hidden"
+    div0.className="tw-border-radius-medium  tw-inline-flex tw-overflow-hidden"
     div0.style="margin-left: 1rem !important;margin-bottom: 0.5rem;margin-top: 0.5rem;"
   
     let div1 = document.createElement('div')
-    div1.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-core-button--secondary tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+    div1.className="tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-core-button tw-full-width tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+
   
     let select0 = document.createElement('select')
     select0.className="tw-font-size-6"
+    select0.style.height ="70%"
+    select0.style.border = "none"
+    select0.style.borderRadius = "8px"
+    select0.style.paddingLeft = "2px"
     let temp_this = this
     select0.addEventListener('change', ()=>{
         temp_this.selectOnChange(select0)
@@ -22275,6 +22277,7 @@ class groupSortBy{
       this.sort()
       this.groupSection.onListUpdate(oldList)
   }
+  
 }
 
 function getSortGroupStreamersFunctions(groupSection){
@@ -22690,8 +22693,22 @@ function setup(){
   
       let img0 = document.createElement("img")
       img0.className="tw-svg__asset tw-svg__asset--inherit tw-svg__asset--notificationbell"
-      img0.src= uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
-      img0.style.maxWidth='none'
+      img0.src=uptextvIMG.pin_icon//browser.runtime.getURL("../src/assets/icon/icon-pin-mouse-over.svg");
+      img0.style.maxWidth='20px'
+
+      if(darkmode.isInDarkMode()){
+          img0.style.filter="invert(90%)"
+      }else{
+          img0.style.filter="invert(10%)"
+      }
+
+      darkmode.onDarkMode(()=>{
+        img0.style.filter="invert(90%)"
+      })
+
+      darkmode.onLightMode(()=>{
+        img0.style.filter="invert(10%)"
+      })
   
       let span0 = document.createElement("span")
       span0.style="opacity: 1; transform: translateX(0px); transition: all 300ms ease 300ms;"
